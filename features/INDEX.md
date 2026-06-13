@@ -10,10 +10,28 @@ Maintained by the **Coordinator** (adds a row when a feature folder is created) 
 
 ## Registry
 
-Newest first. Keep each outcome to one line — detail lives in the feature folder.
+Listed in dependency-build order (breakdown §5), grouped by phase — more useful for a
+backlog than newest-first. Keep each outcome to one line; detail lives in the feature
+folder.
 
-| Slug | Stage | Started | One-line outcome |
-|------|-------|---------|------------------|
-| _none yet_ | — | — | — |
+**`backlog`** = folder + the 7 artifacts scaffolded by the Coordinator from
+[../docs/mvp-component-breakdown.md](../docs/mvp-component-breakdown.md), but **not yet
+entered Stage 1**. Activating one (set `Stage: 1-define` in [../CONTROL.md](../CONTROL.md))
+is decision **D2** and belongs to the user.
 
-> Stage values: see the routing table in [../CLAUDE.md](../CLAUDE.md) §2.
+| Slug | Phase | Stage | Started | Proves | Depends on | One-line outcome |
+|------|-------|-------|---------|--------|------------|------------------|
+| [identity-accounts](identity-accounts/) | 0 Foundation | `1-define` | 2026-06-13 | enabler | — | _active — in Stage 1 (Product Analyst)_ |
+| [interest-taxonomy](interest-taxonomy/) | 0 Foundation | backlog | 2026-06-13 | enabler | — | _backlog_ |
+| [signal-capture](signal-capture/) | 0 Foundation | backlog | 2026-06-13 | H3 | identity-accounts | _backlog_ |
+| [submission-intake](submission-intake/) | 1 Catalog | backlog | 2026-06-13 | H2 | identity-accounts, interest-taxonomy | _backlog_ |
+| [app-pages](app-pages/) | 1 Catalog | backlog | 2026-06-13 | H1, H2 | submission-intake | _backlog_ |
+| [editorial-curation-tools](editorial-curation-tools/) | 1 Catalog | backlog | 2026-06-13 | H1, H3 | interest-taxonomy, submission-intake, weekly-digest | _backlog_ |
+| [interest-profile](interest-profile/) | 2 User loop | backlog | 2026-06-13 | H1 | identity-accounts, interest-taxonomy | _backlog_ |
+| [weekly-digest](weekly-digest/) | 2 User loop | backlog | 2026-06-13 | H1 | editorial-curation-tools, app-pages, signal-capture | _backlog_ |
+| [ratings-reviews](ratings-reviews/) | 2 User loop | backlog | 2026-06-13 | H1, H3 | app-pages, signal-capture | _backlog_ |
+| [open-search-browse](open-search-browse/) | 2 User loop | backlog | 2026-06-13 | enabler / H3 | app-pages | _backlog_ |
+| [developer-dashboard](developer-dashboard/) | 3 Dev value | backlog | 2026-06-13 | H2 | signal-capture, ratings-reviews | _backlog_ |
+
+> Stage values: see the routing table in [../CLAUDE.md](../CLAUDE.md) §2. `backlog` is a
+> pre-pipeline holding state, not a canonical pipeline stage.
