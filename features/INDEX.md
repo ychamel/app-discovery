@@ -21,8 +21,8 @@ is decision **D2** and belongs to the user.
 
 | Slug | Phase | Stage | Started | Proves | Depends on | One-line outcome |
 |------|-------|-------|---------|--------|------------|------------------|
-| [identity-accounts](identity-accounts/) | 0 Foundation | `5-release` | 2026-06-13 | enabler | — | _build complete — 108 tests green; in Stage 5 (Release Engineer)_ |
-| [interest-taxonomy](interest-taxonomy/) | 0 Foundation | backlog | 2026-06-13 | enabler | — | _backlog_ |
+| [identity-accounts](identity-accounts/) | 0 Foundation | closed-out | 2026-06-13 | enabler | — | _released local/dev (108 tests green); Stage 6 retrospective skipped per user — outcome review deferred/reopenable_ |
+| [interest-taxonomy](interest-taxonomy/) | 0 Foundation | `1-define` | 2026-06-17 | enabler | — | _active — Stage 1 (Product Analyst) writing the brief_ |
 | [signal-capture](signal-capture/) | 0 Foundation | backlog | 2026-06-13 | H3 | identity-accounts | _backlog_ |
 | [submission-intake](submission-intake/) | 1 Catalog | backlog | 2026-06-13 | H2 | identity-accounts, interest-taxonomy | _backlog_ |
 | [app-pages](app-pages/) | 1 Catalog | backlog | 2026-06-13 | H1, H2 | submission-intake | _backlog_ |
