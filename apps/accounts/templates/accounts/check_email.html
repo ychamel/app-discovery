@@ -1,0 +1,28 @@
+{% extends "accounts/base.html" %}
+{% block title %}Check your email · App Discovery{% endblock %}
+
+{% block content %}
+  {% if send_failed %}
+    <h1>We couldn't send your link</h1>
+    <p role="alert">
+      Something went wrong sending the sign-in link to <strong>{{ email }}</strong>.
+      Please try again.
+    </p>
+    <form method="post" action="{% url 'accounts:login' %}">
+      {% csrf_token %}
+      <input type="hidden" name="email" value="{{ email }}">
+      <button type="submit">Resend the link</button>
+    </form>
+  {% else %}
+    <h1>Check your email</h1>
+    <p>
+      If an account exists for <strong>{{ email }}</strong>, we've sent a sign-in link
+      to it. The link works once and expires shortly.
+    </p>
+    <form method="post" action="{% url 'accounts:login' %}">
+      {% csrf_token %}
+      <input type="hidden" name="email" value="{{ email }}">
+      <button type="submit">Resend the link</button>
+    </form>
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends "accounts/base.html" %}
+{% block title %}Link expired · App Discovery{% endblock %}
+
+{% block content %}
+  <h1>That link can't be used</h1>
+  <p role="alert">
+    This sign-in link has expired or was already used. Sign-in links work once and
+    expire shortly after they're sent. Request a fresh one below.
+  </p>
+
+  <form method="post" action="{% url 'accounts:login' %}">
+    {% csrf_token %}
+    <p>
+      <label for="id_email">Email</label>
+      <input type="email" name="email" id="id_email" required>
+    </p>
+    <button type="submit">Send a new link</button>
+  </form>
+{% endblock %}

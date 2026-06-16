@@ -1,0 +1,32 @@
+[project]
+name = "app-discovery"
+version = "0.1.0"
+description = "Curated App Discovery Platform — identity-accounts feature"
+requires-python = ">=3.12"
+dependencies = [
+    "Django>=5.0,<6.0",
+    "djangorestframework>=3.15",
+    "psycopg[binary]>=3.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.6",
+]
+
+# ---------------------------------------------------------------------------
+# Tooling
+# ---------------------------------------------------------------------------
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+extend-exclude = [".venv", ".pgdata", ".pgrun", "**/migrations/*"]
+
+[tool.ruff.lint]
+# Boring, well-understood rule set: pyflakes (F), pycodestyle (E/W),
+# isort (I), bugbear (B), pyupgrade (UP). No exotic linters.
+select = ["E", "W", "F", "I", "B", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+# Settings legitimately uses module-level wildcard-style config and long lines.
+"config/settings.py" = ["E501"]

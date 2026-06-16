@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ruff_cache/
+
+# Virtualenv
+.venv/
+
+# Local environment / secrets
+.env
+
+# Local PostgreSQL instance (dev/test only)
+.pgdata/
+.pgrun/
+
+# Django
+*.log
+staticfiles/

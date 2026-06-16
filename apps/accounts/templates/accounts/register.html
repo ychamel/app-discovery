@@ -1,0 +1,30 @@
+{% extends "accounts/base.html" %}
+{% block title %}Create your account · App Discovery{% endblock %}
+
+{% block content %}
+  <h1>Create your account</h1>
+
+  {% if email_taken %}
+    <p role="alert">
+      An account already exists for that email.
+      <a href="{% url 'accounts:signin' %}">Sign in instead</a>.
+    </p>
+  {% endif %}
+
+  <form method="post" action="{% url 'accounts:register' %}">
+    {% csrf_token %}
+    <p>
+      <label for="id_email">Email</label>
+      {{ form.email }}
+      {% if form.email.errors %}<span role="alert">{{ form.email.errors.0 }}</span>{% endif %}
+    </p>
+    <p>
+      <label for="id_display_name">Display name</label>
+      {{ form.display_name }}
+      {% if form.display_name.errors %}<span role="alert">{{ form.display_name.errors.0 }}</span>{% endif %}
+    </p>
+    <button type="submit">Send me a sign-in link</button>
+  </form>
+
+  <p>Already have an account? <a href="{% url 'accounts:signin' %}">Sign in</a>.</p>
+{% endblock %}

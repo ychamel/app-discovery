@@ -88,6 +88,26 @@ decisions go in [/DECISIONS.md](../../DECISIONS.md).*
   the same model. Admin grant/revoke has no rich UI in this feature — the contract is
   provided for `editorial-curation-tools` to build the tooling.
 
+### DL-5: `issue_login_link` takes an Account + injected base_url/sender (build-stage refinement)
+- **Date:** 2026-06-17
+- **Stage / feature:** `4-build` / `identity-accounts` (Senior Engineer)
+- **Decision:** The internal magic-link issuer is implemented as
+  `issue_login_link(account, purpose, *, base_url, email_sender=None)` rather than the
+  `issue_login_link(email, purpose)` sketched in DESIGN §3. Account *existence* (and the
+  enumeration policy that depends on it) is resolved by the caller: registration passes the
+  freshly-created account; sign-in looks the account up and, when absent, simply skips
+  issuing while still returning the generic 202 (DESIGN §10). `base_url` and `email_sender`
+  are injected for configurability and testability.
+- **Why:** Keeps the issuer single-purpose (mint + deliver a token for a known account) and
+  puts the "does this account exist / what do we reveal" decision where it belongs — the
+  view. Injecting `base_url`/`email_sender` removes hidden coupling to settings/global state
+  and makes the component testable in isolation (CLAUDE.md §5.3/§5.4). No HTTP contract (§5)
+  or schema changes; the cross-feature surface is unchanged.
+- **Alternatives rejected:** Keep `(email, purpose)` and look the account up inside — pushes
+  enumeration policy into the issuer and forces it to silently no-op for unknown emails,
+  conflating two responsibilities.
+- **Sacrifices / consequences:** None material; DESIGN §3 updated to match.
+
 > **Related global decision:** the account + role model (one account, one access method,
 > extensible role-based authorization: user / developer / admin) is repo-wide — recorded as
 > **[D-3](../../DECISIONS.md)** (revised 2026-06-14 per user A1), not here, because other

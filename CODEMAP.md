@@ -48,13 +48,42 @@ purpose, and a path. Detail lives in the code, not here.
 
 ## Index
 
-_No code exists yet — entries are added by the Engineer (Stage 4) as code is written._
+_Built by `identity-accounts` Stage 4. Entries are added as each shared item ships._
 
-**Planned shared surface (from [identity-accounts DESIGN.md](features/identity-accounts/DESIGN.md), pending Stage 4):**
-- `Account` — canonical identity model (UUID id, email, display_name, roles) — `apps/accounts/models.py`
-- `USER` / `DEVELOPER` / `ADMIN` — role-name constants — `apps/accounts/roles.py`
-- `HasRole(role)` / `require_role(role)` — the one role-gate (DRF permission + view decorator) — `apps/accounts/permissions.py`
-- `EmailSender.send(to, template, context)` — shared email interface (digest reuses) — `apps/core/email.py`
+### Configuration (`apps/core/config.py`)
+- `login_token_ttl() -> timedelta` — magic-link token lifetime (default 15 min) — `apps/core/config.py`
+- `rate_limit_per_email_per_hour() -> int` — auth-request cap per email (default 5) — `apps/core/config.py`
+- `rate_limit_per_ip_per_hour() -> int` — auth-request cap per client IP (default 20) — `apps/core/config.py`
+- `validate_all()` — evaluate all tunables at startup (fail loud) — `apps/core/config.py`
+
+### Email (`apps/core/email.py`)
+- `EmailSender` (Protocol) / `DefaultEmailSender` — pluggable, fail-loud email send (digest reuses) — `apps/core/email.py`
+- `get_email_sender() -> EmailSender` — factory seam for the configured sender — `apps/core/email.py`
+- `EmailSendError` — raised when a send cannot be handed to the transport — `apps/core/email.py`
+
+### Rate limiting (`apps/core/ratelimit.py`)
+- `rate_limited` (decorator) — enforce per-email + per-IP hourly limits, `429` over cap (no-op on safe methods) — `apps/core/ratelimit.py`
+
+### Observability (`apps/core/observability.py`, `apps/core/middleware.py`)
+- `increment(metric, **tags)` — emit a counter event (pluggable; logs today) — `apps/core/observability.py`
+- metric name constants (`REGISTRATION_COMPLETION`, `SIGNIN_SUCCESS`, `AUTH_ERROR`, `ROLE_GATE_DECISION`, `EMAIL_SEND_FAILURE`, `DELETION_FULFILMENT`, `DEVELOPER_ROLE_ADOPTION`, `ADMIN_ROLE_CHANGE`, `SIGNOUT`) — `apps/core/observability.py`
+- `check_health() -> dict` — DB + email reachability (backs `/health`) — `apps/core/observability.py`
+- `RequestContextFilter` + `RequestContextMiddleware` — inject request id + account UUID into logs — `apps/core/observability.py`, `apps/core/middleware.py`
+
+### Identity model (`apps/accounts/models.py`)
+- `Account` — canonical cross-feature identity (UUID id, citext email, display_name, roles via groups; passwordless) — `apps/accounts/models.py`
+- `Account.objects.create_account(email, display_name)` — the one account-creation path (sets unusable password) — `apps/accounts/managers.py`
+- `LoginToken` — single-use magic-link credential (hash only) — `apps/accounts/models.py`
+- `RoleGrant` — append-only grant/revoke audit row (SET_NULL FKs survive deletion) — `apps/accounts/models.py`
+
+### Roles & authorization (`apps/accounts/`)
+- `USER` / `DEVELOPER` / `ADMIN` / `BASE_ROLE` / `SELF_SERVE_ROLES` — role-name constants & policy — `apps/accounts/roles.py`
+- `account_roles(account) -> list[str]` — role names an account holds — `apps/accounts/roles.py`
+- `account_has_role(user, role) -> bool` — the one fail-closed gate decision — `apps/accounts/permissions.py`
+- `HasRole(role)` — DRF permission class factory — `apps/accounts/permissions.py`
+- `require_role(role)` — Django view decorator (raises 403 when denied) — `apps/accounts/permissions.py`
+- `grant_role` / `revoke_role` — audited role change (writes RoleGrant atomically) — `apps/accounts/services.py`
+- `UnknownRoleError` — raised for a role with no group (→ 400) — `apps/accounts/services.py`
 
 <!-- Example of the shape this takes once code exists:
 

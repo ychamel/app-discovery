@@ -1,0 +1,57 @@
+{% extends "accounts/base.html" %}
+{% block title %}Your profile · App Discovery{% endblock %}
+
+{% block content %}
+  <h1>Your profile</h1>
+
+  <dl>
+    <dt>Email</dt>
+    <dd>{{ account.email }}{% if not account.is_email_confirmed %} (unconfirmed){% endif %}</dd>
+    <dt>Display name</dt>
+    <dd>{{ account.display_name|default:"—" }}</dd>
+    <dt>Roles</dt>
+    <dd>{{ roles|join:", " }}</dd>
+  </dl>
+
+  <section>
+    <h2>Edit display name</h2>
+    <form method="post" action="{% url 'accounts:me' %}" data-method="patch">
+      {% csrf_token %}
+      <input type="text" name="display_name" value="{{ account.display_name }}"
+             maxlength="80" required>
+      <button type="submit">Save</button>
+    </form>
+  </section>
+
+  {% if "developer" not in roles %}
+    <section>
+      <h2>Become a developer</h2>
+      <p>Submit and manage your own apps.</p>
+      <form method="post" action="{% url 'accounts:developer-role' %}">
+        {% csrf_token %}
+        <button type="submit">Become a developer</button>
+      </form>
+    </section>
+  {% endif %}
+
+  <section>
+    <h2>Sign out</h2>
+    <form method="post" action="{% url 'accounts:logout' %}">
+      {% csrf_token %}
+      <button type="submit">Sign out</button>
+    </form>
+  </section>
+
+  <section>
+    <h2>Delete account</h2>
+    <p role="alert">
+      This permanently removes your account, profile, and roles. This cannot be undone.
+    </p>
+    <form method="post" action="{% url 'accounts:me' %}" data-method="delete"
+          onsubmit="return confirm('Permanently delete your account?');">
+      {% csrf_token %}
+      <input type="hidden" name="confirm" value="true">
+      <button type="submit">Delete my account</button>
+    </form>
+  </section>
+{% endblock %}

@@ -1,0 +1,1 @@
+{% if purpose == "register" %}Confirm your email for App Discovery{% else %}Your App Discovery sign-in link{% endif %}
