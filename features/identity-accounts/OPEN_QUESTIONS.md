@@ -28,18 +28,29 @@
 - ~~**Signup access**~~ — **resolved:** open self-serve for everyone (every new account
   gets the base **user** role). Recorded as [DL-1](DECISIONS.md).
 
-## Deferred to Stage 2 (Architect)
+## Deferred to Stage 2 (Architect) — RESOLVED 2026-06-14
 
-- **Auth mechanism** — magic-link vs. password vs. other; session/token storage; the
-  email-confirmation and account-recovery *flows*. The brief fixes the *capabilities*
-  (confirm email ownership, recover via email); the *mechanism* is a design decision.
-- **Shared email-delivery dependency** — registration confirmation and the digest both
-  need an email-sending capability. Not yet decided where that lives (shared infra).
-- **Role-assignment & enforcement mechanics** — *how* roles are stored, how a role is
-  granted/revoked (especially the **admin** grant, which must be safe under open signup),
-  and how role gates are enforced at action boundaries. The brief fixes the *rules*
-  (developer = self-serve, admin = granted not self-assigned, set extensible); the
-  *mechanism* is a Stage-2 design decision (see brief R6).
+- ~~**Auth mechanism**~~ — **resolved:** passwordless **email magic-link** + Django
+  sessions (single-use hashed token, 15-min TTL); recovery is inherent (no credential to
+  lose). See [DESIGN.md](DESIGN.md) §8 and [DL-3](DECISIONS.md).
+- ~~**Shared email-delivery dependency**~~ — **resolved:** a pluggable `EmailSender`
+  interface at `apps/core/email.py` (shared, the digest reuses it); concrete provider is
+  ops/env config, not code. Send failures fail loudly (AC2). See DESIGN.md §6, [D-4](../../DECISIONS.md).
+- ~~**Role-assignment & enforcement mechanics**~~ — **resolved:** roles = Django Groups;
+  one fail-closed gate (`HasRole`/`require_role`); two grant paths (developer self-serve;
+  admin/privileged via an existing admin, audited in `RoleGrant`); first admin bootstrapped
+  by a management command. See DESIGN.md §3/§5/§10 and [DL-4](DECISIONS.md).
+
+## New — raised in Stage 2, handed downstream
+
+- **Cross-feature account-deletion cascade.** AC8 hard-deletes an account but this feature
+  deletes only *identity* data. Any later feature that owns account-referencing data (e.g.
+  apps owned by a developer in `submission-intake`, signals in `signal-capture`) must define
+  its own on-delete behavior (cascade or reassign) when an account is deleted. See DESIGN.md §12.
+- **Concrete email provider** for production (SMTP/SES/Postmark) — an ops/config choice, not
+  a code decision; the interface is fixed (DESIGN.md §6).
+- **Rich SPA frontend** — deferred until a surface needs more than server-rendered pages
+  (developer dashboard / feed are likely first). Not chosen at MVP (D-4).
 
 ## Escalations — resolved
 

@@ -38,6 +38,56 @@ decisions go in [/DECISIONS.md](../../DECISIONS.md).*
   some granted) that Stage 2 must encode in the grant mechanism. The *how* of granting/revoking
   admin (and enforcing gates) is deferred to the Architect; only the rules are fixed here.
 
+### DL-3: Auth mechanism — passwordless email magic-link
+- **Date:** 2026-06-14
+- **Stage / feature:** `2-design` / `identity-accounts` (Software Architect)
+- **Decision:** Authentication is **passwordless**: register/sign-in collects an email,
+  the platform emails a **single-use, TTL-bounded magic link** (32 random bytes, stored
+  only as a SHA-256 hash, default 15-min expiry), and clicking it confirms email control,
+  sets `email_confirmed_at` on first use, and creates a Django session. There is no
+  password. This satisfies the single-access-method contract (D-3) — every role signs in
+  the same way.
+- **Why:** One mechanism covers AC1 (confirm control = clicking the link), AC2
+  (undeliverable email ⇒ no link ⇒ never digest-eligible, surfaced), AC3 (sign-in is the
+  same path), and AC4 (no credential to lose, so recovery is inherent — re-auth via the
+  registered email always returns the same account + roles). No password is stored, which
+  honors the brief's data-minimization posture and removes the password-breach surface.
+- **Alternatives rejected:** (a) **Passwords** — adds credential storage, a breach
+  surface, a separate reset/recovery subsystem, and contradicts data minimization. (b)
+  **OAuth/SSO/MFA** — explicitly out of scope per the brief (post-MVP hardening).
+- **Sacrifices / consequences:** Users with flaky email access are dependent on email —
+  accepted because the core product value (the digest) is itself email, so a non-receiving
+  account has no value anyway; OAuth is the post-MVP escape hatch. The duplicate-
+  registration message reveals an email is registered (enumeration) — an accepted MVP
+  trade-off (D-2 sets no security ceiling), flagged for revisit with the integrity system.
+
+### DL-4: Authorization — Django Groups as roles, one fail-closed gate, two grant paths
+- **Date:** 2026-06-14
+- **Stage / feature:** `2-design` / `identity-accounts` (Software Architect)
+- **Decision:** Roles are **Django `Group`s** (`user`, `developer`, `admin`, seeded;
+  extensible by adding a row). Enforcement is a **single** point — `HasRole(role)` (DRF
+  permission) / `require_role(role)` (view decorator) — that **fails closed** (unknown
+  role or lookup error ⇒ deny). Two grant paths only: (1) **self-serve** adds exactly the
+  `developer` role to the caller's own account (`POST /me/roles/developer`); (2)
+  **admin-granted** roles (`admin` and any future privileged role) go through
+  `POST/DELETE /admin/accounts/{id}/roles`, which requires the caller to **already hold
+  `admin`** and records an immutable `RoleGrant` audit row. The first admin is bootstrapped
+  out-of-band by a `create_admin` management command.
+- **Why:** Groups are the boring, built-in, well-understood RBAC primitive (CLAUDE.md
+  §5.5) and are extensible without touching the auth path (AC10). A single fail-closed gate
+  is the one place authorization lives (cross-cutting concern placed once) and the source
+  of the role-gate-correctness metric. Restricting self-serve to `developer` and routing
+  all privileged grants through an existing admin closes the privilege-escalation hole
+  (brief R6, DL-2, AC9); the management-command bootstrap means there is no self-grant path
+  even for the first admin.
+- **Alternatives rejected:** (a) **Custom Role/Permission tables** — reinvents Django
+  Groups for no benefit. (b) **Per-capability boolean flags on the account** — exactly the
+  non-extensible shape D-3 moved away from (a new capability = a schema + auth change).
+- **Sacrifices / consequences:** Couples the authorization model to Django Groups; accepted
+  because Groups also carry Permissions, so finer-grained gates later are additive within
+  the same model. Admin grant/revoke has no rich UI in this feature — the contract is
+  provided for `editorial-curation-tools` to build the tooling.
+
 > **Related global decision:** the account + role model (one account, one access method,
 > extensible role-based authorization: user / developer / admin) is repo-wide — recorded as
 > **[D-3](../../DECISIONS.md)** (revised 2026-06-14 per user A1), not here, because other

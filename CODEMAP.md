@@ -33,7 +33,9 @@ e.g. `shared/`, `lib/`, or `src/utils/`, recorded in [DECISIONS.md](DECISIONS.md
 This keeps placement consistent so even a targeted search is scoped. The chosen root is
 named here once it exists.
 
-> Shared-code root: _not chosen yet — set in the first feature's Stage 2 design._
+> Shared-code root: **`apps/`** — every feature is a Django app under it; cross-cutting
+> reusable code lives in `apps/core/`, the canonical account/role surface in
+> `apps/accounts/`. Set by `identity-accounts` Stage 2 (global [D-4](DECISIONS.md)).
 
 ## Format
 
@@ -46,8 +48,13 @@ purpose, and a path. Detail lives in the code, not here.
 
 ## Index
 
-_Empty — no code exists yet. The stack is decided in the first feature's Stage 2; the
-first shared helpers get logged here as they are written._
+_No code exists yet — entries are added by the Engineer (Stage 4) as code is written._
+
+**Planned shared surface (from [identity-accounts DESIGN.md](features/identity-accounts/DESIGN.md), pending Stage 4):**
+- `Account` — canonical identity model (UUID id, email, display_name, roles) — `apps/accounts/models.py`
+- `USER` / `DEVELOPER` / `ADMIN` — role-name constants — `apps/accounts/roles.py`
+- `HasRole(role)` / `require_role(role)` — the one role-gate (DRF permission + view decorator) — `apps/accounts/permissions.py`
+- `EmailSender.send(to, template, context)` — shared email interface (digest reuses) — `apps/core/email.py`
 
 <!-- Example of the shape this takes once code exists:
 
