@@ -1,0 +1,347 @@
+# Authoritative founding vocabulary for the interest taxonomy (DESIGN.md §6, T-09).
+#
+# This file is the human-editable source for the curated tag set. `manage.py
+# seed_taxonomy` applies it idempotently (upsert by slug) through the write service.
+#
+# Structure:
+#   clusters:                       # named groupings (every active tag joins ≥1)
+#     - slug: <immutable-key>       # required, unique, never renamed
+#       name: <display name>        # required, renameable
+#       description: <optional>
+#   tags:
+#     - slug: <immutable-key>       # required, unique; the human key (NOT the stored ref)
+#       label: <display label>      # required, renameable; unique (case/space-insensitive)
+#       definition: <optional>      # short meaning where not self-evident
+#       clusters: [<cluster-slug>]  # required, ≥1
+#       retired: true               # optional; retires the tag (kept, never deleted)
+#       replaced_by: <tag-slug>     # optional successor when retired into another tag
+#
+# Niche: "vibecoded webapps" — small web apps from solo/tiny-team devs, often AI-assisted
+# (D-1). Tags describe an app's subject matter and a user's interests in one shared
+# language. Size band: see OQ-3 in features/interest-taxonomy/DECISIONS.md (ITX-12).
+
+clusters:
+  - slug: productivity
+    name: Productivity & Organization
+    description: Tools for planning, tracking, and getting work and personal tasks done.
+  - slug: developer-tools
+    name: Developer Tools
+    description: Apps that help people build, ship, and operate software.
+  - slug: ai-ml
+    name: AI & Machine Learning
+    description: Apps whose core value is an AI/ML capability.
+  - slug: content-creativity
+    name: Content & Creativity
+    description: Writing, publishing, design, and media creation.
+  - slug: finance
+    name: Finance & Money
+    description: Personal and small-business money management.
+  - slug: health-wellness
+    name: Health & Wellness
+    description: Physical and mental wellbeing.
+  - slug: education
+    name: Education & Learning
+    description: Teaching, studying, and skill-building.
+  - slug: social-community
+    name: Social & Community
+    description: Connecting people and running communities.
+  - slug: commerce
+    name: Commerce & Marketplace
+    description: Selling, booking, and transacting.
+  - slug: data-analytics
+    name: Data & Analytics
+    description: Collecting, visualizing, and making sense of data.
+  - slug: lifestyle-entertainment
+    name: Lifestyle & Entertainment
+    description: Everyday life, hobbies, leisure, and games.
+
+tags:
+  # --- Productivity & Organization ---
+  - slug: todo-app
+    label: To-do app
+    definition: Captures and tracks a list of tasks.
+    clusters: [productivity]
+  - slug: note-taking
+    label: Note-taking
+    definition: Writing and organizing personal notes.
+    clusters: [productivity]
+  - slug: project-management
+    label: Project management
+    definition: Coordinating tasks, timelines, and people on projects.
+    clusters: [productivity]
+  - slug: calendar-scheduling
+    label: Calendar & scheduling
+    definition: Managing events and booking time.
+    clusters: [productivity]
+  - slug: habit-tracker
+    label: Habit tracker
+    definition: Building and tracking recurring habits.
+    clusters: [productivity, health-wellness]
+  - slug: time-tracking
+    label: Time tracking
+    definition: Recording where time is spent, often for billing.
+    clusters: [productivity]
+  - slug: bookmarking
+    label: Bookmarking & read-later
+    definition: Saving links and articles to revisit.
+    clusters: [productivity]
+  - slug: knowledge-base
+    label: Knowledge base & wiki
+    definition: A structured store of interconnected notes or docs.
+    clusters: [productivity]
+
+  # --- Developer Tools ---
+  - slug: api-tooling
+    label: API tooling
+    definition: Building, testing, or documenting APIs.
+    clusters: [developer-tools]
+  - slug: deployment-hosting
+    label: Deployment & hosting
+    definition: Shipping and running apps in the cloud.
+    clusters: [developer-tools]
+  - slug: no-code-builder
+    label: No-code / low-code builder
+    definition: Building apps or sites with little or no code.
+    clusters: [developer-tools]
+  - slug: database-tool
+    label: Database tool
+    definition: Managing, querying, or browsing databases.
+    clusters: [developer-tools, data-analytics]
+  - slug: cli-tool
+    label: CLI tool
+    definition: A command-line utility for developers.
+    clusters: [developer-tools]
+  - slug: code-snippet-manager
+    label: Code snippet manager
+    definition: Saving and reusing reusable bits of code.
+    clusters: [developer-tools]
+  - slug: monitoring-observability
+    label: Monitoring & observability
+    definition: Tracking the health and behavior of running systems.
+    clusters: [developer-tools]
+  - slug: dev-collaboration
+    label: Dev collaboration
+    definition: Code review, pairing, and team workflows.
+    clusters: [developer-tools]
+
+  # --- AI & Machine Learning ---
+  - slug: chatbot
+    label: Chatbot & conversational AI
+    definition: A conversational interface powered by an LLM.
+    clusters: [ai-ml]
+  - slug: ai-writing-assistant
+    label: AI writing assistant
+    definition: Generating or improving text with AI.
+    clusters: [ai-ml, content-creativity]
+  - slug: image-generation
+    label: AI image generation
+    definition: Creating images from prompts.
+    clusters: [ai-ml, content-creativity]
+  - slug: ai-agent
+    label: AI agent & automation
+    definition: Autonomous AI that performs multi-step tasks.
+    clusters: [ai-ml]
+  - slug: prompt-engineering
+    label: Prompt engineering
+    definition: Designing, testing, and managing AI prompts.
+    clusters: [ai-ml, developer-tools]
+  - slug: ai-search
+    label: AI search & retrieval
+    definition: Semantic search and retrieval-augmented answers.
+    clusters: [ai-ml]
+  - slug: transcription
+    label: Transcription & speech
+    definition: Converting speech to text or text to speech.
+    clusters: [ai-ml]
+
+  # --- Content & Creativity ---
+  - slug: blogging
+    label: Blogging & publishing
+    definition: Writing and publishing posts to an audience.
+    clusters: [content-creativity]
+  - slug: newsletter
+    label: Newsletter tool
+    definition: Composing and sending email newsletters.
+    clusters: [content-creativity]
+  - slug: portfolio-site
+    label: Portfolio site
+    definition: Showcasing personal or professional work.
+    clusters: [content-creativity]
+  - slug: design-tool
+    label: Design tool
+    definition: Creating graphics, mockups, or UI.
+    clusters: [content-creativity]
+  - slug: video-tool
+    label: Video creation & editing
+    definition: Recording or editing video content.
+    clusters: [content-creativity]
+  - slug: markdown-editor
+    label: Markdown editor
+    definition: Writing in Markdown with live preview.
+    clusters: [content-creativity, productivity]
+  - slug: podcasting
+    label: Podcasting tool
+    definition: Recording, editing, or hosting podcasts.
+    clusters: [content-creativity]
+
+  # --- Finance & Money ---
+  - slug: budgeting
+    label: Budgeting
+    definition: Planning and tracking spending against a budget.
+    clusters: [finance]
+  - slug: expense-tracker
+    label: Expense tracker
+    definition: Recording and categorizing expenses.
+    clusters: [finance]
+  - slug: invoicing
+    label: Invoicing & billing
+    definition: Creating invoices and collecting payment.
+    clusters: [finance, commerce]
+  - slug: crypto
+    label: Crypto & web3
+    definition: Cryptocurrency, wallets, and on-chain apps.
+    clusters: [finance]
+  - slug: investing
+    label: Investing & portfolio
+    definition: Tracking or managing investments.
+    clusters: [finance]
+
+  # --- Health & Wellness ---
+  - slug: fitness
+    label: Fitness & exercise
+    definition: Workouts, training, and activity.
+    clusters: [health-wellness]
+  - slug: meditation-mindfulness
+    label: Meditation & mindfulness
+    definition: Guided meditation and mental calm.
+    clusters: [health-wellness]
+  - slug: nutrition
+    label: Nutrition & meal planning
+    definition: Tracking food, diet, and meal plans.
+    clusters: [health-wellness]
+  - slug: sleep-tracking
+    label: Sleep tracking
+    definition: Monitoring and improving sleep.
+    clusters: [health-wellness]
+  - slug: mental-health
+    label: Mental health
+    definition: Mood tracking, therapy aids, and emotional wellbeing.
+    clusters: [health-wellness]
+
+  # --- Education & Learning ---
+  - slug: flashcards
+    label: Flashcards & spaced repetition
+    definition: Memorizing with timed review.
+    clusters: [education]
+  - slug: language-learning
+    label: Language learning
+    definition: Learning a new spoken or written language.
+    clusters: [education]
+  - slug: course-platform
+    label: Course platform
+    definition: Hosting or taking structured courses.
+    clusters: [education]
+  - slug: quiz-maker
+    label: Quiz & test maker
+    definition: Building quizzes and assessments.
+    clusters: [education]
+  - slug: coding-education
+    label: Learn to code
+    definition: Teaching programming skills.
+    clusters: [education, developer-tools]
+
+  # --- Social & Community ---
+  - slug: community-forum
+    label: Community forum
+    definition: Threaded discussion for a community.
+    clusters: [social-community]
+  - slug: link-in-bio
+    label: Link-in-bio
+    definition: A single page linking to a creator's other places.
+    clusters: [social-community, content-creativity]
+  - slug: event-organizing
+    label: Event organizing
+    definition: Planning and managing events and RSVPs.
+    clusters: [social-community]
+  - slug: dating
+    label: Dating & relationships
+    definition: Meeting people and matchmaking.
+    clusters: [social-community]
+  - slug: messaging
+    label: Messaging & chat
+    definition: Real-time conversation between people.
+    clusters: [social-community]
+
+  # --- Commerce & Marketplace ---
+  - slug: ecommerce-store
+    label: E-commerce store
+    definition: Selling physical or digital products online.
+    clusters: [commerce]
+  - slug: booking-reservations
+    label: Booking & reservations
+    definition: Scheduling appointments or reserving slots.
+    clusters: [commerce]
+  - slug: subscription-billing
+    label: Subscription billing
+    definition: Recurring payments and plan management.
+    clusters: [commerce, finance]
+  - slug: marketplace
+    label: Marketplace
+    definition: A two-sided platform connecting buyers and sellers.
+    clusters: [commerce]
+  - slug: digital-products
+    label: Digital products
+    definition: Selling downloads, templates, or licenses.
+    clusters: [commerce]
+
+  # --- Data & Analytics ---
+  - slug: dashboard-builder
+    label: Dashboard builder
+    definition: Composing live metric dashboards.
+    clusters: [data-analytics]
+  - slug: web-analytics
+    label: Web analytics
+    definition: Measuring website traffic and behavior.
+    clusters: [data-analytics]
+  - slug: form-builder
+    label: Form builder
+    definition: Creating forms to collect input.
+    clusters: [data-analytics, productivity]
+  - slug: survey-tool
+    label: Survey & polling
+    definition: Gathering structured responses at scale.
+    clusters: [data-analytics]
+  - slug: data-visualization
+    label: Data visualization
+    definition: Turning data into charts and graphics.
+    clusters: [data-analytics]
+  - slug: web-scraping
+    label: Web scraping & data extraction
+    definition: Pulling structured data from web pages.
+    clusters: [data-analytics, developer-tools]
+
+  # --- Lifestyle & Entertainment ---
+  - slug: recipe-manager
+    label: Recipe manager
+    definition: Saving and organizing recipes.
+    clusters: [lifestyle-entertainment]
+  - slug: travel-planner
+    label: Travel planner
+    definition: Planning trips and itineraries.
+    clusters: [lifestyle-entertainment]
+  - slug: journaling
+    label: Journaling
+    definition: Personal daily writing and reflection.
+    clusters: [lifestyle-entertainment, health-wellness]
+  - slug: browser-game
+    label: Browser game
+    definition: A game played directly in the browser.
+    clusters: [lifestyle-entertainment]
+  - slug: trivia-puzzle
+    label: Trivia & puzzles
+    definition: Quiz games and brain teasers for fun.
+    clusters: [lifestyle-entertainment]
+  - slug: music-tool
+    label: Music tool
+    definition: Creating, discovering, or organizing music.
+    clusters: [lifestyle-entertainment, content-creativity]

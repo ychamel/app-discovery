@@ -25,6 +25,10 @@ from django.core.exceptions import ImproperlyConfigured
 DEFAULT_LOGIN_TOKEN_TTL_SECONDS = 15 * 60  # 15 minutes
 DEFAULT_RATE_LIMIT_PER_EMAIL_PER_HOUR = 5
 DEFAULT_RATE_LIMIT_PER_IP_PER_HOUR = 20
+# Max replaced_by successor hops resolve_tag will follow before declaring a
+# cycle/over-long chain (interest-taxonomy DESIGN.md §5a/§10). A handful of merges is
+# realistic; anything beyond this is treated as corrupt data, not a longer chain.
+DEFAULT_TAXONOMY_RESOLVE_MAX_STEPS = 16
 
 
 def _resolve_raw(setting_name: str, env_name: str, default: int) -> object:
@@ -78,8 +82,18 @@ def rate_limit_per_ip_per_hour() -> int:
     )
 
 
+def taxonomy_resolve_max_steps() -> int:
+    """Max successor hops `resolve_tag` follows before bailing on a cycle (DESIGN.md §5a/§10)."""
+    return _positive_int(
+        "TAXONOMY_RESOLVE_MAX_STEPS",
+        "TAXONOMY_RESOLVE_MAX_STEPS",
+        DEFAULT_TAXONOMY_RESOLVE_MAX_STEPS,
+    )
+
+
 def validate_all() -> None:
     """Evaluate every tunable so misconfiguration surfaces at startup, not at use."""
     login_token_ttl()
     rate_limit_per_email_per_hour()
     rate_limit_per_ip_per_hour()
+    taxonomy_resolve_max_steps()

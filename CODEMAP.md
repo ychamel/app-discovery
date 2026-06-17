@@ -54,6 +54,7 @@ _Built by `identity-accounts` Stage 4. Entries are added as each shared item shi
 - `login_token_ttl() -> timedelta` — magic-link token lifetime (default 15 min) — `apps/core/config.py`
 - `rate_limit_per_email_per_hour() -> int` — auth-request cap per email (default 5) — `apps/core/config.py`
 - `rate_limit_per_ip_per_hour() -> int` — auth-request cap per client IP (default 20) — `apps/core/config.py`
+- `taxonomy_resolve_max_steps() -> int` — max replaced_by hops `resolve_tag` follows before bailing on a cycle (default 16) — `apps/core/config.py`
 - `validate_all()` — evaluate all tunables at startup (fail loud) — `apps/core/config.py`
 
 ### Email (`apps/core/email.py`)
@@ -67,6 +68,7 @@ _Built by `identity-accounts` Stage 4. Entries are added as each shared item shi
 ### Observability (`apps/core/observability.py`, `apps/core/middleware.py`)
 - `increment(metric, **tags)` — emit a counter event (pluggable; logs today) — `apps/core/observability.py`
 - metric name constants (`REGISTRATION_COMPLETION`, `SIGNIN_SUCCESS`, `AUTH_ERROR`, `ROLE_GATE_DECISION`, `EMAIL_SEND_FAILURE`, `DELETION_FULFILMENT`, `DEVELOPER_ROLE_ADOPTION`, `ADMIN_ROLE_CHANGE`, `SIGNOUT`) — `apps/core/observability.py`
+- taxonomy metric constants (`TAXONOMY_TAG_ADDED`, `TAXONOMY_TAG_RENAMED`, `TAXONOMY_TAG_RETIRED`, `TAXONOMY_REFERENCE_BREAK`, `TAXONOMY_INTEGRITY_VIOLATION`) — `apps/core/observability.py`
 - `check_health() -> dict` — DB + email reachability (backs `/health`) — `apps/core/observability.py`
 - `RequestContextFilter` + `RequestContextMiddleware` — inject request id + account UUID into logs — `apps/core/observability.py`, `apps/core/middleware.py`
 
@@ -84,6 +86,24 @@ _Built by `identity-accounts` Stage 4. Entries are added as each shared item shi
 - `require_role(role)` — Django view decorator (raises 403 when denied) — `apps/accounts/permissions.py`
 - `grant_role` / `revoke_role` — audited role change (writes RoleGrant atomically) — `apps/accounts/services.py`
 - `UnknownRoleError` — raised for a role with no group (→ 400) — `apps/accounts/services.py`
+
+### Interest vocabulary — model (`apps/taxonomy/models.py`)
+- `Tag` — one vocabulary unit; UUID `id` is the stable cross-feature reference, `slug`/`label`/`status`/`replaced_by`/`clusters` — `apps/taxonomy/models.py`
+- `Cluster` — a named grouping of related tags (anchor for future adjacency) — `apps/taxonomy/models.py`
+- `CanonicalLabel` — SQL Func for a label's case/whitespace-insensitive duplicate-detection form — `apps/taxonomy/models.py`
+
+### Interest vocabulary — write surface (`apps/taxonomy/services.py`, admin-only single mutate path)
+- `add_tag` / `rename_tag` / `retire_tag` — tag lifecycle (≥1 cluster, dedupe, soft-retire + successor) — `apps/taxonomy/services.py`
+- `update_tag` — idempotent sync of an existing tag's label/definition/membership (seed path; no-op when unchanged) — `apps/taxonomy/services.py`
+- `add_cluster` / `rename_cluster` / `update_cluster` / `assign_to_cluster` / `remove_from_cluster` — cluster + membership writes (refuses to orphan an active tag) — `apps/taxonomy/services.py`
+- `check_integrity() -> IntegrityReport` — scan for orphan active tags, empty clusters, duplicate labels — `apps/taxonomy/services.py`
+- `DuplicateTagError` / `OrphanTagError` / `RetireSuccessorError` — loud write-service failures — `apps/taxonomy/errors.py`
+
+### Interest vocabulary — read surface (`apps/taxonomy/selectors.py`, the cross-feature substrate — D-5)
+- `list_active_tags()` / `list_clusters()` — active vocabulary with membership prefetched (no N+1) — `apps/taxonomy/selectors.py`
+- `get_tag(id) -> Tag | None` — fetch a tag of any status — `apps/taxonomy/selectors.py`
+- `is_valid_tag(id) -> bool` — closed-set validator: True only for an active tag (consumers enforce at their write boundary, AC2) — `apps/taxonomy/selectors.py`
+- `resolve_tag(id) -> Tag | None` — follow `replaced_by` to current meaning; keeps retired refs, cycle-guarded (AC6/AC7) — `apps/taxonomy/selectors.py`
 
 <!-- Example of the shape this takes once code exists:
 

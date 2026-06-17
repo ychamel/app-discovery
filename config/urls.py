@@ -12,5 +12,6 @@ from apps.core.views import health
 urlpatterns = [
     path("django-admin/", admin.site.urls),
     path("health", health, name="health"),
+    path("taxonomy/", include("apps.taxonomy.urls")),
     path("", include("apps.accounts.urls")),
 ]

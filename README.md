@@ -32,6 +32,32 @@ python manage.py create_admin you@example.com
 curl -fsS http://localhost:8000/health      # 200 when DB + email are reachable
 ```
 
+## Interest taxonomy (`apps/taxonomy`)
+
+The shared, curated interest vocabulary — **tags** grouped into **clusters** — that both
+a user's interests and an app's subject matter are written in. Its UUID `Tag.id` is the
+stable cross-feature reference (see [D-5](DECISIONS.md)).
+
+```bash
+python manage.py migrate taxonomy     # create tables (no content)
+python manage.py seed_taxonomy        # apply apps/taxonomy/seed/vocabulary.yaml (idempotent)
+python manage.py check_taxonomy       # integrity gate; non-zero exit on a violation
+```
+
+Edit the vocabulary in [apps/taxonomy/seed/vocabulary.yaml](apps/taxonomy/seed/vocabulary.yaml)
+(or via the `is_staff`-gated Django admin) and re-run `seed_taxonomy`; it upserts by `slug`
+and never deletes a tag that drops out of the file (retiring is the explicit `retired:` flag).
+Read the vocabulary over HTTP (authenticated session):
+
+```
+GET /taxonomy/tags          # active tags with their clusters
+GET /taxonomy/tags/{id}     # one tag of any status (renders retired/remapped references)
+GET /taxonomy/clusters      # clusters with their active tags
+```
+
+In-process consumers read through `apps.taxonomy.selectors` — `is_valid_tag(id)` at their
+write boundary and `resolve_tag(id)` at read (the D-5 contract).
+
 ## Tests and linting
 
 ```bash

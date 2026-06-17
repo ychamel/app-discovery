@@ -247,6 +247,12 @@ def rename_cluster(cluster, *, name: str) -> Cluster
 def assign_to_cluster(tag, cluster) -> None
 def remove_from_cluster(tag, cluster) -> None             # refuses if it would orphan an active tag
 def check_integrity() -> IntegrityReport                  # AC5: orphans, empty clusters, dup labels
+
+# Idempotent sync setters used by seed_taxonomy (§6) — added in Stage 4 (ITX-11) to
+# realize §6's "updates labels/definitions/membership for existing ones". Each is a
+# no-op when nothing changed, so re-seeding an unchanged file writes nothing.
+def update_tag(tag, *, label, clusters, definition="") -> Tag
+def update_cluster(cluster, *, name, description="") -> Cluster
 ```
 
 Errors (raised loudly, never swallowed): `DuplicateTagError` (slug or normalized-label
@@ -258,9 +264,14 @@ collision — AC1/R2), `OrphanTagError` (would leave an active tag in zero clust
 
 | # | Endpoint | Auth | Success | Errors |
 |---|----------|------|---------|--------|
-| 1 | `GET /taxonomy/tags` | session (any role) | `200 [{id, slug, label, definition, clusters:[{id,slug,name}]}]` — **active tags only** | `401` |
-| 2 | `GET /taxonomy/tags/{id}` | session | `200 {id, slug, label, definition, status, replaced_by, clusters:[…]}` — any status (lets a consumer render a retired/remapped reference) | `401` · `404` unknown id |
-| 3 | `GET /taxonomy/clusters` | session | `200 [{id, slug, name, description, tags:[{id,label}]}]` (active tags) | `401` |
+| 1 | `GET /taxonomy/tags` | session (any role) | `200 [{id, slug, label, definition, clusters:[{id,slug,name}]}]` — **active tags only** | `403` |
+| 2 | `GET /taxonomy/tags/{id}` | session | `200 {id, slug, label, definition, status, replaced_by, clusters:[…]}` — any status (lets a consumer render a retired/remapped reference) | `403` · `404` unknown id |
+| 3 | `GET /taxonomy/clusters` | session | `200 [{id, slug, name, description, tags:[{id,label}]}]` (active tags) | `403` |
+
+> **Unauthenticated = `403` (Stage-4 correction, ITX-9).** Under the platform's DRF
+> `SessionAuthentication` (D-4), an unauthenticated request returns `403` (no
+> `WWW-Authenticate` challenge is issued), not `401` — matching identity-accounts. The
+> intent ("reject the unauthenticated") is unchanged.
 
 **Auth posture.** Reads require an authenticated session (DRF default `IsAuthenticated`,
 inherited from D-4) but **no special role** — any signed-in user may read the vocabulary to

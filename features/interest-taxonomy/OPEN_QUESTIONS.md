@@ -56,3 +56,17 @@ above are closed against concrete decisions.*
   matcher must store the `Tag.id` (UUID, never the label/slug), validate input with
   `is_valid_tag(id)` at their write boundary, and resolve with `resolve_tag(id)` at read.
   Flagged so a consumer does not store labels or coin off-vocabulary tags.
+
+## Stage 4 — Senior Engineer (2026-06-17)
+
+- **OQ-3 (size band) — CLOSED for MVP, with a deferral.** Founding vocabulary authored in
+  `seed/vocabulary.yaml`: **11 clusters / 67 tags** for the single beachhead niche
+  (vibecoded webapps). Editorial size band recorded as **ITX-12**; a guard-rail test
+  (`test_founding_vocabulary.py`) keeps it in the 6–16 cluster / 40–90 tag range.
+- **OQ-4 (app-coverage validation) — DEFERRED & reopenable (PL-1).** DESIGN §12 sizes against
+  "the real founding catalog", but **no app catalog exists yet** — it arrives with
+  `submission-intake` (downstream of this Phase-0 foundation, D2). The vocabulary was
+  therefore authored against the **niche definition + representative app archetypes**;
+  measuring AC4 App-coverage against a *real submitted catalog* is deferred, exactly as
+  `identity-accounts` deferred live metrics (R1). **Re-validate when `submission-intake`
+  lands.** This deferral does not block Stage 4 (surfaced in CONTROL).

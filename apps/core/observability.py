@@ -27,6 +27,14 @@ EMAIL_SEND_FAILURE = "email_send_failure"
 DELETION_FULFILMENT = "deletion_fulfilment"
 ADMIN_ROLE_CHANGE = "admin_role_change"  # alert: any admin grant/revoke
 
+# interest-taxonomy lifecycle + safety metrics (DESIGN.md §9). The two diagnostic
+# counters below must stay 0 in a healthy system — alert on any nonzero value.
+TAXONOMY_TAG_ADDED = "taxonomy_tag_added"
+TAXONOMY_TAG_RENAMED = "taxonomy_tag_renamed"
+TAXONOMY_TAG_RETIRED = "taxonomy_tag_retired"
+TAXONOMY_REFERENCE_BREAK = "taxonomy_reference_break"  # alert: resolve hit a cycle/over-long chain
+TAXONOMY_INTEGRITY_VIOLATION = "taxonomy_integrity_violation"  # alert: orphan/duplicate found
+
 metrics_logger = logging.getLogger("apps.metrics")
 
 

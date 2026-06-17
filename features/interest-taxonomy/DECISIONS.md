@@ -104,3 +104,65 @@ founding catalog**, measured by the App-coverage / User-coverage metrics (R1/R2)
 honest yardstick.
 **Rejected:** fixing a number now (guesswork before the catalog is in view).
 **Binds:** OQ-3, Metrics (tag-set size band). See [DESIGN.md](DESIGN.md) §12.
+
+---
+
+*Stage-4 (Senior Engineer) implementation notes, 2026-06-17.*
+
+## ITX-9 — Unauthenticated read returns **403**, not 401 (DESIGN §5c correction)
+
+**Decision:** The three read endpoints return **403** (not the `401` written in DESIGN
+§5c) for an unauthenticated request. DRF's `SessionAuthentication` — the project-wide
+default fixed by [D-4](../../DECISIONS.md) — issues no `WWW-Authenticate` challenge, so
+the framework returns `403 Forbidden`. DESIGN §5c was updated to match.
+**Rationale:** This is the established platform behavior; `identity-accounts` asserts the
+same `403` for unauthenticated API access ([test_developer_role.py:39](../../apps/accounts/tests/test_developer_role.py)).
+Forcing a `401` would require diverging from the platform auth default for no real benefit
+(the contract intent — reject the unauthenticated — is met by `403`).
+**Rejected:** a custom authenticator/exception handler to coerce `401` (inconsistent with
+the rest of the platform; added complexity, no benefit).
+**Binds:** DESIGN §5c auth posture; the read-API tests (T-05).
+
+## ITX-10 — Seed file parsed with PyYAML
+
+**Decision:** `seed_taxonomy` (T-06) parses `seed/vocabulary.yaml` with **PyYAML**
+(added to `pyproject.toml` dependencies), using `yaml.safe_load`.
+**Rationale:** DESIGN §6 specifies a human-editable YAML vocabulary file; PyYAML is the
+boring, universal YAML parser. A hand-rolled parser would be a maintenance liability
+(CLAUDE.md §5.2). The seed format stays isolated behind the command (DESIGN §3 coupling
+check), so the dependency is contained.
+**Rejected:** a bespoke YAML/JSON parser (reinventing a solved problem); switching the
+file format to JSON (less readable for a hand-curated vocabulary).
+**Binds:** T-06 implementation, `pyproject.toml`.
+
+## ITX-11 — Added `update_tag` / `update_cluster` sync setters to the write service (DESIGN §5b)
+
+**Decision:** Added two functions to the write service: `update_tag(tag, *, label,
+clusters, definition="")` and `update_cluster(cluster, *, name, description="")`. Each
+applies the same dedupe/≥1-cluster guards as `add_*` and is a **no-op when nothing
+changed**. DESIGN §5b was updated to list them.
+**Rationale:** DESIGN §6 requires `seed_taxonomy` to "update labels/definitions/membership
+for existing ones" through `services.py` only, but §5b's enumerated functions had no
+idempotent-sync setter for definition/description. These realize §6 (rather than changing
+intent) and make a re-seed of an unchanged file a true no-op (T-06 DoD). `rename_tag`/
+`rename_cluster` remain the focused AC6 "safe rename" verbs for admin use.
+**Rejected:** the seeder writing the ORM directly (bypasses invariants — forbidden by §6);
+overloading `rename_*` to also carry definition/description (muddies the AC6 rename verb).
+**Binds:** DESIGN §5b, T-06/T-08.
+
+## ITX-12 — Founding size band: 11 clusters / 67 tags (closes OQ-3)
+
+**Decision:** The founding `seed/vocabulary.yaml` for the beachhead niche (vibecoded
+webapps, D-1) holds **11 clusters and 67 tags**. A guard-rail test pins the band at
+**6–16 clusters / 40–90 tags** — wide enough to grow, tight enough to catch synonym bloat
+(R2) or collapse.
+**Rationale:** Enough breadth for users to declare interests (AC3) and to distinguish apps
+(AC4) across the archetypes a solo/AI-assisted web app tends to be (productivity, dev
+tools, AI, content, finance, health, education, social, commerce, data, lifestyle), without
+near-duplicate tags. Sized editorially per DESIGN §12 (no fixed number was set there).
+**Rejected:** a tiny set (under-covers app subject matter, AC4); a sprawling set (synonym
+bloat, harms the closed-vocabulary matching quality, R2).
+**Binds:** OQ-3, AC3/AC4/AC5. **Caveat — app-coverage deferral (PL-1):** authored against
+the niche definition + representative archetypes, not a real submitted catalog (none exists
+pre-`submission-intake`); App-coverage (AC4) re-validation is **deferred & reopenable** —
+see [OPEN_QUESTIONS.md](OPEN_QUESTIONS.md) OQ-4.
