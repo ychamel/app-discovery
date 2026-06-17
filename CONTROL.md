@@ -16,11 +16,16 @@ Rules:
 
 | Field              | Value                                                            |
 |--------------------|------------------------------------------------------------------|
-| **Active feature** | `interest-taxonomy`                                              |
-| **Stage**          | `6-post-release`                                                 |
-| **Persona**        | Retrospective Analyst (see [phase-6-retrospective-analyst.md](process/personas/phase-6-retrospective-analyst.md)) |
-| **Folder**         | [features/interest-taxonomy/](features/interest-taxonomy/)       |
-| **Last updated**   | 2026-06-17 (released local/dev — [RELEASE_NOTES.md](features/interest-taxonomy/RELEASE_NOTES.md) written, rollout→rollback rehearsed on scratch DB, 184 tests green; handed to Retrospective Analyst) |
+| **Active feature** | `submission-intake`                                              |
+| **Stage**          | `1-define`                                                       |
+| **Persona**        | Product Analyst (see [phase-1-product-analyst.md](process/personas/phase-1-product-analyst.md)) |
+| **Folder**         | [features/submission-intake/](features/submission-intake/)       |
+| **Last updated**   | 2026-06-17 (Product Analyst **drafted `submission-intake/FEATURE_BRIEF.md`** — 6 stories, 9 criteria, 8 metrics; **awaiting approval**, 7 calls flagged for confirmation) |
+
+> **`interest-taxonomy` closed out 2026-06-17** per **DN-1 Option A** — Stage 6
+> (retrospective) skipped, mirroring `identity-accounts`. Build/release artifacts stand
+> (184 tests green, released local/dev; rollback rehearsed); live-metrics + real-catalog
+> coverage measurement + outcome report remain deferred (reopenable).
 
 > **`identity-accounts` closed out 2026-06-17** at user request — Stage 6 (retrospective)
 > skipped. Build/release artifacts stand (108 tests green, released local/dev basis);
@@ -33,24 +38,23 @@ Rules:
 ### Latest session status (CLAUDE.md §6.7 — overwritten each session)
 
 ```
-Stage: 5-release → 6-post-release | Feature: interest-taxonomy | Persona: Release Engineer (handoff)
-Done: Re-verified the Stage-4 build and shipped interest-taxonomy to local/dev. Wrote
-      RELEASE_NOTES.md (what changed, who's affected, operator rollout, gate-based promotion,
-      rehearsed rollback, metric→alert mapping, known limitations). Rehearsed the full
-      rollout→rollback on a THROWAWAY Postgres DB: migrate taxonomy (3 tables) → seed_taxonomy
-      (11 clusters / 67 tags) → check_taxonomy exit 0 → idempotent re-seed (no writes) →
-      migrate taxonomy zero reverses to 0 taxonomy_* tables while KEEPING the shared citext
-      extension. Updated features/INDEX.md (→ 6-post-release, released local/dev).
-Verified by: full repo suite 184 tests green; ruff clean; manage.py check clean;
-      makemigrations --check no drift; scratch-DB rollout→rollback rehearsal (above).
-Blocked/Deferred: live-metrics monitoring window deferred (no live consumer / no production
-      target yet — local/dev only, consistent with identity-accounts R1). OQ-4/PL-1 — AC4
-      app-coverage vs a REAL catalog deferred & reopenable (no catalog pre-submission-intake).
-Decisions needed: DN-1 below — run the Stage-6 retrospective now or skip it (as
-      identity-accounts did), given outcomes can't be measured until a consumer + real
-      catalog exist. No code/scope change pending.
-Next: Retrospective Analyst — measure outcomes against the brief OR (user's call, DN-1) skip
-      Stage 6 and mark interest-taxonomy closed-out with the outcome review reopenable.
+Stage: 1-define | Feature: submission-intake | Persona: Product Analyst
+Done: Wrote features/submission-intake/FEATURE_BRIEF.md from the breakdown §4.3/§7 Q6 +
+      vision §2.1/§5.5/§6 Dev-facing + global D-1/D-2/D-3/D-4/D-5 + both dependency briefs:
+      problem/goal, 6 user stories, 9 Given/When/Then criteria, 8 success metrics, in/out of
+      scope, constraints (verified/unverified), 6 risks, vision alignment. Core boundary:
+      the gate filters OBJECTIVE FLOORS ONLY, never taste (AC5/AC6, vision §5.5); intake is
+      identical + free for every developer (AC3, §5.6 — the on-ramp half of H2). Tags bound
+      to the D-5 contract (valid taxonomy tag, stored by Tag.id). Logged OQ-1 (founding-catalog
+      entry path), OQ-2 (exact gate-checklist wording → Stage 2/3), OQ-3 (media slots → align
+      with app-pages). 7 calls flagged under "For confirmation at approval".
+Verified by: n/a (Stage-1 artifact only — no code).
+Blocked/Deferred: brief AWAITING USER APPROVAL before Stage-2 handoff (Product-Analyst exit
+      criterion). OQ-2/OQ-3 deferred to design by intent. interest-taxonomy + identity-accounts
+      outcome reports still deferred until a live consumer + real catalog exist (reopenable).
+Decisions needed: none blocking — but 7 confirmation calls await sign-off (see brief).
+Next: User reviews/approves the brief (or amends the 7 calls). On approval: log calls in
+      submission-intake/DECISIONS.md, set Stage 2-design + persona Software Architect, hand off.
 ```
 
 ---
@@ -60,19 +64,14 @@ Next: Retrospective Analyst — measure outcomes against the brief OR (user's ca
 The agent is blocked on these. Answer inline (edit the **Answer** cell), then the agent
 proceeds.
 
-**DN-1 — Run the `interest-taxonomy` Stage-6 retrospective now, or skip it?** The feature is
-released to local/dev and verified. Stage 6 measures live outcomes against the brief — but
-the headline metrics (app/user coverage, reference-break rate) need a *live consumer* and a
-*real submitted catalog*, neither of which exists yet (OQ-4/PL-1). For `identity-accounts`
-you chose to **skip** Stage 6 and keep the outcome review reopenable. Same call here?
+_No open decisions blocking the agent._
 
-| Option | Meaning | **Answer** |
-|--------|---------|------------|
-| **A — Skip** (mirrors identity-accounts) | Mark `interest-taxonomy` closed-out; defer the outcome report until a consumer + catalog exist (reopenable). Then return to Coordinator to pick the next feature. | skip for now |
-| **B — Run it now** | Retrospective Analyst writes the outcome report against what *can* be measured today (integrity gate, vocabulary size/redundancy, the design's AC8 future-proofing), flagging coverage as not-yet-measurable. | _ |
+**DN-2 — RESOLVED 2026-06-17 → Option B (`submission-intake`).** Both Phase-0 enablers done;
+user selected `submission-intake` (Phase 1 Catalog) as the next feature (D2). Activated into
+Stage `1-define`, handed to Product Analyst.
 
-> Not blocking the release (already shipped). It only decides whether the next session runs
-> Stage 6 or moves on. Default if unanswered: hold at `6-post-release` awaiting your call.
+**DN-1 — RESOLVED 2026-06-17 → Option A (skip).** `interest-taxonomy` Stage-6 retrospective
+skipped; feature closed-out, outcome review deferred & reopenable (mirrors identity-accounts).
 
 ---
 
@@ -105,6 +104,8 @@ folders remain the full record either way.
 
 | Date       | Stage           | Summary                                                                 |
 |------------|-----------------|-------------------------------------------------------------------------|
+| 2026-06-17 | `1-define`      | **Product Analyst** — drafted [submission-intake/FEATURE_BRIEF.md](features/submission-intake/FEATURE_BRIEF.md): developer entry point + the **objective** quality gate (works / not malware-spam / not duplicate / honest metadata / basic policy — **floors only, never taste**, §5.5). 6 stories, 9 G/W/T criteria, 8 metrics. Fixed identical-free-intake fairness (AC3, §5.6), the D-5 tag contract (store by `Tag.id`), and the accepted-app downstream contract (AC9). Logged **OQ-1/OQ-2/OQ-3**; flagged 7 calls for confirmation. Awaiting approval before Stage-2 handoff. |
+| 2026-06-17 | `6-post-release`→`0-coordinator` | **Coordinator** — DN-1 resolved → Option A: **`interest-taxonomy` closed out**, Stage-6 retrospective skipped (outcome review deferred/reopenable, mirrors identity-accounts). Both Phase-0 enablers now released local/dev. Updated [INDEX.md](features/INDEX.md). Raised **DN-2** for the next feature (`signal-capture` vs `submission-intake`). |
 | 2026-06-17 | `5-release`→`6-post-release` | **Release Engineer** — released `interest-taxonomy` to local/dev. Wrote [RELEASE_NOTES.md](features/interest-taxonomy/RELEASE_NOTES.md) (changes, audience, operator rollout, gate-based promotion, metric→alert map, known limits). **Rehearsed rollout→rollback on a throwaway Postgres DB**: migrate (3 tables) → `seed_taxonomy` (11 clusters / 67 tags) → `check_taxonomy` exit 0 → idempotent re-seed (no writes) → `migrate taxonomy zero` reverses to 0 `taxonomy_*` tables, shared `citext` retained. Re-verified 184 tests / `ruff` / `check` / no migration drift. Raised **DN-1** (run Stage 6 now vs skip, as identity-accounts). Handed off to Retrospective Analyst. |
 | 2026-06-17 | `4-build`→`5-release` | **Senior Engineer** — built `apps/taxonomy` from TASKS.md (T-01…T-10): data model (UUID/citext/normalized-label unique index, reversible migration), single write path with all invariants + cycle-guarded `resolve_tag`, 3-endpoint read API, idempotent `seed_taxonomy` (PyYAML) + founding vocabulary (11 clusters / 67 tags), `check_taxonomy` gate, services-routed admin, docs/CODEMAP/D-5. **76 new tests, 184 total green**; ruff clean; no migration drift. Logged ITX-9/10/11/12. Wrote [TEST_PLAN.md](features/interest-taxonomy/TEST_PLAN.md). Handed off to Release Engineer. |
 | 2026-06-17 | `3-plan`→`4-build` | **Planner** — A5 approved → decomposed [DESIGN.md](features/interest-taxonomy/DESIGN.md) into [TASKS.md](features/interest-taxonomy/TASKS.md): 10 ordered S/M tasks, risk front-loaded (write-service invariants + `replaced_by` cycle guard in T-03/T-04), full DESIGN/AC coverage. Flagged deferral PL-1. Handed off to Senior Engineer. |

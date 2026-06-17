@@ -22,9 +22,9 @@ is decision **D2** and belongs to the user.
 | Slug | Phase | Stage | Started | Proves | Depends on | One-line outcome |
 |------|-------|-------|---------|--------|------------|------------------|
 | [identity-accounts](identity-accounts/) | 0 Foundation | closed-out | 2026-06-13 | enabler | — | _released local/dev (108 tests green); Stage 6 retrospective skipped per user — outcome review deferred/reopenable_ |
-| [interest-taxonomy](interest-taxonomy/) | 0 Foundation | `6-post-release` | 2026-06-17 | enabler | — | _released local/dev (11 clusters / 67 tags, 184 tests green; rollback rehearsed); live-metrics/real-catalog coverage deferred — Stage 6 pending_ |
+| [interest-taxonomy](interest-taxonomy/) | 0 Foundation | closed-out | 2026-06-17 | enabler | — | _released local/dev (11 clusters / 67 tags, 184 tests green; rollback rehearsed); Stage 6 retrospective skipped per user (DN-1 A) — live-metrics/real-catalog coverage + outcome report deferred/reopenable_ |
 | [signal-capture](signal-capture/) | 0 Foundation | backlog | 2026-06-13 | H3 | identity-accounts | _backlog_ |
-| [submission-intake](submission-intake/) | 1 Catalog | backlog | 2026-06-13 | H2 | identity-accounts, interest-taxonomy | _backlog_ |
+| [submission-intake](submission-intake/) | 1 Catalog | `1-define` | 2026-06-17 | H2 | identity-accounts, interest-taxonomy | _active — activated 2026-06-17 (D2); Product Analyst writing brief_ |
 | [app-pages](app-pages/) | 1 Catalog | backlog | 2026-06-13 | H1, H2 | submission-intake | _backlog_ |
 | [editorial-curation-tools](editorial-curation-tools/) | 1 Catalog | backlog | 2026-06-13 | H1, H3 | interest-taxonomy, submission-intake, weekly-digest | _backlog_ |
 | [interest-profile](interest-profile/) | 2 User loop | backlog | 2026-06-13 | H1 | identity-accounts, interest-taxonomy | _backlog_ |
