@@ -17,10 +17,10 @@ Rules:
 | Field              | Value                                                            |
 |--------------------|------------------------------------------------------------------|
 | **Active feature** | `submission-intake`                                              |
-| **Stage**          | `2-design`                                                       |
-| **Persona**        | Software Architect (see [phase-2-architect.md](process/personas/phase-2-architect.md)) |
+| **Stage**          | `4-build`                                                        |
+| **Persona**        | Senior Engineer (see [phase-4-engineer.md](process/personas/phase-4-engineer.md)) |
 | **Folder**         | [features/submission-intake/](features/submission-intake/)       |
-| **Last updated**   | 2026-06-17 (**DESIGN.md drafted** by Software Architect — awaiting approval; OQ-2/OQ-3 resolved; global **D-6** proposed) |
+| **Last updated**   | 2026-06-17 (**TASKS.md complete** — 14 ordered S/M tasks, risk-first, full DESIGN/AC coverage, no `L`; advanced to Stage 4 — awaiting build) |
 
 > **`interest-taxonomy` closed out 2026-06-17** per **DN-1 Option A** — Stage 6
 > (retrospective) skipped, mirroring `identity-accounts`. Build/release artifacts stand
@@ -38,24 +38,25 @@ Rules:
 ### Latest session status (CLAUDE.md §6.7 — overwritten each session)
 
 ```
-Stage: 2-design | Feature: submission-intake | Persona: Software Architect
-Done: Wrote submission-intake/DESIGN.md via the 14-step protocol. New Django app apps/catalog/
-      (reuses accounts gate + taxonomy is_valid_tag/resolve_tag + core email/observability/config;
-      no new stack). Data model: App (one row/app, lifecycle status) + AppTag (soft Tag.id ref,
-      D-5) + AppMedia + append-only ReviewDecision. Gate = FIXED 5-floor code enum with NO
-      "other/quality" value → taste rejection (R1/AC6) unrepresentable. Lifecycle state machine
-      (pending↔accepted/rejected/withdrawn; rejection non-terminal). FIFO queue + no
-      payment/tier/priority field anywhere (AC3). Resolved OQ-2 (gate wording → gate.CHECKLIST)
-      and OQ-3 (media: 1–8 imgs, PNG/JPEG/WebP, ≤5MB, Pillow). Proposed global D-6 (catalogued-app
-      contract: accepted-only read via selectors, App.id stable ref). Every AC1–AC9 mapped (§14).
-Verified by: n/a (design artifact — no code).
-Blocked/Deferred: D-6 + global DECISIONS/CODEMAP entries + Stage→3-plan bump deferred to approval
-      (per persona hand-off). app-pages must adopt the §9 media limits + §11/D-6 read contract.
-      Flagged-for-data: re-review-on-any-edit churn; owner-account-deletion CASCADE (revisit at
-      signal-capture); accepted-URL partial-unique hardening.
-Decisions needed: none blocking — awaiting DESIGN approval (or change requests).
-Next: User reviews submission-intake/DESIGN.md. On approval: record D-6 in global DECISIONS.md,
-      set Stage 3-plan / persona Planner, hand off to decompose into TASKS.md.
+Stage: 4-build | Feature: submission-intake | Persona: Senior Engineer
+Done: TASKS.md COMPLETE — decomposed DESIGN.md into 14 ordered, independently verifiable tasks
+      (T-01…T-14), all S/M, no L remaining. Risk front-loaded: the four DESIGN §13 sharp edges
+      land before any HTTP/UI depends on them — T-02 gate enum (no "other" → taste rejection
+      unrepresentable, AC6), T-05 write-service invariants (fields/closed-vocab/media), T-06
+      decision atomicity + lifecycle state machine, T-07 accepted-only catalog (AC9/D-6). Write
+      path split T-05/T-06, HTTP surface T-09/T-10, pages T-11/T-12 (kept off L). Coverage table
+      maps every DESIGN element + all 9 ACs to ≥1 task. Advanced CONTROL.md to Stage 4-build /
+      persona Senior Engineer.
+Verified by: n/a (process artifact — no code). Planner exit criteria met: full coverage, every
+      task has a DoD, no L tasks.
+Blocked/Deferred: build not started (CLAUDE.md §2: never run two personas in one session).
+      T-09…T-12 share catalog/views.py + urls.py → run sequentially, not parallel. app-pages must
+      adopt §9 media limits + §11/D-6 read contract. Flagged-for-data (not Stage-4 blockers):
+      re-review-on-any-accepted-edit churn; owner-account-deletion CASCADE (revisit at
+      signal-capture); accepted-URL partial-unique.
+Decisions needed: none.
+Next: Senior Engineer builds submission-intake from TASKS.md in order (T-01 scaffold → … →
+      T-14 docs/CODEMAP/D-6), writing tests per task and TEST_PLAN.md covering AC1–AC9.
 ```
 
 ---
@@ -81,6 +82,8 @@ skipped; feature closed-out, outcome review deferred & reopenable (mirrors ident
 A short, human-readable digest. Full rationale lives in [DECISIONS.md](DECISIONS.md)
 (global) or `features/<slug>/DECISIONS.md` (local).
 
+- **Plan-SI (2026-06-17)** — `submission-intake` [TASKS.md](features/submission-intake/TASKS.md) **complete** (14 ordered S/M tasks, no `L`). Risk-first per DESIGN §13: gate no-"other" enum (T-02), write-service invariants (T-05), decision atomicity + lifecycle (T-06), accepted-only catalog/D-6 (T-07) all precede the HTTP/UI tasks. Write path / HTTP surface / pages each split to stay off `L`. Full DESIGN-element + AC1–AC9 coverage table. Advanced to Stage 4; handed to Senior Engineer.
+- **Design-SI (2026-06-17)** — `submission-intake` [DESIGN.md](features/submission-intake/DESIGN.md) **approved**. New Django app `apps/catalog/` reusing the accounts gate + taxonomy `is_valid_tag`/`resolve_tag` (D-5) + core email/observability/config (no new stack). Gate = fixed 5-floor code enum with **no "other"** → taste rejection (R1/AC6) unrepresentable; lifecycle state machine; FIFO queue, zero pay/tier/priority fields (AC3). Recorded global **[D-6](DECISIONS.md)** (catalogued-app contract: accepted `App.id` read only via `list_catalogued_apps`/`get_catalogued_app`). OQ-2/OQ-3 resolved in the design. Advanced to Stage 3; handed to Planner.
 - **A-SI (2026-06-17)** — `submission-intake` brief **approved**; the 7 confirmation calls logged as **SI-1…SI-7** in [features/submission-intake/DECISIONS.md](features/submission-intake/DECISIONS.md) (web-only app=URL; human/admin checklist gate with no MVP automation; rejection non-terminal; individual ownership; offline founding-catalog recruitment → closes OQ-1; metadata-correction in / versioned-updates out; media=screenshots aligned to `app-pages`). Advanced to Stage 2; handed to Software Architect.
 - **Release (2026-06-17)** — `interest-taxonomy` **released to local/dev**. [RELEASE_NOTES.md](features/interest-taxonomy/RELEASE_NOTES.md) written; rollout→rollback **rehearsed on a scratch DB** (migrate → seed 11/67 → check exit 0 → idempotent re-seed → `migrate taxonomy zero` drops 3 tables, keeps shared `citext`). 184 tests / ruff / check / no-drift re-verified. Live-metrics window deferred (no consumer/prod target yet). Stage-6 retrospective awaiting **DN-1** (run-now vs skip, as identity-accounts did). Advanced to `6-post-release`.
 - **Build (2026-06-17)** — `interest-taxonomy` **built (T-01…T-10), 76 new tests / 184 total green**. Stage-4 deviations logged in [features/interest-taxonomy/DECISIONS.md](features/interest-taxonomy/DECISIONS.md): **ITX-9** (unauth read = `403` not `401`; DESIGN §5c corrected), **ITX-10** (PyYAML dep for the seed file), **ITX-11** (added `update_tag`/`update_cluster` sync setters; DESIGN §5b), **ITX-12** (founding size band 11 clusters / 67 tags, closes OQ-3). Handed to Release Engineer.
@@ -106,6 +109,8 @@ folders remain the full record either way.
 
 | Date       | Stage           | Summary                                                                 |
 |------------|-----------------|-------------------------------------------------------------------------|
+| 2026-06-17 | `3-plan`→`4-build` | **Planner / Tech Lead** — decomposed [submission-intake/DESIGN.md](features/submission-intake/DESIGN.md) into [TASKS.md](features/submission-intake/TASKS.md): **14 ordered S/M tasks** (T-01…T-14), no `L`. Risk front-loaded — the four §13 sharp edges (gate no-"other" enum T-02 / write invariants T-05 / decision atomicity + lifecycle T-06 / accepted-only catalog T-07) precede every HTTP/UI task. Write path split T-05/T-06, HTTP T-09/T-10, pages T-11/T-12. Coverage table maps every DESIGN element + AC1–AC9. Advanced to `4-build` / Senior Engineer. |
+| 2026-06-17 | `2-design`→`3-plan` | **Software Architect** (hand-off) — [submission-intake/DESIGN.md](features/submission-intake/DESIGN.md) **approved**. Recorded global **[D-6](DECISIONS.md)** (catalogued-app contract: accepted `catalog.App`, `App.id` UUID stable ref, read only via `list_catalogued_apps`/`get_catalogued_app`, tags as `Tag.id` under D-5, ordered media). Marked DESIGN status APPROVED; CODEMAP entries deferred to Stage 4. Advanced to `3-plan` / Planner. |
 | 2026-06-17 | `2-design`      | **Software Architect** — wrote [submission-intake/DESIGN.md](features/submission-intake/DESIGN.md): new `apps/catalog/` (App + soft-`tag_id` AppTag + AppMedia + append-only ReviewDecision); gate = **fixed 5-floor enum, no "other" value** → taste rejection (AC6/R1) unrepresentable; lifecycle state machine (rejection non-terminal); FIFO queue, zero pay/tier/priority fields (AC3). Reuses accounts gate + taxonomy `is_valid_tag`/`resolve_tag` (D-5) + core email/observability. Resolved **OQ-2** (gate wording) + **OQ-3** (media 1–8 imgs/PNG-JPEG-WebP/≤5MB/Pillow). Proposed global **D-6** (catalogued-app contract). All AC mapped. Awaiting approval. |
 | 2026-06-17 | `1-define`      | **Product Analyst** — drafted [submission-intake/FEATURE_BRIEF.md](features/submission-intake/FEATURE_BRIEF.md): developer entry point + the **objective** quality gate (works / not malware-spam / not duplicate / honest metadata / basic policy — **floors only, never taste**, §5.5). 6 stories, 9 G/W/T criteria, 8 metrics. Fixed identical-free-intake fairness (AC3, §5.6), the D-5 tag contract (store by `Tag.id`), and the accepted-app downstream contract (AC9). Logged **OQ-1/OQ-2/OQ-3**; flagged 7 calls for confirmation. Awaiting approval before Stage-2 handoff. |
 | 2026-06-17 | `6-post-release`→`0-coordinator` | **Coordinator** — DN-1 resolved → Option A: **`interest-taxonomy` closed out**, Stage-6 retrospective skipped (outcome review deferred/reopenable, mirrors identity-accounts). Both Phase-0 enablers now released local/dev. Updated [INDEX.md](features/INDEX.md). Raised **DN-2** for the next feature (`signal-capture` vs `submission-intake`). |

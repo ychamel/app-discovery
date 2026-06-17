@@ -1,6 +1,6 @@
 # DESIGN — submission-intake
 
-*Stage 2 artifact (Software Architect). Status: **DRAFTED 2026-06-17 — awaiting approval**.
+*Stage 2 artifact (Software Architect). Status: **APPROVED 2026-06-17** (D-6 recorded global; → Stage 3-plan).
 Reads: [FEATURE_BRIEF.md](FEATURE_BRIEF.md) (APPROVED A-SI), feature
 [DECISIONS.md](DECISIONS.md) SI-1…SI-7, [OPEN_QUESTIONS.md](OPEN_QUESTIONS.md)
 (OQ-2 gate wording, OQ-3 media limits), global [DECISIONS.md](../../DECISIONS.md)
