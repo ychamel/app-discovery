@@ -17,10 +17,10 @@ Rules:
 | Field              | Value                                                            |
 |--------------------|------------------------------------------------------------------|
 | **Active feature** | `interest-taxonomy`                                              |
-| **Stage**          | `5-release`                                                      |
-| **Persona**        | Release Engineer (see [phase-5-release-engineer.md](process/personas/phase-5-release-engineer.md)) |
+| **Stage**          | `6-post-release`                                                 |
+| **Persona**        | Retrospective Analyst (see [phase-6-retrospective-analyst.md](process/personas/phase-6-retrospective-analyst.md)) |
 | **Folder**         | [features/interest-taxonomy/](features/interest-taxonomy/)       |
-| **Last updated**   | 2026-06-17 (build complete — T-01…T-10, 76 new tests, 184 total green; handed to Release Engineer) |
+| **Last updated**   | 2026-06-17 (released local/dev — [RELEASE_NOTES.md](features/interest-taxonomy/RELEASE_NOTES.md) written, rollout→rollback rehearsed on scratch DB, 184 tests green; handed to Retrospective Analyst) |
 
 > **`identity-accounts` closed out 2026-06-17** at user request — Stage 6 (retrospective)
 > skipped. Build/release artifacts stand (108 tests green, released local/dev basis);
@@ -33,26 +33,24 @@ Rules:
 ### Latest session status (CLAUDE.md §6.7 — overwritten each session)
 
 ```
-Stage: 4-build → 5-release | Feature: interest-taxonomy | Persona: Senior Engineer (handoff)
-Done: Built apps/taxonomy from TASKS.md (T-01…T-10): new Django app; data model (Tag/Cluster
-      + M2M, UUID PKs, citext slugs, functional unique index for normalized-label dedup,
-      reversible 0001 that keeps the shared citext extension); single write path services.py
-      (≥1-cluster, dedupe, soft-retire + successor validation, +update_tag/update_cluster sync
-      setters); cycle-guarded selectors.py (is_valid_tag/resolve_tag, config step-limit);
-      3-endpoint JSON read API; seed/vocabulary.yaml + idempotent seed_taxonomy (PyYAML);
-      check_taxonomy integrity gate; services-routed Django admin; founding vocabulary
-      (11 clusters / 67 tags, vibecoded-webapps niche); README + .env.example + CODEMAP + D-5.
-      Wrote TEST_PLAN.md mapping AC1–AC8.
-Verified by: 76 new taxonomy tests (full repo 184) green; ruff clean; makemigrations --check
-      no drift; manage.py check clean; on dev DB: migrate→seed_taxonomy (11/67)→check_taxonomy
-      exit 0, idempotent re-seed, reversible migration verified.
-Blocked/Deferred: OQ-4/PL-1 — AC4 app-coverage against a REAL catalog deferred & reopenable
-      (no catalog pre-submission-intake). identity-accounts Stage 6 outcome report deferred.
-Decisions needed: none blocking. Stage-4 deviations logged: ITX-9 (unauth read=403 not 401,
-      DESIGN §5c corrected), ITX-11 (added update_tag/update_cluster, DESIGN §5b), ITX-12
-      (size band), ITX-10 (PyYAML dependency).
-Next: Release Engineer plans rollout per DESIGN §12 (migrate → seed_taxonomy → check_taxonomy),
-      writes RELEASE_NOTES.md, re-verifies the gate.
+Stage: 5-release → 6-post-release | Feature: interest-taxonomy | Persona: Release Engineer (handoff)
+Done: Re-verified the Stage-4 build and shipped interest-taxonomy to local/dev. Wrote
+      RELEASE_NOTES.md (what changed, who's affected, operator rollout, gate-based promotion,
+      rehearsed rollback, metric→alert mapping, known limitations). Rehearsed the full
+      rollout→rollback on a THROWAWAY Postgres DB: migrate taxonomy (3 tables) → seed_taxonomy
+      (11 clusters / 67 tags) → check_taxonomy exit 0 → idempotent re-seed (no writes) →
+      migrate taxonomy zero reverses to 0 taxonomy_* tables while KEEPING the shared citext
+      extension. Updated features/INDEX.md (→ 6-post-release, released local/dev).
+Verified by: full repo suite 184 tests green; ruff clean; manage.py check clean;
+      makemigrations --check no drift; scratch-DB rollout→rollback rehearsal (above).
+Blocked/Deferred: live-metrics monitoring window deferred (no live consumer / no production
+      target yet — local/dev only, consistent with identity-accounts R1). OQ-4/PL-1 — AC4
+      app-coverage vs a REAL catalog deferred & reopenable (no catalog pre-submission-intake).
+Decisions needed: DN-1 below — run the Stage-6 retrospective now or skip it (as
+      identity-accounts did), given outcomes can't be measured until a consumer + real
+      catalog exist. No code/scope change pending.
+Next: Retrospective Analyst — measure outcomes against the brief OR (user's call, DN-1) skip
+      Stage 6 and mark interest-taxonomy closed-out with the outcome review reopenable.
 ```
 
 ---
@@ -62,9 +60,19 @@ Next: Release Engineer plans rollout per DESIGN §12 (migrate → seed_taxonomy 
 The agent is blocked on these. Answer inline (edit the **Answer** cell), then the agent
 proceeds.
 
-**None blocking.** The Planner's founding-catalog deferral (PL-1, T-09) is logged under
-*Decisions Made* for visibility — speak up if you'd rather pause T-09 until real app data
-exists, otherwise the Senior Engineer proceeds against the niche definition.
+**DN-1 — Run the `interest-taxonomy` Stage-6 retrospective now, or skip it?** The feature is
+released to local/dev and verified. Stage 6 measures live outcomes against the brief — but
+the headline metrics (app/user coverage, reference-break rate) need a *live consumer* and a
+*real submitted catalog*, neither of which exists yet (OQ-4/PL-1). For `identity-accounts`
+you chose to **skip** Stage 6 and keep the outcome review reopenable. Same call here?
+
+| Option | Meaning | **Answer** |
+|--------|---------|------------|
+| **A — Skip** (mirrors identity-accounts) | Mark `interest-taxonomy` closed-out; defer the outcome report until a consumer + catalog exist (reopenable). Then return to Coordinator to pick the next feature. | skip for now |
+| **B — Run it now** | Retrospective Analyst writes the outcome report against what *can* be measured today (integrity gate, vocabulary size/redundancy, the design's AC8 future-proofing), flagging coverage as not-yet-measurable. | _ |
+
+> Not blocking the release (already shipped). It only decides whether the next session runs
+> Stage 6 or moves on. Default if unanswered: hold at `6-post-release` awaiting your call.
 
 ---
 
@@ -73,6 +81,7 @@ exists, otherwise the Senior Engineer proceeds against the niche definition.
 A short, human-readable digest. Full rationale lives in [DECISIONS.md](DECISIONS.md)
 (global) or `features/<slug>/DECISIONS.md` (local).
 
+- **Release (2026-06-17)** — `interest-taxonomy` **released to local/dev**. [RELEASE_NOTES.md](features/interest-taxonomy/RELEASE_NOTES.md) written; rollout→rollback **rehearsed on a scratch DB** (migrate → seed 11/67 → check exit 0 → idempotent re-seed → `migrate taxonomy zero` drops 3 tables, keeps shared `citext`). 184 tests / ruff / check / no-drift re-verified. Live-metrics window deferred (no consumer/prod target yet). Stage-6 retrospective awaiting **DN-1** (run-now vs skip, as identity-accounts did). Advanced to `6-post-release`.
 - **Build (2026-06-17)** — `interest-taxonomy` **built (T-01…T-10), 76 new tests / 184 total green**. Stage-4 deviations logged in [features/interest-taxonomy/DECISIONS.md](features/interest-taxonomy/DECISIONS.md): **ITX-9** (unauth read = `403` not `401`; DESIGN §5c corrected), **ITX-10** (PyYAML dep for the seed file), **ITX-11** (added `update_tag`/`update_cluster` sync setters; DESIGN §5b), **ITX-12** (founding size band 11 clusters / 67 tags, closes OQ-3). Handed to Release Engineer.
 - **A5 (2026-06-17)** — `interest-taxonomy` [DESIGN.md](features/interest-taxonomy/DESIGN.md) **approved** (flat tags + named clusters via M2M; UUID stable identity; soft-retire + read-time `resolve_tag`; seed-file/command/admin management). Decomposed into [TASKS.md](features/interest-taxonomy/TASKS.md); advanced to Stage 4.
 - **A4 (2026-06-17)** — `interest-taxonomy` brief **approved**; the 5 confirmation calls logged as **ITX-1…ITX-5** (closed/curated vocabulary; clusters in MVP, adjacency deferred not precluded; shape left to Stage 2 under AC8; English-only at MVP; vocabulary+lifecycle here, rich curation UI in `editorial-curation-tools`).
@@ -96,6 +105,7 @@ folders remain the full record either way.
 
 | Date       | Stage           | Summary                                                                 |
 |------------|-----------------|-------------------------------------------------------------------------|
+| 2026-06-17 | `5-release`→`6-post-release` | **Release Engineer** — released `interest-taxonomy` to local/dev. Wrote [RELEASE_NOTES.md](features/interest-taxonomy/RELEASE_NOTES.md) (changes, audience, operator rollout, gate-based promotion, metric→alert map, known limits). **Rehearsed rollout→rollback on a throwaway Postgres DB**: migrate (3 tables) → `seed_taxonomy` (11 clusters / 67 tags) → `check_taxonomy` exit 0 → idempotent re-seed (no writes) → `migrate taxonomy zero` reverses to 0 `taxonomy_*` tables, shared `citext` retained. Re-verified 184 tests / `ruff` / `check` / no migration drift. Raised **DN-1** (run Stage 6 now vs skip, as identity-accounts). Handed off to Retrospective Analyst. |
 | 2026-06-17 | `4-build`→`5-release` | **Senior Engineer** — built `apps/taxonomy` from TASKS.md (T-01…T-10): data model (UUID/citext/normalized-label unique index, reversible migration), single write path with all invariants + cycle-guarded `resolve_tag`, 3-endpoint read API, idempotent `seed_taxonomy` (PyYAML) + founding vocabulary (11 clusters / 67 tags), `check_taxonomy` gate, services-routed admin, docs/CODEMAP/D-5. **76 new tests, 184 total green**; ruff clean; no migration drift. Logged ITX-9/10/11/12. Wrote [TEST_PLAN.md](features/interest-taxonomy/TEST_PLAN.md). Handed off to Release Engineer. |
 | 2026-06-17 | `3-plan`→`4-build` | **Planner** — A5 approved → decomposed [DESIGN.md](features/interest-taxonomy/DESIGN.md) into [TASKS.md](features/interest-taxonomy/TASKS.md): 10 ordered S/M tasks, risk front-loaded (write-service invariants + `replaced_by` cycle guard in T-03/T-04), full DESIGN/AC coverage. Flagged deferral PL-1. Handed off to Senior Engineer. |
 | 2026-06-17 | `2-design`      | **Architect** — wrote [DESIGN.md](features/interest-taxonomy/DESIGN.md): flat tags + named clusters via M2M (adjacency deferred, AC8); UUID stable identity; soft-retire + `resolve_tag`; seed.yaml + `seed_taxonomy` + Django admin (no custom UI). Logged global **D-5** + ITX-6/7/8. Awaiting A5. |
@@ -104,6 +114,6 @@ folders remain the full record either way.
 | 2026-06-17 | `0-coordinator` | **Coordinator** — user skipped identity-accounts Stage 6; selected next feature by dependency order: **`interest-taxonomy`** (Phase-0, no deps). Activated into `1-define`. Handed off to Product Analyst. |
 | 2026-06-17 | `5-release`     | **Release Engineer** — wrote [RELEASE_NOTES.md](features/identity-accounts/RELEASE_NOTES.md): gate-based rollout, **rehearsed rollback** on a scratch Postgres DB, metric→alert mapping. Re-verified 108 tests / `ruff` / `check` / no migration drift. Surfaced R1 → user chose Option A (local/dev release). Handed off to Stage 6. |
 | 2026-06-17 | `4-build`→`5-release` | **Senior Engineer** — built `identity-accounts` from TASKS.md (T-01…T-18): Django/DRF/PostgreSQL scaffold, shared core, data model (UUID PKs, citext, 3 role groups), fail-closed role gate, risk-first magic-link (double-spend test), all endpoints + pages, mgmt commands, security hardening, docs, [TEST_PLAN.md](features/identity-accounts/TEST_PLAN.md). **108 tests pass**. Logged DL-5. Handed off to Release Engineer. |
-| 2026-06-17 | `3-plan`→`4-build` | **Planner** — A3 approved → decomposed into [TASKS.md](features/identity-accounts/TASKS.md): 18 ordered S/M tasks, risk front-loaded (magic-link T-07), full coverage table. Handed off to Senior Engineer. |
-| 2026-06-14 | `2-design`      | **Architect** — stack chosen (**A2**) → global **D-4**. Wrote [DESIGN.md](features/identity-accounts/DESIGN.md): components, data model, 10 endpoint contracts, traceability (all 10 ACs). Resolved DL-3 (magic-link) + DL-4 (Groups-as-roles + fail-closed gate). Awaiting A3. |
-| 2026-06-14 | `1-define`→`2-design` | **Product Analyst** — **A1** answered → revised brief to single access method + extensible role model (user/developer/admin). Revised **D-3**; logged **DL-2**. Resolved editorial/admin escalation. Handed off to Software Architect. |
+
+> Older rows (through `identity-accounts` Stage 3 and earlier) live in
+> [process/activity-archive.md](process/activity-archive.md).

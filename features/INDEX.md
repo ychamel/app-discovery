@@ -22,7 +22,7 @@ is decision **D2** and belongs to the user.
 | Slug | Phase | Stage | Started | Proves | Depends on | One-line outcome |
 |------|-------|-------|---------|--------|------------|------------------|
 | [identity-accounts](identity-accounts/) | 0 Foundation | closed-out | 2026-06-13 | enabler | — | _released local/dev (108 tests green); Stage 6 retrospective skipped per user — outcome review deferred/reopenable_ |
-| [interest-taxonomy](interest-taxonomy/) | 0 Foundation | `5-release` | 2026-06-17 | enabler | — | _active — built (T-01…T-10), 76 new tests / 184 total green; in Stage-5 release_ |
+| [interest-taxonomy](interest-taxonomy/) | 0 Foundation | `6-post-release` | 2026-06-17 | enabler | — | _released local/dev (11 clusters / 67 tags, 184 tests green; rollback rehearsed); live-metrics/real-catalog coverage deferred — Stage 6 pending_ |
 | [signal-capture](signal-capture/) | 0 Foundation | backlog | 2026-06-13 | H3 | identity-accounts | _backlog_ |
 | [submission-intake](submission-intake/) | 1 Catalog | backlog | 2026-06-13 | H2 | identity-accounts, interest-taxonomy | _backlog_ |
 | [app-pages](app-pages/) | 1 Catalog | backlog | 2026-06-13 | H1, H2 | submission-intake | _backlog_ |
