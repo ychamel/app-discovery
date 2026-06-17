@@ -17,10 +17,10 @@ Rules:
 | Field              | Value                                                            |
 |--------------------|------------------------------------------------------------------|
 | **Active feature** | `submission-intake`                                              |
-| **Stage**          | `1-define`                                                       |
-| **Persona**        | Product Analyst (see [phase-1-product-analyst.md](process/personas/phase-1-product-analyst.md)) |
+| **Stage**          | `2-design`                                                       |
+| **Persona**        | Software Architect (see [phase-2-architect.md](process/personas/phase-2-architect.md)) |
 | **Folder**         | [features/submission-intake/](features/submission-intake/)       |
-| **Last updated**   | 2026-06-17 (Product Analyst **drafted `submission-intake/FEATURE_BRIEF.md`** — 6 stories, 9 criteria, 8 metrics; **awaiting approval**, 7 calls flagged for confirmation) |
+| **Last updated**   | 2026-06-17 (**DESIGN.md drafted** by Software Architect — awaiting approval; OQ-2/OQ-3 resolved; global **D-6** proposed) |
 
 > **`interest-taxonomy` closed out 2026-06-17** per **DN-1 Option A** — Stage 6
 > (retrospective) skipped, mirroring `identity-accounts`. Build/release artifacts stand
@@ -38,23 +38,24 @@ Rules:
 ### Latest session status (CLAUDE.md §6.7 — overwritten each session)
 
 ```
-Stage: 1-define | Feature: submission-intake | Persona: Product Analyst
-Done: Wrote features/submission-intake/FEATURE_BRIEF.md from the breakdown §4.3/§7 Q6 +
-      vision §2.1/§5.5/§6 Dev-facing + global D-1/D-2/D-3/D-4/D-5 + both dependency briefs:
-      problem/goal, 6 user stories, 9 Given/When/Then criteria, 8 success metrics, in/out of
-      scope, constraints (verified/unverified), 6 risks, vision alignment. Core boundary:
-      the gate filters OBJECTIVE FLOORS ONLY, never taste (AC5/AC6, vision §5.5); intake is
-      identical + free for every developer (AC3, §5.6 — the on-ramp half of H2). Tags bound
-      to the D-5 contract (valid taxonomy tag, stored by Tag.id). Logged OQ-1 (founding-catalog
-      entry path), OQ-2 (exact gate-checklist wording → Stage 2/3), OQ-3 (media slots → align
-      with app-pages). 7 calls flagged under "For confirmation at approval".
-Verified by: n/a (Stage-1 artifact only — no code).
-Blocked/Deferred: brief AWAITING USER APPROVAL before Stage-2 handoff (Product-Analyst exit
-      criterion). OQ-2/OQ-3 deferred to design by intent. interest-taxonomy + identity-accounts
-      outcome reports still deferred until a live consumer + real catalog exist (reopenable).
-Decisions needed: none blocking — but 7 confirmation calls await sign-off (see brief).
-Next: User reviews/approves the brief (or amends the 7 calls). On approval: log calls in
-      submission-intake/DECISIONS.md, set Stage 2-design + persona Software Architect, hand off.
+Stage: 2-design | Feature: submission-intake | Persona: Software Architect
+Done: Wrote submission-intake/DESIGN.md via the 14-step protocol. New Django app apps/catalog/
+      (reuses accounts gate + taxonomy is_valid_tag/resolve_tag + core email/observability/config;
+      no new stack). Data model: App (one row/app, lifecycle status) + AppTag (soft Tag.id ref,
+      D-5) + AppMedia + append-only ReviewDecision. Gate = FIXED 5-floor code enum with NO
+      "other/quality" value → taste rejection (R1/AC6) unrepresentable. Lifecycle state machine
+      (pending↔accepted/rejected/withdrawn; rejection non-terminal). FIFO queue + no
+      payment/tier/priority field anywhere (AC3). Resolved OQ-2 (gate wording → gate.CHECKLIST)
+      and OQ-3 (media: 1–8 imgs, PNG/JPEG/WebP, ≤5MB, Pillow). Proposed global D-6 (catalogued-app
+      contract: accepted-only read via selectors, App.id stable ref). Every AC1–AC9 mapped (§14).
+Verified by: n/a (design artifact — no code).
+Blocked/Deferred: D-6 + global DECISIONS/CODEMAP entries + Stage→3-plan bump deferred to approval
+      (per persona hand-off). app-pages must adopt the §9 media limits + §11/D-6 read contract.
+      Flagged-for-data: re-review-on-any-edit churn; owner-account-deletion CASCADE (revisit at
+      signal-capture); accepted-URL partial-unique hardening.
+Decisions needed: none blocking — awaiting DESIGN approval (or change requests).
+Next: User reviews submission-intake/DESIGN.md. On approval: record D-6 in global DECISIONS.md,
+      set Stage 3-plan / persona Planner, hand off to decompose into TASKS.md.
 ```
 
 ---
@@ -80,6 +81,7 @@ skipped; feature closed-out, outcome review deferred & reopenable (mirrors ident
 A short, human-readable digest. Full rationale lives in [DECISIONS.md](DECISIONS.md)
 (global) or `features/<slug>/DECISIONS.md` (local).
 
+- **A-SI (2026-06-17)** — `submission-intake` brief **approved**; the 7 confirmation calls logged as **SI-1…SI-7** in [features/submission-intake/DECISIONS.md](features/submission-intake/DECISIONS.md) (web-only app=URL; human/admin checklist gate with no MVP automation; rejection non-terminal; individual ownership; offline founding-catalog recruitment → closes OQ-1; metadata-correction in / versioned-updates out; media=screenshots aligned to `app-pages`). Advanced to Stage 2; handed to Software Architect.
 - **Release (2026-06-17)** — `interest-taxonomy` **released to local/dev**. [RELEASE_NOTES.md](features/interest-taxonomy/RELEASE_NOTES.md) written; rollout→rollback **rehearsed on a scratch DB** (migrate → seed 11/67 → check exit 0 → idempotent re-seed → `migrate taxonomy zero` drops 3 tables, keeps shared `citext`). 184 tests / ruff / check / no-drift re-verified. Live-metrics window deferred (no consumer/prod target yet). Stage-6 retrospective awaiting **DN-1** (run-now vs skip, as identity-accounts did). Advanced to `6-post-release`.
 - **Build (2026-06-17)** — `interest-taxonomy` **built (T-01…T-10), 76 new tests / 184 total green**. Stage-4 deviations logged in [features/interest-taxonomy/DECISIONS.md](features/interest-taxonomy/DECISIONS.md): **ITX-9** (unauth read = `403` not `401`; DESIGN §5c corrected), **ITX-10** (PyYAML dep for the seed file), **ITX-11** (added `update_tag`/`update_cluster` sync setters; DESIGN §5b), **ITX-12** (founding size band 11 clusters / 67 tags, closes OQ-3). Handed to Release Engineer.
 - **A5 (2026-06-17)** — `interest-taxonomy` [DESIGN.md](features/interest-taxonomy/DESIGN.md) **approved** (flat tags + named clusters via M2M; UUID stable identity; soft-retire + read-time `resolve_tag`; seed-file/command/admin management). Decomposed into [TASKS.md](features/interest-taxonomy/TASKS.md); advanced to Stage 4.
@@ -104,6 +106,7 @@ folders remain the full record either way.
 
 | Date       | Stage           | Summary                                                                 |
 |------------|-----------------|-------------------------------------------------------------------------|
+| 2026-06-17 | `2-design`      | **Software Architect** — wrote [submission-intake/DESIGN.md](features/submission-intake/DESIGN.md): new `apps/catalog/` (App + soft-`tag_id` AppTag + AppMedia + append-only ReviewDecision); gate = **fixed 5-floor enum, no "other" value** → taste rejection (AC6/R1) unrepresentable; lifecycle state machine (rejection non-terminal); FIFO queue, zero pay/tier/priority fields (AC3). Reuses accounts gate + taxonomy `is_valid_tag`/`resolve_tag` (D-5) + core email/observability. Resolved **OQ-2** (gate wording) + **OQ-3** (media 1–8 imgs/PNG-JPEG-WebP/≤5MB/Pillow). Proposed global **D-6** (catalogued-app contract). All AC mapped. Awaiting approval. |
 | 2026-06-17 | `1-define`      | **Product Analyst** — drafted [submission-intake/FEATURE_BRIEF.md](features/submission-intake/FEATURE_BRIEF.md): developer entry point + the **objective** quality gate (works / not malware-spam / not duplicate / honest metadata / basic policy — **floors only, never taste**, §5.5). 6 stories, 9 G/W/T criteria, 8 metrics. Fixed identical-free-intake fairness (AC3, §5.6), the D-5 tag contract (store by `Tag.id`), and the accepted-app downstream contract (AC9). Logged **OQ-1/OQ-2/OQ-3**; flagged 7 calls for confirmation. Awaiting approval before Stage-2 handoff. |
 | 2026-06-17 | `6-post-release`→`0-coordinator` | **Coordinator** — DN-1 resolved → Option A: **`interest-taxonomy` closed out**, Stage-6 retrospective skipped (outcome review deferred/reopenable, mirrors identity-accounts). Both Phase-0 enablers now released local/dev. Updated [INDEX.md](features/INDEX.md). Raised **DN-2** for the next feature (`signal-capture` vs `submission-intake`). |
 | 2026-06-17 | `5-release`→`6-post-release` | **Release Engineer** — released `interest-taxonomy` to local/dev. Wrote [RELEASE_NOTES.md](features/interest-taxonomy/RELEASE_NOTES.md) (changes, audience, operator rollout, gate-based promotion, metric→alert map, known limits). **Rehearsed rollout→rollback on a throwaway Postgres DB**: migrate (3 tables) → `seed_taxonomy` (11 clusters / 67 tags) → `check_taxonomy` exit 0 → idempotent re-seed (no writes) → `migrate taxonomy zero` reverses to 0 `taxonomy_*` tables, shared `citext` retained. Re-verified 184 tests / `ruff` / `check` / no migration drift. Raised **DN-1** (run Stage 6 now vs skip, as identity-accounts). Handed off to Retrospective Analyst. |

@@ -12,17 +12,19 @@
 
 ## Stage 1 (Product Analyst, 2026-06-17)
 
-- **OQ-1 — Founding-catalog entry path (refines breakdown §7 Q6).** The brief's proposed
-  default ([FEATURE_BRIEF.md](FEATURE_BRIEF.md) confirmation call 5, R6): founding apps are
-  **self-submitted** by recruited developers through the same form; recruitment itself is an
-  **offline** editorial activity, *not* a product surface in this feature. Carried to
-  approval; if the user wants an in-product recruitment/invite surface, that reopens scope.
-- **OQ-2 — Exact gate checklist wording (deferred to Stage 2/3).** The brief fixes the
-  *five objective floors* (works / not malware-spam / not duplicate / honest metadata / basic
-  policy, AC5) as the product requirement. The precise, checklist-ready wording of each floor
-  — what a reviewer concretely checks for "works", "honest", "duplicate", and the content of
-  "basic platform policy" — is design/planning detail, to be made deterministic for review in
-  Stage 2/3 (CLAUDE.md §6.2). Flagged so it is not lost between stages.
-- **OQ-3 — Media slots/limits.** Exact media slots, formats, and limits are left to align
-  with [app-pages](../app-pages/) in Stage 2 (brief Constraints, [unverified]); recorded so
-  the Architect coordinates the two rather than each guessing.
+- **OQ-1 — Founding-catalog entry path (refines breakdown §7 Q6). RESOLVED 2026-06-17 →
+  SI-5.** Confirmed at brief approval: founding apps are **self-submitted** by recruited
+  developers through the same form; recruitment is an **offline** editorial activity, *not*
+  a product surface in this feature. Reopens scope only if an in-product recruitment/invite
+  surface is later wanted. See [DECISIONS.md](DECISIONS.md) SI-5.
+- **OQ-2 — Exact gate checklist wording. RESOLVED 2026-06-17 → [DESIGN.md](DESIGN.md) §6.**
+  The five floors are a **fixed code enum** (`catalog.gate.Criterion`); their reviewer-facing
+  "what to check" wording lives in one place (`gate.CHECKLIST`), editable as a one-file change.
+  Crucially there is **no "other"/"quality" criterion** — a taste rejection is unrepresentable in
+  the decision shape (AC6/R1, §6b). The concrete wording per floor is a Stage-4 fill-in of
+  `CHECKLIST` against the design's intent.
+- **OQ-3 — Media slots/limits. RESOLVED 2026-06-17 → [DESIGN.md](DESIGN.md) §4/§9.** MVP media =
+  screenshots/images; **1 ≤ count ≤ 8 per app**, formats **PNG/JPEG/WebP**, **≤ 5 MB/file**,
+  Pillow-validated at the boundary, stored via Django storage under `MEDIA_ROOT` (limits are
+  `apps.core.config` tunables). Published as the contract **[app-pages](../app-pages/) must adopt**
+  (recorded here so the two don't diverge); revisit if `app-pages` needs different slots.
