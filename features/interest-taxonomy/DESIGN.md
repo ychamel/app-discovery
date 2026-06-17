@@ -1,6 +1,7 @@
 # DESIGN — interest-taxonomy
 
-*Stage 2 artifact (Software Architect). Status: **DRAFT — awaiting design approval (A5)**.
+*Stage 2 artifact (Software Architect). Status: **APPROVED 2026-06-17 (A5)** — decomposed into
+[TASKS.md](TASKS.md), handed to Stage 4 (Senior Engineer).
 Reads: [FEATURE_BRIEF.md](FEATURE_BRIEF.md) (APPROVED A4), feature
 [DECISIONS.md](DECISIONS.md) ITX-1…ITX-5, [OPEN_QUESTIONS.md](OPEN_QUESTIONS.md)
 (Q5/OQ-1/OQ-2/OQ-3), global [DECISIONS.md](../../DECISIONS.md) (D-1/D-2/D-3/D-4),

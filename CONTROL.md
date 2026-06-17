@@ -17,10 +17,10 @@ Rules:
 | Field            | Value                                                            |
 |------------------|------------------------------------------------------------------|
 | **Active feature** | `interest-taxonomy`                                            |
-| **Stage**          | `2-design`                                                     |
-| **Persona**        | Software Architect (see [phase-2-architect.md](process/personas/phase-2-architect.md)) |
+| **Stage**          | `4-build`                                                     |
+| **Persona**        | Senior Engineer (see [phase-4-engineer.md](process/personas/phase-4-engineer.md)) |
 | **Folder**         | [features/interest-taxonomy/](features/interest-taxonomy/)     |
-| **Last updated**   | 2026-06-17 (DESIGN.md written — awaiting design approval A5)   |
+| **Last updated**   | 2026-06-17 (A5 approved → TASKS.md written; handed to Senior Engineer for build) |
 
 > **`identity-accounts` closed out 2026-06-17** at user request — Stage 6 (retrospective)
 > **skipped**. Build/release artifacts stand (108 tests green, released local/dev basis);
@@ -34,33 +34,40 @@ Rules:
 ### Latest session status (CLAUDE.md §6.7 — overwritten each session)
 
 ```
-Stage: 2-design | Feature: interest-taxonomy | Persona: Software Architect
-Done: Ran the 14-step protocol and wrote features/interest-taxonomy/DESIGN.md. Resolved all four
-      open items handed from Stage 1: (Q5/OQ-1 shape) flat tags + named clusters via M2M, no
-      tag-hierarchy; (OQ-1 mgmt surface) editable seed/vocabulary.yaml + idempotent
-      `seed_taxonomy` command + Django admin, no custom curation UI; (OQ-2 retire rule)
-      soft-retire + optional `replaced_by` successor, non-destructive read-time `resolve_tag`;
-      (OQ-3 size band) deferred to Stage 4, authored against the real founding catalog. Stable
-      identity = UUID `id` (downstream stores UUID, never label/slug). AC8 satisfied: adjacency is
-      a future cluster-to-cluster table over existing clusters — additive, no re-tag. New app
-      apps/taxonomy/ reuses the stack (D-4), apps/core observability/config, and the accounts
-      admin gate — no new auth path. Logged global D-5 (taxonomy shape + cross-feature reference
-      contract) and feature-local ITX-6/ITX-7/ITX-8; closed OQ-1/OQ-2/OQ-3 + Q5 in OPEN_QUESTIONS.
-      All 8 ACs traced (§14); no "TBD" in any contract.
-Verified by: n/a (Stage 2 — design only, no code).
-Blocked/Deferred: identity-accounts Stage 6 outcome report + live metrics (deferred, reopenable).
-Decisions needed: A5 — design approval for interest-taxonomy DESIGN.md (see Decisions Needed From You).
-Next: User reviews DESIGN.md + D-5. On approval (A5), hand to Planner (3-plan) to decompose into
-      TASKS.md. Stage stays 2-design until approved (one persona per session; handoff only at the gate).
+Stage: 3-plan → 4-build | Feature: interest-taxonomy | Persona: Planner / Tech Lead (handoff)
+Done: A5 approved → decomposed DESIGN.md into features/interest-taxonomy/TASKS.md: 10 ordered,
+      independently verifiable tasks (all S/M, no L) in build order — scaffold (T-01) → models +
+      migration (T-02) → write service + invariants + 3 error types (T-03) → cycle-guarded
+      selectors/resolve_tag (T-04) → JSON read API (T-05) → seed file + seed_taxonomy (T-06) →
+      check_taxonomy (T-07) → Django admin via services (T-08) → author founding vocabulary +
+      size band (T-09) → docs/CODEMAP/D-5 (T-10). Risk front-loaded: the two sharpest edges from
+      DESIGN §13 (write-service invariants ≥1-cluster/dedupe/safe-retire, and the cycle-guarded
+      replaced_by resolution) are T-03/T-04, tested in isolation before any HTTP/admin surface.
+      Each task has a DoD, declared files (no collisions), deps, and DESIGN/AC refs. Coverage table
+      maps every DESIGN element (§2–§14) + all 8 ACs to ≥1 task. Reuses apps/core (observability/
+      config/middleware) + accounts admin gate by name; modifies no existing component.
+Verified by: n/a (Stage 3 — planning only, no code). TASKS.md coverage table is the exit-criterion check.
+Blocked/Deferred: (1) FOUNDING-CATALOG (T-09) — DESIGN §12 sizes the vocabulary against "the real
+      founding catalog," but no app catalog exists yet (it comes from submission-intake, downstream of
+      this Phase-0 root). Planner decision: author T-09 against the niche definition + app archetypes;
+      app-coverage validation vs a real catalog is DEFERRED until submission-intake lands (mirrors the
+      R1 live-metrics deferral). Surfaced below — does NOT block Stage 4. (2) identity-accounts Stage 6
+      outcome report + live metrics (deferred, reopenable).
+Decisions needed: none blocking. The founding-catalog deferral is flagged for visibility (Decisions
+      Made), not as a gate — say so if you'd rather pause T-09 until real app data exists.
+Next: Senior Engineer (4-build) executes TASKS.md T-01→T-10, produces code + TEST_PLAN.md covering
+      AC1–AC8, keeps CODEMAP current. Start at T-01 (scaffold).
 ```
 
-> **Handoff (2026-06-17):** Software Architect → *awaiting design approval (A5)*. DESIGN.md written;
-> global D-5 + feature-local ITX-6/7/8 logged. **Stage stays `2-design`** — the Planner picks it up
-> only after the user approves the design (one persona per session).
+> **Handoff (2026-06-17):** Planner / Tech Lead → **Senior Engineer (`4-build`)**. A5 approved;
+> TASKS.md complete (10 tasks, all S/M, full DESIGN/AC coverage, risk front-loaded). Build executes
+> T-01→T-10 in order; each leaves the system working and releasable.
 
-> **Deviation logged this session:** DL-5 — `issue_login_link` takes an `Account` (+ injected
-> `base_url`/`email_sender`) instead of `(email, purpose)`; DESIGN §3 updated to match. No HTTP
-> contract or schema change. See [features/identity-accounts/DECISIONS.md](features/identity-accounts/DECISIONS.md).
+> **Planner deferral flagged (2026-06-17):** the founding-vocabulary sizing (T-09 / OQ-3) is authored
+> against the **niche definition + representative app archetypes**, not a real submitted app catalog
+> (none exists pre-`submission-intake`). App-coverage validation vs a real catalog is **deferred and
+> reopenable**, exactly as `identity-accounts` deferred live metrics (R1). Recorded in TASKS.md T-09;
+> not a Stage-4 blocker.
 
 ---
 
@@ -69,32 +76,17 @@ Next: User reviews DESIGN.md + D-5. On approval (A5), hand to Planner (3-plan) t
 The agent is blocked on these. Answer inline (edit the **Answer** cell), then the agent
 proceeds.
 
-### A5 — Approve the `interest-taxonomy` DESIGN.md? *(blocks Stage 3)*
+**None blocking.** A5 resolved below; the Planner's founding-catalog deferral (T-09) is logged
+under *Decisions Made* for visibility — speak up if you'd rather pause T-09 until real app data
+exists, otherwise the Senior Engineer proceeds against the niche definition.
 
-The Software Architect has written [DESIGN.md](features/interest-taxonomy/DESIGN.md). Key calls
-for your sign-off (all traceable to the brief's ACs):
-
-- **Shape:** flat tags + named **clusters** via many-to-many membership (no tag hierarchy);
-  adjacency deferred as a future cluster-to-cluster table — additive, **no re-tag** (AC8).
-- **Stable identity:** a tag's **UUID** is the cross-feature reference; downstream stores the
-  UUID, never the label. Rename changes the label only → zero broken references (AC6/AC7).
-- **Retire rule (OQ-2):** soft-retire + optional successor; resolution is **read-time, never
-  rewrites** stored references (reference-break-rate = 0).
-- **Management (OQ-1):** editable `seed/vocabulary.yaml` + a `seed_taxonomy` command + Django
-  admin — **no custom curation UI** (that stays in `editorial-curation-tools`).
-- **Size band (OQ-3):** deliberately **not fixed**; authored against the real founding catalog
-  at Stage 4.
-- Introduces global **[D-5](DECISIONS.md)** (taxonomy shape + cross-feature tag-reference
-  contract) and feature-local **ITX-6/ITX-7/ITX-8**.
-
-| Decision | Answer |
-|----------|--------|
-| **A5** — Approve DESIGN.md as written, or request changes? | **approve** |
-
-> On **approve**, I advance to **Stage 3 (Planner)** to decompose the design into `TASKS.md`.
-
-_A4 resolved below._
-
+> **A5 — resolved 2026-06-17.** User **approved** the `interest-taxonomy`
+> [DESIGN.md](features/interest-taxonomy/DESIGN.md) as written (shape = flat tags + named clusters
+> via M2M; UUID stable identity; soft-retire + read-time `resolve_tag`; seed-file/command/Django-admin
+> management; OQ-3 size band left to Stage 4). The Planner decomposed it into
+> [TASKS.md](features/interest-taxonomy/TASKS.md) (10 ordered S/M tasks, full DESIGN/AC coverage,
+> risk front-loaded) and handed off to **Stage 4 (Senior Engineer)**.
+>
 > **A4 — resolved 2026-06-17.** User **approved** the `interest-taxonomy`
 > [FEATURE_BRIEF.md](features/interest-taxonomy/FEATURE_BRIEF.md) — all 5 "For confirmation at
 > approval" calls confirmed (closed/curated vocabulary; clusters-in-MVP + adjacency-deferred-not-
@@ -137,6 +129,7 @@ A short, human-readable digest. Full rationale lives in [DECISIONS.md](DECISIONS
 - **D-3 (revised) → identity model = one account, one access method, extensible role-based authorization.** Roles: **user** (base), **developer** (self-serve), **admin** (granted, not self-serve), + future roles; one sign-in for all. Revised 2026-06-14 per user A1 (was "dual capability reader+developer"). Repo-wide; logged as [D-3](DECISIONS.md). Other features gate actions on roles, key off one account, and authenticate every surface (incl. admin) through this feature.
 - **DL-1 → signup = open self-serve for everyone** (account creation un-gated; every new account gets the base **user** role; quality control lives at submission, not signup). Feature-local; logged in [features/identity-accounts/DECISIONS.md](features/identity-accounts/DECISIONS.md).
 - **DL-2 → role-assignment rules: developer self-serve, admin granted (never self-assigned).** Prevents privilege escalation under open signup (brief R6). Feature-local; logged in [features/identity-accounts/DECISIONS.md](features/identity-accounts/DECISIONS.md).
+- **PL-1 (Planner deferral, 2026-06-17) → founding-vocabulary sizing is authored against the niche definition + app archetypes, not a real catalog.** DESIGN §12 sizes the vocabulary (OQ-3) against "the real founding catalog," but no app catalog exists yet — it is produced by `submission-intake`, downstream of this Phase-0 root. The Senior Engineer authors T-09 from the niche definition (D-1) + representative app archetypes; **app-coverage validation against a real submitted catalog is deferred and reopenable** (same pattern as the identity-accounts R1 live-metrics deferral). Flagged for visibility; not a Stage-4 blocker. Recorded in [TASKS.md](features/interest-taxonomy/TASKS.md) T-09.
 - **ITX-1…ITX-5 → `interest-taxonomy` brief calls, approved at A4 (2026-06-17).** Closed/editorially-curated vocabulary (not folksonomy); clusters in MVP, adjacency deferred but not precluded (AC8); **taxonomy shape left to the Architect** under AC8; English-only at MVP; this feature owns vocabulary+lifecycle, rich curation UI lives in `editorial-curation-tools`. Feature-local; logged in [features/interest-taxonomy/DECISIONS.md](features/interest-taxonomy/DECISIONS.md).
 
 ---
@@ -149,6 +142,7 @@ stays quick to scan. The per-feature folders remain the full record either way.
 
 | Date       | Stage           | Summary                                                                 |
 |------------|-----------------|-------------------------------------------------------------------------|
+| 2026-06-17 | `3-plan`→`4-build` | **Planner / Tech Lead** — A5 approved → decomposed [DESIGN.md](features/interest-taxonomy/DESIGN.md) into [TASKS.md](features/interest-taxonomy/TASKS.md): **10 ordered, independently verifiable tasks (all S/M, no L)** in build order — scaffold (T-01) → models+migration (T-02) → **write service + invariants + 3 error types (T-03)** → **cycle-guarded selectors/`resolve_tag` (T-04)** → JSON read API (T-05) → seed file + `seed_taxonomy` (T-06) → `check_taxonomy` (T-07) → Django admin via services (T-08) → author founding vocabulary + size band (T-09) → docs/CODEMAP/D-5 (T-10). **Risk front-loaded** (the DESIGN §13 sharp edges — ≥1-cluster/dedupe/safe-retire invariants and the `replaced_by` cycle guard — land in T-03/T-04, tested in isolation before any HTTP/admin surface). Each task has a DoD, declared files (no collisions), deps, DESIGN/AC refs; coverage table maps every §2–§14 element + all 8 ACs to ≥1 task. **Reuses** `apps/core` (observability/config/middleware) + accounts admin gate by name; modifies no existing component. **Flagged Planner deferral PL-1** — founding-vocabulary sizing (T-09/OQ-3) authored vs the niche definition + app archetypes (no real catalog exists pre-`submission-intake`); app-coverage-vs-real-catalog validation deferred & reopenable (R1 pattern), not a Stage-4 blocker. **Handed off to Senior Engineer (4-build).** |
 | 2026-06-17 | `2-design`      | **Software Architect** — ran the 14-step protocol → wrote [DESIGN.md](features/interest-taxonomy/DESIGN.md) for `interest-taxonomy`. Resolved all four handed-down items: **shape** = flat tags + named **clusters** via M2M (no tag hierarchy), adjacency deferred as a future cluster-to-cluster table (additive, **no re-tag** — AC8); **stable identity** = UUID `id` (downstream stores UUID, never label/slug; rename = label-only → 0 broken refs, AC6/AC7); **retire rule (OQ-2)** = soft-retire + optional `replaced_by`, non-destructive read-time `resolve_tag`; **mgmt surface (OQ-1)** = editable `seed/vocabulary.yaml` + idempotent `seed_taxonomy` command + Django admin, **no custom curation UI**; **size band (OQ-3)** deferred to Stage 4 vs the real founding catalog. New app `apps/taxonomy/` **reuses** the stack (D-4), `apps/core` observability/config, and the accounts `admin` gate — no new auth path. Logged global **[D-5](DECISIONS.md)** (shape + cross-feature reference contract) + feature-local **ITX-6/7/8**; closed Q5/OQ-1/OQ-2/OQ-3. All 8 ACs traced; no "TBD". **Awaiting design approval (A5)** — stayed in `2-design` (one persona/session). |
 | 2026-06-17 | `1-define`→`2-design` | **Product Analyst** (handoff) — user **approved** the `interest-taxonomy` brief (**A4**), confirming all 5 "For confirmation at approval" calls. Recorded them as feature-local **ITX-1…ITX-5** in [DECISIONS.md](features/interest-taxonomy/DECISIONS.md) (closed/curated vocabulary; clusters-in-MVP + adjacency-deferred-but-not-precluded; **taxonomy shape left to Stage-2 under AC8**; English-only at MVP; vocabulary+lifecycle here / rich curation UI in `editorial-curation-tools`). Marked the brief APPROVED, advanced [INDEX.md](features/INDEX.md) + CONTROL Current State to **`2-design`**, resolved A4. Carried 3 open items to the Architect (Q5/OQ-1 shape + seed/maintain boundary, OQ-2 retired-tag rule, OQ-3 size band). **Handed off to Software Architect (2-design);** did not start Stage-2 design (one persona per session). |
 | 2026-06-17 | `1-define`      | **Product Analyst** — wrote [interest-taxonomy/FEATURE_BRIEF.md](features/interest-taxonomy/FEATURE_BRIEF.md). Framed the feature as the **single shared controlled vocabulary** (tags + clusters) that both user interests and app labels are expressed in — explicitly **not** owning user selection (`interest-profile`), app tagging (`submission-intake`), or the matching algorithm. 6 stories, 8 G/W/T criteria, 6 enabler metrics (app/user **coverage**, cluster integrity, non-redundancy, **reference-break-rate = 0**, size band), in/out scope, constraints, 5 risks (under/over-scope, **shape lock-in**, no stable identity, drift). Deliberately **did not pick the taxonomy shape** (flat vs shallow hierarchy — breakdown §7 Q5); left it to Stage-2 design under a hard constraint — **AC8: adjacency addable later without destructive migration** — and fixed **stable tag identity (AC7)** + **safe rename/retire (AC6)** as product requirements. Logged Q5 handling + 3 open questions (mgmt-surface boundary, retired-tag rule, size band) in [OPEN_QUESTIONS.md](features/interest-taxonomy/OPEN_QUESTIONS.md). **Awaiting brief approval (A4)** before Stage-2 handoff; stayed in `1-define` (one persona per session). |
