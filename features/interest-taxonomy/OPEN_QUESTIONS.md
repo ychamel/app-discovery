@@ -30,3 +30,29 @@
 - **OQ-3 — Tag-set size band.** The brief sets size as an editorial call, not a fixed
   number. The concrete initial count/band should be decided when the founding catalog is
   in view (App-coverage metric), likely at Stage 2/4 with editorial input.
+
+## Stage 2 — Software Architect (2026-06-17) — resolutions
+
+*Resolved in [DESIGN.md](DESIGN.md) (pending design approval A5). Logged so the open items
+above are closed against concrete decisions.*
+
+- **Q5 / OQ-1 (taxonomy shape) — RESOLVED.** Flat tags + named clusters joined by a
+  many-to-many membership (no tag→tag hierarchy). Adjacency (AC8) is a future
+  cluster-to-cluster table over existing clusters — additive, no re-tag. Global
+  [D-5](../../DECISIONS.md); DESIGN §7. *(was breakdown §7 Q5.)*
+- **OQ-1 (management surface) — RESOLVED.** Editable `seed/vocabulary.yaml` + idempotent
+  `manage.py seed_taxonomy` + `is_staff`/admin-gated Django admin; no custom curation UI
+  (rich UI stays in `editorial-curation-tools`). Feature-local **ITX-7**; DESIGN §6.
+- **OQ-2 (retired-tag rule) — RESOLVED.** Soft-retire (`status=retired`, row kept) +
+  optional `replaced_by` successor; non-destructive read-time resolution via `resolve_tag`,
+  never rewriting downstream references. Feature-local **ITX-6**; DESIGN §7.
+- **OQ-3 (size band) — DEFERRED to Stage 4 by design.** No number fixed; the band is
+  authored editorially against the real founding catalog when `seed/vocabulary.yaml` is
+  written, measured by App-/User-coverage. Feature-local **ITX-8**; DESIGN §12.
+
+### New cross-feature note handed downstream (DESIGN §11 / D-5)
+
+- **Tag-reference contract for consumers.** `interest-profile`, `submission-intake`, and the
+  matcher must store the `Tag.id` (UUID, never the label/slug), validate input with
+  `is_valid_tag(id)` at their write boundary, and resolve with `resolve_tag(id)` at read.
+  Flagged so a consumer does not store labels or coin off-vocabulary tags.

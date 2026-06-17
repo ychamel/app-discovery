@@ -61,3 +61,46 @@ scope here; the exact seed-vs-UI boundary is a Stage-2 design call (OQ-1).
 keeps this feature's surface area focused on the substrate.
 **Rejected:** building the full editorial management UI inside this feature (over-scope).
 **Binds:** In/Out of Scope; OQ-1 handed to the Architect.
+
+---
+
+*Stage-2 (Software Architect) decisions, 2026-06-17. Made in [DESIGN.md](DESIGN.md);
+**pending design approval (A5)**. The cross-feature shape + reference contract is global
+[D-5](../../DECISIONS.md); the finer mechanism choices below are feature-local.*
+
+## ITX-6 — Retire rule: soft-retire + optional successor, non-destructive (resolves OQ-2)
+
+**Decision:** A retired tag is **kept** (`status=retired`, row stays, `retired_at` set) and
+stops being offered for new selection/labelling; existing references still resolve. When a
+tag is retired *because it merges into* another, the editor sets an optional `replaced_by`
+successor, and `resolve_tag` returns the active successor. Remapping is **read-time only** —
+it never rewrites references stored by `interest-profile`/`submission-intake`.
+**Rationale:** Guarantees reference-break-rate = 0 (AC6/AC7, R4) without touching data this
+feature doesn't own; "what a tag means now" stays in one place (`resolve_tag`).
+**Rejected:** hard-delete on retire (breaks references); rewriting downstream references on
+merge (touches non-owned tables, momentarily breaks references).
+**Binds:** AC6, OQ-2. See [DESIGN.md](DESIGN.md) §7/§10.
+
+## ITX-7 — Management surface: seed file + `seed_taxonomy` command + Django admin (resolves OQ-1)
+
+**Decision:** MVP seed/maintain = an editable, version-controlled `seed/vocabulary.yaml`
+applied idempotently (upsert-by-`slug`) by `manage.py seed_taxonomy`, plus the `is_staff`/
+admin-gated Django admin for ad-hoc edits — **no custom curation UI**. All writes route
+through `services.py` (the single mutate path). Retirements are explicit; the seeder never
+deletes a tag that drops out of the file.
+**Rationale:** Mirrors identity-accounts (admin role here, admin *tooling* in
+`editorial-curation-tools`); vocabulary is *data*, so it lives in a re-runnable seed file,
+not a data migration.
+**Rejected:** building the rich curation UI here (over-scope, ITX-5); baking the vocabulary
+into a data migration (couples editorial content to schema migrations).
+**Binds:** OQ-1, In/Out of Scope. See [DESIGN.md](DESIGN.md) §6.
+
+## ITX-8 — Tag-set size band deferred to Stage 4, authored against the founding catalog (OQ-3)
+
+**Decision:** No fixed tag count is set in the design. The concrete initial size/band is an
+**editorial Stage-4 call** made while authoring `seed/vocabulary.yaml` against the **real
+founding catalog**, measured by the App-coverage / User-coverage metrics (R1/R2).
+**Rationale:** Sizing in the abstract risks under/over-scoping; the catalog is the only
+honest yardstick.
+**Rejected:** fixing a number now (guesswork before the catalog is in view).
+**Binds:** OQ-3, Metrics (tag-set size band). See [DESIGN.md](DESIGN.md) §12.
