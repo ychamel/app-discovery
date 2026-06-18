@@ -17,10 +17,10 @@ Rules:
 | Field              | Value                                                            |
 |--------------------|------------------------------------------------------------------|
 | **Active feature** | `submission-intake`                                              |
-| **Stage**          | `5-release`                                                      |
-| **Persona**        | Release Engineer (see [phase-5-release-engineer.md](process/personas/phase-5-release-engineer.md)) |
+| **Stage**          | `6-post-release`                                                 |
+| **Persona**        | Retrospective Analyst (see [phase-6-retrospective-analyst.md](process/personas/phase-6-retrospective-analyst.md)) |
 | **Folder**         | [features/submission-intake/](features/submission-intake/)       |
-| **Last updated**   | 2026-06-18 (**BUILD COMPLETE** — `apps/catalog` built T-01…T-14; **131 new tests / 315 total green**, ruff clean, no migration drift, migration reversibility rehearsed; [TEST_PLAN.md](features/submission-intake/TEST_PLAN.md) covers AC1–AC9; advanced to Stage 5 — awaiting release) |
+| **Last updated**   | 2026-06-18 (**RELEASED local/dev** — [RELEASE_NOTES.md](features/submission-intake/RELEASE_NOTES.md) written; rollout→rollback **rehearsed on a throwaway DB** (migrate → 4 `catalog_*` tables + shared `citext` → `check` clean → `migrate catalog zero` reverses to 0 tables, `citext` retained → re-apply); **315 tests green**, ruff clean, no drift re-verified. Advanced to Stage 6 — **DN-3** asks run-now-vs-skip retrospective, mirroring DN-1) |
 
 > **`interest-taxonomy` closed out 2026-06-17** per **DN-1 Option A** — Stage 6
 > (retrospective) skipped, mirroring `identity-accounts`. Build/release artifacts stand
@@ -38,31 +38,26 @@ Rules:
 ### Latest session status (CLAUDE.md §6.7 — overwritten each session)
 
 ```
-Stage: 5-release | Feature: submission-intake | Persona: Release Engineer
-Done: BUILD COMPLETE — built apps/catalog from TASKS.md (T-01…T-14) in risk-first order. New
-      Django app: 4 tables (App + soft-tag_id AppTag + ordered AppMedia + append-only
-      ReviewDecision); gate.py = fixed 5-floor Criterion enum with NO "other" value (taste
-      rejection unrepresentable, AC6); single write path services.py (submit/edit/media invariants
-      + accept/reject/withdraw/resubmit, atomic, row-locked §7 state machine); single read path
-      selectors.py (owner-scoped views, FIFO queue + dup hint, ACCEPTED-ONLY list_catalogued_apps/
-      get_catalogued_app with resolve_tag + ordered media — the D-6 substrate, time-to-decision);
-      decision emails (after-commit, EMAIL_SEND_FAILURE never rolls back the decision); developer
-      API (endpoints 1–8) + review API (9–10) under catalog/api/; server-rendered developer +
-      admin-review pages; Django-admin inspection (ReviewDecision append-only). Reused accounts
-      gate + taxonomy is_valid_tag/resolve_tag + core email/observability/config as-is. Added 2
-      core.config tunables (catalog_media_max_count=8 / _max_bytes=5MB) + Pillow + MEDIA_ROOT.
-      Registered catalog write+read surfaces in CODEMAP; confirmed global D-6; updated README +
-      .env.example; wrote TEST_PLAN.md (AC1–AC9 each mapped). Logged SI-8…SI-11.
-Verified by: 131 new catalog tests, 315 total green; ruff clean; manage.py check clean; no
-      migration drift (makemigrations --check); migration reversibility rehearsed on the dev DB
-      (migrate catalog zero drops the 4 tables, shared citext retained, re-applied).
-Blocked/Deferred: none for build. Flagged-for-data (not release blockers, carried from DESIGN §13):
-      re-review-on-any-accepted-edit churn; owner-account-deletion CASCADE (revisit at
-      signal-capture); accepted-URL partial-unique. app-pages must adopt §9 media limits + D-6 read
-      contract before storing any app reference.
-Decisions needed: none.
-Next: Release Engineer writes RELEASE_NOTES.md, rehearses rollout→rollback (migrate catalog +
-      MEDIA_ROOT setup → migrate catalog zero), and releases per the rollout plan (DESIGN §12).
+Stage: 5-release → 6-post-release | Feature: submission-intake | Persona: Release Engineer
+Done: RELEASED submission-intake to local/dev. Wrote RELEASE_NOTES.md (what changed; who is
+      affected incl. the D-6 action required of downstream; operator rollout; gate-based promotion;
+      success-metric→signal→alert map; rehearsed rollback; known limits). Re-verified the Stage-4
+      build green and rehearsed rollout→rollback on a throwaway Postgres DB (catalog_release_rehearsal,
+      dropped after): migrate created the 4 catalog_* tables (catalog_app / _app_tag / _app_media /
+      _review_decision) with shared citext present → manage.py check clean → migrate catalog zero
+      reversed to 0 catalog_* tables (shared citext RETAINED, used by accounts/taxonomy) → re-migrate
+      catalog re-applied (migration confirmed reversible). Updated features/INDEX.md.
+Verified by: 315 tests green; ruff clean; manage.py check clean; no migration drift
+      (makemigrations --check); rollout→rollback rehearsed on a scratch DB (above), dev DB untouched.
+      TEST_PLAN.md maps AC1–AC9.
+Blocked/Deferred: live-metrics monitoring window deferred (local/dev target, no consumer yet —
+      mirrors identity-accounts/interest-taxonomy). Flagged-for-data (not blockers, DESIGN §13):
+      re-review-on-any-accepted-edit churn; owner-account-deletion CASCADE (revisit at signal-capture);
+      accepted-URL partial-unique; manual review scaling. app-pages must adopt §9 media limits + the
+      D-6 read contract before storing any app reference.
+Decisions needed: DN-3 — run Stage 6 retrospective now vs skip & close out (mirrors DN-1/identity).
+Next: Retrospective Analyst awaits DN-3. If skip → close out submission-intake (Stage 6 deferred/
+      reopenable), update INDEX, return to Coordinator for the next feature (app-pages is now unblocked).
 ```
 
 ---
@@ -72,7 +67,15 @@ Next: Release Engineer writes RELEASE_NOTES.md, rehearses rollout→rollback (mi
 The agent is blocked on these. Answer inline (edit the **Answer** cell), then the agent
 proceeds.
 
-_No open decisions blocking the agent._
+**DN-3 — Run `submission-intake` Stage 6 (retrospective) now, or skip and close out?**
+`submission-intake` is released to local/dev (RELEASE_NOTES.md written, rollout→rollback rehearsed,
+315 tests green). As with `identity-accounts` (R1) and `interest-taxonomy` (DN-1), there is no
+production target or live consumer yet, so an outcome-measurement window has no real signal to read.
+
+| Option | Meaning | Answer |
+|--------|---------|--------|
+| **A — Skip & close out** *(recommended; mirrors DN-1)* | Mark the feature closed-out; defer the outcome review (reopenable when a consumer + live metrics exist). Return to Coordinator — `app-pages` is now unblocked. | |
+| **B — Run Stage 6 now** | Retrospective Analyst runs the post-release review against the brief's success metrics now (limited signal at local/dev). | |
 
 **DN-2 — RESOLVED 2026-06-17 → Option B (`submission-intake`).** Both Phase-0 enablers done;
 user selected `submission-intake` (Phase 1 Catalog) as the next feature (D2). Activated into
@@ -88,6 +91,7 @@ skipped; feature closed-out, outcome review deferred & reopenable (mirrors ident
 A short, human-readable digest. Full rationale lives in [DECISIONS.md](DECISIONS.md)
 (global) or `features/<slug>/DECISIONS.md` (local).
 
+- **Release-SI (2026-06-18)** — `submission-intake` **released to local/dev**. [RELEASE_NOTES.md](features/submission-intake/RELEASE_NOTES.md) written (changes, downstream D-6 action, operator rollout, gate-based promotion, success-metric→signal→alert map, known limits). Rollout→rollback **rehearsed on a throwaway Postgres DB**: migrate → 4 `catalog_*` tables + shared `citext` → `check` clean → `migrate catalog zero` reverses to 0 tables (`citext` retained) → re-apply (reversible). **315 tests / ruff / check / no-drift** re-verified. Live-metrics window deferred (no consumer/prod target). Advanced to `6-post-release`; **DN-3** raised (run Stage 6 now vs skip, as DN-1).
 - **Build-SI (2026-06-18)** — `submission-intake` **built (T-01…T-14), 131 new tests / 315 total green**, ruff clean, no migration drift, reversibility rehearsed. New app `apps/catalog` (4 tables; fixed 5-floor gate enum, no "other"; single write/read paths; ACCEPTED-only D-6 catalogue substrate; developer+review API and pages; decision emails; admin inspection). Reused accounts gate + taxonomy D-5 + core as-is; added 2 media tunables + Pillow + MEDIA_ROOT. CODEMAP + README + .env.example + [TEST_PLAN.md](features/submission-intake/TEST_PLAN.md) (AC1–AC9) done; global **D-6** confirmed. Stage-4 deviations logged **SI-8…SI-11** in [features/submission-intake/DECISIONS.md](features/submission-intake/DECISIONS.md). Advanced to `5-release` / Release Engineer.
 - **Plan-SI (2026-06-17)** — `submission-intake` [TASKS.md](features/submission-intake/TASKS.md) **complete** (14 ordered S/M tasks, no `L`). Risk-first per DESIGN §13: gate no-"other" enum (T-02), write-service invariants (T-05), decision atomicity + lifecycle (T-06), accepted-only catalog/D-6 (T-07) all precede the HTTP/UI tasks. Write path / HTTP surface / pages each split to stay off `L`. Full DESIGN-element + AC1–AC9 coverage table. Advanced to Stage 4; handed to Senior Engineer.
 - **Design-SI (2026-06-17)** — `submission-intake` [DESIGN.md](features/submission-intake/DESIGN.md) **approved**. New Django app `apps/catalog/` reusing the accounts gate + taxonomy `is_valid_tag`/`resolve_tag` (D-5) + core email/observability/config (no new stack). Gate = fixed 5-floor code enum with **no "other"** → taste rejection (R1/AC6) unrepresentable; lifecycle state machine; FIFO queue, zero pay/tier/priority fields (AC3). Recorded global **[D-6](DECISIONS.md)** (catalogued-app contract: accepted `App.id` read only via `list_catalogued_apps`/`get_catalogued_app`). OQ-2/OQ-3 resolved in the design. Advanced to Stage 3; handed to Planner.
@@ -116,6 +120,7 @@ folders remain the full record either way.
 
 | Date       | Stage           | Summary                                                                 |
 |------------|-----------------|-------------------------------------------------------------------------|
+| 2026-06-18 | `5-release`→`6-post-release` | **Release Engineer** — released `submission-intake` to local/dev. Wrote [RELEASE_NOTES.md](features/submission-intake/RELEASE_NOTES.md) (changes, who's affected + the **D-6** action required of downstream, operator rollout, gate-based promotion, success-metric→signal→alert map, rehearsed rollback, known limits). **Rehearsed rollout→rollback on a throwaway Postgres DB**: `migrate` → 4 `catalog_*` tables (`catalog_app`/`_app_tag`/`_app_media`/`_review_decision`) + shared `citext` → `check` clean → `migrate catalog zero` reverses to **0 `catalog_*` tables** (shared `citext` retained) → re-`migrate catalog` re-applies (reversible). Re-verified **315 tests / `ruff` / `check` / no drift**. Live-metrics window deferred (local/dev, no consumer yet). Updated [INDEX.md](features/INDEX.md). Raised **DN-3** (run Stage 6 now vs skip, as DN-1). Handed to Retrospective Analyst. |
 | 2026-06-18 | `4-build`→`5-release` | **Senior Engineer** — built `apps/catalog` from [TASKS.md](features/submission-intake/TASKS.md) (T-01…T-14), risk-first. 4 tables; **fixed 5-floor `Criterion` enum, no "other"** (taste rejection unrepresentable, AC6); single write path (invariants + atomic, row-locked §7 lifecycle) / single read path (owner-scoped, FIFO queue+dup hint, **ACCEPTED-only** `list_catalogued_apps`/`get_catalogued_app` = D-6 substrate, time-to-decision); after-commit decision emails; developer API (1–8) + review API (9–10) under `catalog/api/`; developer + admin-review pages; Django-admin inspection (append-only decisions). Reused accounts gate + taxonomy `is_valid_tag`/`resolve_tag` + core as-is; added 2 `core.config` media tunables + `Pillow` + `MEDIA_ROOT`. **131 new tests / 315 total green**, ruff clean, no drift, reversibility rehearsed. CODEMAP/README/.env.example/[TEST_PLAN.md](features/submission-intake/TEST_PLAN.md) done; **D-6** confirmed; logged SI-8…SI-11. Advanced to `5-release`. |
 | 2026-06-17 | `3-plan`→`4-build` | **Planner / Tech Lead** — decomposed [submission-intake/DESIGN.md](features/submission-intake/DESIGN.md) into [TASKS.md](features/submission-intake/TASKS.md): **14 ordered S/M tasks** (T-01…T-14), no `L`. Risk front-loaded — the four §13 sharp edges (gate no-"other" enum T-02 / write invariants T-05 / decision atomicity + lifecycle T-06 / accepted-only catalog T-07) precede every HTTP/UI task. Write path split T-05/T-06, HTTP T-09/T-10, pages T-11/T-12. Coverage table maps every DESIGN element + AC1–AC9. Advanced to `4-build` / Senior Engineer. |
 | 2026-06-17 | `2-design`→`3-plan` | **Software Architect** (hand-off) — [submission-intake/DESIGN.md](features/submission-intake/DESIGN.md) **approved**. Recorded global **[D-6](DECISIONS.md)** (catalogued-app contract: accepted `catalog.App`, `App.id` UUID stable ref, read only via `list_catalogued_apps`/`get_catalogued_app`, tags as `Tag.id` under D-5, ordered media). Marked DESIGN status APPROVED; CODEMAP entries deferred to Stage 4. Advanced to `3-plan` / Planner. |
