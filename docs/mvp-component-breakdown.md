@@ -1,6 +1,6 @@
 # MVP Component Breakdown — Curated App Discovery Platform
 
-*Status: Draft for review · Last updated: 2026-06-13 · Source: [curated-app-platform-design.md](../curated-app-platform-design.md)*
+*Status: Draft for review · First drafted 2026-06-13 · Amended 2026-06-18 (see §0) · Source: [curated-app-platform-design.md](../curated-app-platform-design.md)*
 
 > **Purpose.** This document decomposes the vision doc into **separately designable
 > components**, viewed through an MVP lens. It is a planning/reference artifact for the
@@ -9,6 +9,39 @@
 >
 > **Nothing here is final.** The vision is explicitly pre-MVP and up for change. Treat
 > every scope line as a proposal and every open question as a real fork.
+
+---
+
+## 0. Amendments since the first draft (2026-06-13)
+
+> The decomposition below (§1–§8) is kept **intact** as the original 2026-06-13 draft. As
+> features go through the pipeline, an approved `FEATURE_BRIEF.md` can supersede parts of it;
+> those changes are logged here so this planning doc doesn't silently drift from the
+> authoritative artifacts. **Authoritative sources, on any conflict:** each feature's approved
+> `FEATURE_BRIEF.md` and the registry [../features/INDEX.md](../features/INDEX.md) — not the
+> tables below.
+
+- **2026-06-18 — `signal-capture` spine pivoted to on-platform engagement (SC-7/SC-8; brief
+  approved).** The §4.5 MVP slice and the §3 "hard tech that must NOT be deferred" box framed
+  the off-platform **cross-platform attribution prototype** as the centerpiece. The approved
+  [signal-capture brief](../features/signal-capture/FEATURE_BRIEF.md) **demotes that to a
+  best-effort *secondary* signal** and makes the measured spine **on-platform engagement**
+  (impression → click-through → return-to-platform 3d/14d → subscribe/follow → on-page
+  re-engagement → share) — which is more faithful to vision Open Q #4 for the **web-only**
+  niche (return visits are observed *via the platform*; off-platform installs are the
+  mobile/desktop case, deferred per D-1). Where §3/§4.5 below still center the off-platform
+  proxy, **read them as superseded.**
+- **2026-06-18 — two net-new backlog features added (from signal-capture OQ-4).** The pivot
+  makes the corpus depend on on-platform engagement *actually happening*, so the surfaces that
+  drive it were logged as features (the engagement loop the brief deliberately keeps **out** of
+  signal-capture, CLAUDE.md §6.4): **`app-subscriptions`** (Phase 2, user-side — follow apps +
+  update/early-access notices) and **`developer-updates`** (Phase 3, developer-side — post
+  updates / early-access / talk to subscribers; the platform as the dev's front page). These
+  **promote** two items this draft had deferred — "Collections & follows" (§3) and the dev↔user
+  communication / "Update & re-boost manager" idea (§3, vision §5.2/§6) — from "post-MVP
+  niceties" to backlog features, because the pivot makes them load-bearing for the signal
+  corpus, not just engagement polish. Slugs + dependencies live in
+  [../features/INDEX.md](../features/INDEX.md).
 
 ---
 
@@ -62,8 +95,8 @@ records signal.
 | **Matching engine / ring computation / impression allocator** (§2.2, §6 Internal) | Meaningless at 50–150 apps and a small user base; the interest graph isn't dense enough. | Humans assemble each digest (editorial curation). |
 | **Integrity system** — account maturity, behavioral coherence, graph analysis (§4) | At MVP scale (hand-recruited catalog, trusted early users) manipulation isn't yet the threat, and the score it would protect doesn't exist yet. | Capture the behavioral data the future system needs; manual eyeballing suffices for now. |
 | **Browsable destination feed** (§5.4 step 4) | The design explicitly graduates to this *after* the digest proves out. | Weekly digest is the hero surface. |
-| **Update & re-boost manager** (§5.2, §6 Dev-facing) | Depends on the allocator existing. | Editorial can manually re-feature an updated app. |
-| **Collections & follows** (§6 User-facing) | Engagement nicety, not part of the core hypotheses. | — |
+| **Update & re-boost manager** (§5.2, §6 Dev-facing) | Depends on the allocator existing. | Editorial can manually re-feature an updated app. *(**partially superseded 2026-06-18 — see §0:** the dev↔user communication slice — posting updates / early-access to subscribers — was promoted to the `developer-updates` backlog feature; algorithmic re-boost stays deferred.)* |
+| **Collections & follows** (§6 User-facing) | Engagement nicety, not part of the core hypotheses. | — *(**superseded 2026-06-18 — see §0:** "follows" promoted to the `app-subscriptions` backlog feature; after the signal-capture pivot it's load-bearing for the on-platform corpus, not just a nicety.)* |
 | **Developer subscription / monetization** (§5.6) | Free tier must always be enough to launch; no revenue needed to validate. | Everything free during MVP. |
 | **Reviewer reputation weighting** (§3.2) | Earned slowly over time; nothing to weight yet. | All curated signal treated equally for now. |
 
@@ -71,6 +104,13 @@ records signal.
 > engagement tracking (Open Question #4). The design flags it as *"a genuine technical
 > hard problem to prototype early."* It lives in the MVP under **Signal Capture** (§4.5)
 > precisely because deferring it would invalidate H2 and H3.
+>
+> **Superseded 2026-06-18 (see §0):** the approved signal-capture brief reframes this. For
+> the **web-only** niche the hard, must-capture signal is **on-platform engagement** (return
+> visits *via the platform*, subscribes, on-page re-engagement) — the *off-platform* attribution
+> proxy is demoted to best-effort **secondary**, and the genuinely hard off-platform-install
+> case is the mobile/desktop one, deferred with D-1. So this box's "must not defer" still holds,
+> but the thing not being deferred is on-platform capture, not the off-platform proxy.
 
 ---
 
@@ -130,6 +170,12 @@ thin version; the **proves** column ties it to a hypothesis.
 > not rewrites. If it's modeled badly, the whole north-star architecture inherits the debt.
 > The Architect (Stage 2) should treat the event schema here as a near-irreversible,
 > repo-wide decision and log it in [DECISIONS.md](../DECISIONS.md).
+>
+> **Amended 2026-06-18 (see §0):** the MVP-slice cell above leads with the off-platform
+> attribution prototype; the approved brief makes that **secondary** and the **on-platform
+> engagement** funnel (return-to-platform / subscribe / on-page re-engagement / share) the
+> spine. The "model the schema well, once" mandate is unchanged and now also covers the events
+> emitted by the new `app-subscriptions` / `developer-updates` surfaces.
 
 ---
 
@@ -149,10 +195,17 @@ Phase 2 — Close the user loop and start measuring
   interest-profile ─► weekly-digest ─► (impression/click signals flow into signal-capture)
   ratings-reviews   (curated-gate recorded)
   open-search-browse  (minimal; enables open-access + direct-link integrity premise)
+  app-subscriptions   (added 2026-06-18, §0; user follows apps → on-platform return/engagement signal)
 
 Phase 3 — Make developer value visible
   developer-dashboard  (reads everything signal-capture + ratings-reviews collected)
+  developer-updates    (added 2026-06-18, §0; dev posts updates/early-access to subscribers; needs app-subscriptions)
 ```
+
+> **Note (2026-06-18, §0):** `app-subscriptions` and `developer-updates` are backlog
+> additions, not yet sequenced into committed work — placed here at their natural dependency
+> positions (subscriptions before the dev channel that addresses subscribers). They are
+> candidates for a future D2-style pick, alongside the rest of the backlog.
 
 **Thinnest end-to-end slice that tests H1+H2+H3 at once:** Phase 0 + Phase 1 +
 `weekly-digest` + `signal-capture` + a stub `developer-dashboard`. Everything else

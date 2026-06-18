@@ -31,7 +31,9 @@ is decision **D2** and belongs to the user.
 | [weekly-digest](weekly-digest/) | 2 User loop | backlog | 2026-06-13 | H1 | editorial-curation-tools, app-pages, signal-capture | _backlog_ |
 | [ratings-reviews](ratings-reviews/) | 2 User loop | backlog | 2026-06-13 | H1, H3 | app-pages, signal-capture | _backlog_ |
 | [open-search-browse](open-search-browse/) | 2 User loop | backlog | 2026-06-13 | enabler / H3 | app-pages | _backlog_ |
+| [app-subscriptions](app-subscriptions/) | 2 User loop | backlog | 2026-06-18 | H1 (feeds H3) | app-pages, identity-accounts, signal-capture | _backlog — net-new from signal-capture SC-7/SC-8 (OQ-4): user-side engagement loop (follow apps + update/early-access notices) that generates the on-platform signal the corpus measures_ |
 | [developer-dashboard](developer-dashboard/) | 3 Dev value | backlog | 2026-06-13 | H2 | signal-capture, ratings-reviews | _backlog_ |
+| [developer-updates](developer-updates/) | 3 Dev value | backlog | 2026-06-18 | H2 | app-subscriptions, app-pages, signal-capture | _backlog — net-new from signal-capture SC-7/SC-8 (OQ-4): developer-side channel (post updates / early-access / talk to subscribers) — platform as the dev's front page_ |
 
 > Stage values: see the routing table in [../CLAUDE.md](../CLAUDE.md) §2. `backlog` is a
 > pre-pipeline holding state, not a canonical pipeline stage.

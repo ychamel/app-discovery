@@ -17,10 +17,10 @@ Rules:
 | Field              | Value                                                            |
 |--------------------|------------------------------------------------------------------|
 | **Active feature** | `signal-capture`                                                 |
-| **Stage**          | `1-define`                                                       |
-| **Persona**        | Product Analyst (see [phase-1-product-analyst.md](process/personas/phase-1-product-analyst.md)) |
+| **Stage**          | `2-design`                                                       |
+| **Persona**        | Software Architect (see [phase-2-architect.md](process/personas/phase-2-architect.md)) |
 | **Folder**         | [features/signal-capture/](features/signal-capture/)             |
-| **Last updated**   | 2026-06-18 — **FEATURE_BRIEF.md drafted** (Product Analyst). Awaiting approval (**DN-5**) before Stage-2 hand-off; one privacy confirmation (SC-6) to settle. |
+| **Last updated**   | 2026-06-18 — **FEATURE_BRIEF.md APPROVED** (DN-5 → A; SC-6 privacy posture ratified by the approval). Spine pivoted to on-platform engagement (SC-7/SC-8). Incentive surfaces logged as two backlog features — `app-subscriptions`, `developer-updates` (OQ-4 resolved). **Handed to the Software Architect for Stage 2** (event schema = repo-wide, near-irreversible decision). |
 
 > **Closed out (Stage 6 skipped, reopenable):** `identity-accounts` (2026-06-17, 108
 > tests), `interest-taxonomy` (2026-06-17, 184 tests), and `submission-intake`
@@ -34,23 +34,24 @@ Rules:
 ### Latest session status (CLAUDE.md §6.7 — overwritten each session)
 
 ```
-Stage: 1-define | Feature: signal-capture | Persona: Product Analyst
-Done: Drafted features/signal-capture/FEATURE_BRIEF.md from the request + vision doc — problem,
-      goal, 7 user stories, 10 Given/When/Then ACs, 6 success metrics, in/out-of-scope, constraints
-      (C1–C5 + assumptions A1–A5), 5 risks, vision alignment (§3.1/§3.2, §5.4, H3→H1/H2). Held the
-      line on scope: the brief defines WHAT to capture (impression→click→open→return 3d/14d→share,
-      keyed user×App.id×impression, capture-time Tag.id category tags, raw-not-scored) and leaves the
-      event-SCHEMA + attribution-mechanism to Stage 2. Adopted D-1 (web-only → native-install
-      attribution out, click-through-and-return proxy is the model), D-3 (key to Account.id),
-      D-5/D-6 (tags by Tag.id, apps by App.id via selectors). Logged confirmation calls SC-1…SC-6 in
-      features/signal-capture/DECISIONS.md and OQ-1…OQ-3 in OPEN_QUESTIONS.md.
-Verified by: n/a (Stage-1 artifact only; no code).
-Blocked/Deferred: Awaiting brief approval (DN-5) before Stage-2 hand-off. SC-6 (privacy posture,
-      §6.5 escalation) is the one substantive call needing explicit confirmation. Carried forward
-      for design: event schema = repo-wide near-irreversible (log in /DECISIONS.md); proxy under-count
-      is a known limitation (R1/OQ-3); owner/account-deletion vs. retention to reconcile.
-Decisions needed: DN-5 — approve FEATURE_BRIEF.md (and confirm/adjust the SC-6 privacy posture).
-Next: On approval, advance to Stage 2-design / Software Architect; otherwise revise per feedback.
+Stage: 2-design | Feature: signal-capture | Persona: Software Architect (handed off this session by the Product Analyst)
+Done: FEATURE_BRIEF.md APPROVED by the user (DN-5 → A); SC-6 privacy posture ratified by the approval
+      (pseudonymous in-platform events keyed to Account.id, ToS consent, no auto-purge). Earlier this
+      session the brief's spine was pivoted to on-platform engagement (SC-7/SC-8). Then, at the user's
+      request, logged the incentive surfaces as TWO new backlog features: `app-subscriptions` (Phase 2,
+      user-side — follow apps + update/early-access notices) and `developer-updates` (Phase 3,
+      developer-side — post updates / early-access / talk to subscribers; early-access folded in, not
+      split). Both scaffolded with the 7 standard artifacts + scope seed citing their provenance
+      (signal-capture SC-7/SC-8, OQ-4); INDEX.md rows added; OQ-4 marked resolved; SC-8 updated.
+Verified by: n/a (Stage-1 artifacts + backlog scaffolding only; no code).
+Blocked/Deferred: none blocking. For Stage 2 (Architect): the event SCHEMA is a repo-wide,
+      near-irreversible decision — design it and record it in the global /DECISIONS.md, not feature-local
+      (breakdown §4.5, signal-capture R2). The off-platform proxy (OQ-1) is now SECONDARY — design a seam,
+      do not over-build. The two new backlog features emit into this schema; design the capture contract
+      so they (and weekly-digest/app-pages/ratings-reviews) call one write path (brief A5).
+Decisions needed: none.
+Next: Software Architect reads features/signal-capture/FEATURE_BRIEF.md + the codebase and writes
+      features/signal-capture/DESIGN.md (event schema as a global decision; the on-platform capture contract).
 ```
 
 ---
@@ -62,9 +63,9 @@ proceeds.
 
 | ID | Decision needed | Context | Answer |
 |----|-----------------|---------|--------|
-| **DN-5** | **Approve `signal-capture` FEATURE_BRIEF.md?** And confirm or adjust the proposed MVP **privacy posture (SC-6)**: pseudonymous in-platform behavioral events keyed to `Account.id`; consent via signup ToS (no per-event opt-in) given the small hand-recruited cohort; **no auto-purge** (the H3 backtest needs the historical corpus). | The brief is complete and reviewable. SC-6 is the only call with privacy implications (CLAUDE.md §6.5), left an open fork by D-2 / breakdown §7 Q4. The attribution *mechanism* (OQ-1) is correctly deferred to Stage 2. | _(unanswered)_ |
+| _(none open)_ | — | — | — |
 
-> Resolved decisions (DN-1, DN-2, DN-3, DN-4 …) are summarized under *Decisions Made* below; full
+> Resolved decisions (DN-1 … DN-5) are summarized under *Decisions Made* below; full
 > rationale lives in the decision logs.
 
 ---
@@ -74,6 +75,8 @@ proceeds.
 A short, human-readable digest. Full rationale lives in [DECISIONS.md](DECISIONS.md)
 (global) or `features/<slug>/DECISIONS.md` (local).
 
+- **DN-5 → A (2026-06-18)** — **`signal-capture` FEATURE_BRIEF.md approved**; the SC-6 privacy posture (pseudonymous in-platform events keyed to `Account.id`, ToS consent, no auto-purge for the H3 backtest) **ratified by the approval**. Advanced to `2-design`; handed to the Software Architect (event schema = repo-wide decision). Same session: logged the incentive surfaces as two new backlog features — **`app-subscriptions`** (Phase 2) and **`developer-updates`** (Phase 3) — scaffolded + added to [INDEX.md](features/INDEX.md); OQ-4 resolved (SC-8).
+- **SC-7/SC-8 (2026-06-18, user review)** — **`signal-capture` brief spine PIVOTED to on-platform engagement.** User's call: we can't track off-platform behavior, so measure observable on-platform signal and incentivize users/devs onto the platform rather than chase a lossy proxy. Captured spine is now impression→click-through→**return-to-platform(3d/14d)**→**subscribe/follow**→**on-page re-engagement**→share (all directly observed, more faithful to vision Open Q #4); off-platform open/return demoted to best-effort **secondary** (R1 High→Low). The incentive surfaces that generate the signal (subscriptions, dev↔user comms, early access) are held **out of scope** (CLAUDE.md §6.4) and logged as **OQ-4** for the Coordinator. Brief revised; still awaiting final approval + SC-6 (DN-5).
 - **DN-4 → A (2026-06-18)** — **`signal-capture` activated** as the next feature (Phase-0, the last Foundation enabler; deps `identity-accounts` met). Chosen over `app-pages` to finish Phase 0 before widening. Set `Stage: 1-define`; scaffold already present; handed to Product Analyst.
 - **DN-3 → A (2026-06-18)** — `submission-intake` **closed out**; Stage-6 retrospective **skipped** (outcome review deferred/reopenable when a consumer + live metrics exist — mirrors `identity-accounts` and DN-1/`interest-taxonomy`). Returned to Coordinator. Raised **DN-4** to pick the next feature (`signal-capture` vs `app-pages` — both now have all dependencies met).
 - **Release-SI (2026-06-18)** — `submission-intake` **released to local/dev**. [RELEASE_NOTES.md](features/submission-intake/RELEASE_NOTES.md) written (changes, downstream D-6 action, operator rollout, gate-based promotion, success-metric→signal→alert map, known limits). Rollout→rollback **rehearsed on a throwaway Postgres DB**: migrate → 4 `catalog_*` tables + shared `citext` → `check` clean → `migrate catalog zero` reverses to 0 tables (`citext` retained) → re-apply (reversible). **315 tests / ruff / check / no-drift** re-verified. Live-metrics window deferred (no consumer/prod target). Advanced to `6-post-release`; **DN-3** raised (run Stage 6 now vs skip, as DN-1).
@@ -101,6 +104,8 @@ folders remain the full record either way.
 
 | Date       | Stage           | Summary                                                                 |
 |------------|-----------------|-------------------------------------------------------------------------|
+| 2026-06-18 | `1-define`→`2-design` | **Product Analyst** (hand-off) — **[signal-capture/FEATURE_BRIEF.md](features/signal-capture/FEATURE_BRIEF.md) APPROVED** (DN-5 → A); SC-6 privacy posture ratified by the approval. At the user's request, **logged the incentive surfaces as two new backlog features**: [app-subscriptions](features/app-subscriptions/) (Phase 2 User loop — user follows apps + update/early-access notices; H1, feeds H3) and [developer-updates](features/developer-updates/) (Phase 3 Dev value — dev posts updates/early-access/talks to subscribers; H2). Both scaffolded with the 7 standard artifacts + a scope seed citing provenance (signal-capture SC-7/SC-8, OQ-4); [INDEX.md](features/INDEX.md) rows added; **OQ-4 resolved**, SC-8 updated. Advanced `signal-capture` to **`2-design`** and handed to the **Software Architect** (event schema = repo-wide, near-irreversible decision → global /DECISIONS.md). |
+| 2026-06-18 | `1-define`      | **Product Analyst** (brief review w/ user) — **pivoted the [signal-capture/FEATURE_BRIEF.md](features/signal-capture/FEATURE_BRIEF.md) spine to on-platform engagement** (SC-7). The draft hung the corpus on an off-platform funnel carried by a lossy proxy (R1 High/High); the user's steer — can't see off-platform, so measure observable on-platform signal and incentivize staying — is also more faithful to vision Open Q #4 (web-app return visits observed *via the platform*). New captured spine: impression→click-through→**return-to-platform(3d/14d)**→**subscribe/follow**→**on-page re-engagement**→share; off-platform open/return demoted to flagged **best-effort secondary** (R1→High/**Low**). Held the §6.4 line: the **incentive surfaces** (subscriptions, dev↔user comms, early access) that *generate* the signal are OUT (logged **OQ-4** for the Coordinator), not folded in. Rewrote Goal/terms/story 3/AC4–AC11/metrics/scope/A6/R1/R6/vision. Logged **SC-7/SC-8**, revised SC-3, added OQ-4. Brief still awaiting approval + SC-6 (**DN-5**). |
 | 2026-06-18 | `1-define`      | **Product Analyst** — drafted [signal-capture/FEATURE_BRIEF.md](features/signal-capture/FEATURE_BRIEF.md): the Phase-0 measurement spine. Problem (capture-before-first-impression or lose the H3 corpus forever; schema-first because every later surface emits/reads it), goal, **7 stories / 10 G-W-T ACs / 6 metrics**, in/out-of-scope, C1–C5 + A1–A5, 5 risks, vision alignment. Defined **what** to capture (impression→click-through→open→return 3d/14d→share; keyed **user × `App.id` × impression**; capture-time `Tag.id` category tags; **raw-not-scored**) and kept the event **schema + attribution mechanism** for Stage 2. Adopted D-1 (web-only → native-install attribution out, click-through-and-return proxy), D-3/D-5/D-6 reference contracts. Logged **SC-1…SC-6** ([DECISIONS.md](features/signal-capture/DECISIONS.md)) + **OQ-1…OQ-3** ([OPEN_QUESTIONS.md](features/signal-capture/OPEN_QUESTIONS.md)). Raised **DN-5** (approve brief + confirm SC-6 privacy posture); awaiting approval before Stage-2 hand-off. |
 | 2026-06-18 | `0-coordinator`→`1-define` | **Coordinator** — DN-4 resolved → Option A: **activated `signal-capture`** (Phase-0, last Foundation enabler; deps `identity-accounts` met) over `app-pages`. Scaffold already present from backlog; set `Stage: 1-define`, updated [INDEX.md](features/INDEX.md), handed to **Product Analyst** to draft [FEATURE_BRIEF.md](features/signal-capture/FEATURE_BRIEF.md). |
 | 2026-06-18 | `6-post-release`→`0-coordinator` | **Coordinator** — DN-3 resolved → Option A: **`submission-intake` closed out**, Stage-6 retrospective skipped (outcome review deferred/reopenable, mirrors `identity-accounts`/`interest-taxonomy`). All three released features now closed-out. Updated [INDEX.md](features/INDEX.md). Surveyed backlog: with all deps met, **`signal-capture`** (Phase-0, last Foundation enabler) and **`app-pages`** (Phase-1, builds on `submission-intake`) are both available. Raised **DN-4** for the next-feature pick (D2). |
