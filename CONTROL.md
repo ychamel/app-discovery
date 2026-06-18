@@ -20,7 +20,7 @@ Rules:
 | **Stage**          | `1-define`                                                       |
 | **Persona**        | Product Analyst (see [phase-1-product-analyst.md](process/personas/phase-1-product-analyst.md)) |
 | **Folder**         | [features/signal-capture/](features/signal-capture/)             |
-| **Last updated**   | 2026-06-18 — **DN-4 → A**: `signal-capture` activated at Stage 1. `submission-intake` closed out (DN-3 A). Product Analyst to draft FEATURE_BRIEF.md. |
+| **Last updated**   | 2026-06-18 — **FEATURE_BRIEF.md drafted** (Product Analyst). Awaiting approval (**DN-5**) before Stage-2 hand-off; one privacy confirmation (SC-6) to settle. |
 
 > **Closed out (Stage 6 skipped, reopenable):** `identity-accounts` (2026-06-17, 108
 > tests), `interest-taxonomy` (2026-06-17, 184 tests), and `submission-intake`
@@ -34,24 +34,23 @@ Rules:
 ### Latest session status (CLAUDE.md §6.7 — overwritten each session)
 
 ```
-Stage: 6-post-release → 0-coordinator | Feature: submission-intake → none | Persona: Coordinator
-Done: DN-3 resolved → Option A. CLOSED OUT submission-intake (Stage 6 retrospective skipped,
-      reopenable when a consumer + live metrics exist — mirrors identity-accounts/interest-taxonomy).
-      Updated CONTROL.md (Current State → Coordinator) and features/INDEX.md (submission-intake →
-      closed-out). Surveyed the backlog for the next available feature: with identity-accounts,
-      interest-taxonomy and submission-intake all released, two features now have all dependencies
-      met — signal-capture (Phase 0 Foundation, the last Phase-0 enabler, depends on identity-accounts)
-      and app-pages (Phase 1 Catalog, depends on submission-intake). Raised DN-4 to pick between them.
-Verified by: n/a (Coordinator close-out + routing; no code changed).
-Blocked/Deferred: submission-intake live-metrics/outcome report deferred (no consumer/prod target).
-      Carried-forward data flags for whoever builds next: app-pages must adopt DESIGN §9 media limits
-      + the D-6 read contract (list_catalogued_apps/get_catalogued_app) before storing any app reference;
-      owner-account-deletion CASCADE to revisit at signal-capture.
-      DN-4 → A: activated signal-capture (scaffold already present from backlog), set Stage 1-define,
-      updated INDEX row, handed to Product Analyst.
-Decisions needed: none.
-Next: Product Analyst (Stage 1) reads the request + vision doc and drafts
-      features/signal-capture/FEATURE_BRIEF.md (then awaits approval before Stage-2 handoff).
+Stage: 1-define | Feature: signal-capture | Persona: Product Analyst
+Done: Drafted features/signal-capture/FEATURE_BRIEF.md from the request + vision doc — problem,
+      goal, 7 user stories, 10 Given/When/Then ACs, 6 success metrics, in/out-of-scope, constraints
+      (C1–C5 + assumptions A1–A5), 5 risks, vision alignment (§3.1/§3.2, §5.4, H3→H1/H2). Held the
+      line on scope: the brief defines WHAT to capture (impression→click→open→return 3d/14d→share,
+      keyed user×App.id×impression, capture-time Tag.id category tags, raw-not-scored) and leaves the
+      event-SCHEMA + attribution-mechanism to Stage 2. Adopted D-1 (web-only → native-install
+      attribution out, click-through-and-return proxy is the model), D-3 (key to Account.id),
+      D-5/D-6 (tags by Tag.id, apps by App.id via selectors). Logged confirmation calls SC-1…SC-6 in
+      features/signal-capture/DECISIONS.md and OQ-1…OQ-3 in OPEN_QUESTIONS.md.
+Verified by: n/a (Stage-1 artifact only; no code).
+Blocked/Deferred: Awaiting brief approval (DN-5) before Stage-2 hand-off. SC-6 (privacy posture,
+      §6.5 escalation) is the one substantive call needing explicit confirmation. Carried forward
+      for design: event schema = repo-wide near-irreversible (log in /DECISIONS.md); proxy under-count
+      is a known limitation (R1/OQ-3); owner/account-deletion vs. retention to reconcile.
+Decisions needed: DN-5 — approve FEATURE_BRIEF.md (and confirm/adjust the SC-6 privacy posture).
+Next: On approval, advance to Stage 2-design / Software Architect; otherwise revise per feedback.
 ```
 
 ---
@@ -61,7 +60,9 @@ Next: Product Analyst (Stage 1) reads the request + vision doc and drafts
 The agent is blocked on these. Answer inline (edit the **Answer** cell), then the agent
 proceeds.
 
-_No open decisions._ DN-4 resolved → **A (`signal-capture`)**; the feature is active at Stage 1.
+| ID | Decision needed | Context | Answer |
+|----|-----------------|---------|--------|
+| **DN-5** | **Approve `signal-capture` FEATURE_BRIEF.md?** And confirm or adjust the proposed MVP **privacy posture (SC-6)**: pseudonymous in-platform behavioral events keyed to `Account.id`; consent via signup ToS (no per-event opt-in) given the small hand-recruited cohort; **no auto-purge** (the H3 backtest needs the historical corpus). | The brief is complete and reviewable. SC-6 is the only call with privacy implications (CLAUDE.md §6.5), left an open fork by D-2 / breakdown §7 Q4. The attribution *mechanism* (OQ-1) is correctly deferred to Stage 2. | _(unanswered)_ |
 
 > Resolved decisions (DN-1, DN-2, DN-3, DN-4 …) are summarized under *Decisions Made* below; full
 > rationale lives in the decision logs.
@@ -100,6 +101,7 @@ folders remain the full record either way.
 
 | Date       | Stage           | Summary                                                                 |
 |------------|-----------------|-------------------------------------------------------------------------|
+| 2026-06-18 | `1-define`      | **Product Analyst** — drafted [signal-capture/FEATURE_BRIEF.md](features/signal-capture/FEATURE_BRIEF.md): the Phase-0 measurement spine. Problem (capture-before-first-impression or lose the H3 corpus forever; schema-first because every later surface emits/reads it), goal, **7 stories / 10 G-W-T ACs / 6 metrics**, in/out-of-scope, C1–C5 + A1–A5, 5 risks, vision alignment. Defined **what** to capture (impression→click-through→open→return 3d/14d→share; keyed **user × `App.id` × impression**; capture-time `Tag.id` category tags; **raw-not-scored**) and kept the event **schema + attribution mechanism** for Stage 2. Adopted D-1 (web-only → native-install attribution out, click-through-and-return proxy), D-3/D-5/D-6 reference contracts. Logged **SC-1…SC-6** ([DECISIONS.md](features/signal-capture/DECISIONS.md)) + **OQ-1…OQ-3** ([OPEN_QUESTIONS.md](features/signal-capture/OPEN_QUESTIONS.md)). Raised **DN-5** (approve brief + confirm SC-6 privacy posture); awaiting approval before Stage-2 hand-off. |
 | 2026-06-18 | `0-coordinator`→`1-define` | **Coordinator** — DN-4 resolved → Option A: **activated `signal-capture`** (Phase-0, last Foundation enabler; deps `identity-accounts` met) over `app-pages`. Scaffold already present from backlog; set `Stage: 1-define`, updated [INDEX.md](features/INDEX.md), handed to **Product Analyst** to draft [FEATURE_BRIEF.md](features/signal-capture/FEATURE_BRIEF.md). |
 | 2026-06-18 | `6-post-release`→`0-coordinator` | **Coordinator** — DN-3 resolved → Option A: **`submission-intake` closed out**, Stage-6 retrospective skipped (outcome review deferred/reopenable, mirrors `identity-accounts`/`interest-taxonomy`). All three released features now closed-out. Updated [INDEX.md](features/INDEX.md). Surveyed backlog: with all deps met, **`signal-capture`** (Phase-0, last Foundation enabler) and **`app-pages`** (Phase-1, builds on `submission-intake`) are both available. Raised **DN-4** for the next-feature pick (D2). |
 | 2026-06-18 | `5-release`→`6-post-release` | **Release Engineer** — released `submission-intake` to local/dev. Wrote [RELEASE_NOTES.md](features/submission-intake/RELEASE_NOTES.md) (changes, who's affected + the **D-6** action required of downstream, operator rollout, gate-based promotion, success-metric→signal→alert map, rehearsed rollback, known limits). **Rehearsed rollout→rollback on a throwaway Postgres DB**: `migrate` → 4 `catalog_*` tables (`catalog_app`/`_app_tag`/`_app_media`/`_review_decision`) + shared `citext` → `check` clean → `migrate catalog zero` reverses to **0 `catalog_*` tables** (shared `citext` retained) → re-`migrate catalog` re-applies (reversible). Re-verified **315 tests / `ruff` / `check` / no drift**. Live-metrics window deferred (local/dev, no consumer yet). Updated [INDEX.md](features/INDEX.md). Raised **DN-3** (run Stage 6 now vs skip, as DN-1). Handed to Retrospective Analyst. |
