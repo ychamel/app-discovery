@@ -1,0 +1,32 @@
+{% extends "catalog/base.html" %}
+{% block title %}My apps · App Discovery{% endblock %}
+
+{% block content %}
+  <h1>My apps</h1>
+  <p><a href="{% url 'catalog:submit' %}">Submit an app</a></p>
+
+  {% if not apps %}
+    <p>You haven't submitted an app yet.</p>
+  {% else %}
+    <ul>
+      {% for app in apps %}
+        <li>
+          <a href="{% url 'catalog:app-detail' app_id=app.id %}">{{ app.name }}</a>
+          — <strong>{{ app.status }}</strong>
+          {% if app.status == "rejected" and app.latest_decision %}
+            <div role="alert">
+              <p>This app needs changes before it can be listed:</p>
+              <ul>
+                {% for criterion in app.latest_decision.failed_criteria %}
+                  <li>{{ criterion }}</li>
+                {% endfor %}
+              </ul>
+              {% if app.latest_decision.note %}<p>Reviewer note: {{ app.latest_decision.note }}</p>{% endif %}
+              <p><a href="{% url 'catalog:app-detail' app_id=app.id %}">Correct &amp; resubmit</a></p>
+            </div>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endblock %}

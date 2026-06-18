@@ -1,0 +1,52 @@
+{% extends "catalog/base.html" %}
+{% block title %}Review {{ app.name }} · App Discovery{% endblock %}
+
+{% block content %}
+  <p><a href="{% url 'catalog:review' %}">← Review queue</a></p>
+  <h1>{{ app.name }}</h1>
+
+  {% if error %}<p role="alert">{{ error }}</p>{% endif %}
+
+  <dl>
+    <dt>Owner</dt><dd>{{ owner_email }}</dd>
+    <dt>URL</dt><dd><a href="{{ app.url }}" rel="noopener noreferrer" target="_blank">{{ app.url }}</a></dd>
+    <dt>Description</dt><dd>{{ app.description }}</dd>
+    <dt>Tags</dt><dd>{% for tag in app.tags %}{{ tag.label }}{% if not forloop.last %}, {% endif %}{% endfor %}</dd>
+    {% if duplicate_hint %}<dt>Duplicate signal</dt><dd role="alert">{{ duplicate_hint }} other app(s) share this URL</dd>{% endif %}
+  </dl>
+
+  <section>
+    <h2>Screenshots</h2>
+    {% for media in app.media %}
+      <img src="{{ media.url }}" alt="{{ media.alt_text }}" width="200">
+    {% endfor %}
+  </section>
+
+  <section>
+    <h2>Objective checklist</h2>
+    <p>Accept only if every floor passes. To reject, name each floor that fails — there is
+       no "low quality" option; rejection is never a matter of taste.</p>
+
+    <form method="post" action="{% url 'catalog:review-detail' app_id=app.id %}">
+      {% csrf_token %}
+      <ul>
+        {% for item in checklist %}
+          <li>
+            <label>
+              <input type="checkbox" name="failed_criteria" value="{{ item.value }}">
+              <strong>{{ item.label }}</strong> — {{ item.hint }}
+            </label>
+          </li>
+        {% endfor %}
+      </ul>
+
+      <p>
+        <label for="id_note">Note to the developer (shown on rejection)</label>
+        <textarea name="note" id="id_note"></textarea>
+      </p>
+
+      <button type="submit" name="action" value="accept">Accept</button>
+      <button type="submit" name="action" value="reject">Reject (with the floors checked above)</button>
+    </form>
+  </section>
+{% endblock %}

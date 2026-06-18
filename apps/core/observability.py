@@ -35,6 +35,19 @@ TAXONOMY_TAG_RETIRED = "taxonomy_tag_retired"
 TAXONOMY_REFERENCE_BREAK = "taxonomy_reference_break"  # alert: resolve hit a cycle/over-long chain
 TAXONOMY_INTEGRITY_VIOLATION = "taxonomy_integrity_violation"  # alert: orphan/duplicate found
 
+# submission-intake metrics (DESIGN.md §9), 1:1 with the brief's success metrics. The
+# off-vocabulary counter must stay 0 in a healthy system — alert on any nonzero value.
+SUBMISSION_STARTED = "submission_started"
+SUBMISSION_COMPLETED = "submission_completed"
+SUBMISSION_CREATED = "submission_created"
+APP_WITHDRAWN = "app_withdrawn"
+APP_RESUBMITTED = "app_resubmitted"
+APP_ACCEPTED = "app_accepted"
+APP_REJECTED = "app_rejected"
+REVIEW_DECISION = "review_decision"  # tags: outcome, and per failed criterion on reject
+TAG_OFF_VOCABULARY_REJECTED = "tag_off_vocabulary_rejected"  # alert: must stay 0 (AC4)
+DUPLICATE_FLAGGED = "duplicate_flagged"
+
 metrics_logger = logging.getLogger("apps.metrics")
 
 

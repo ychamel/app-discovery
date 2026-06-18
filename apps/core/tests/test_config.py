@@ -59,6 +59,29 @@ class RateLimitTests(SimpleTestCase):
             config.rate_limit_per_email_per_hour()
 
 
+class CatalogMediaLimitTests(SimpleTestCase):
+    def test_defaults(self):
+        for env_name in ("CATALOG_MEDIA_MAX_COUNT", "CATALOG_MEDIA_MAX_BYTES"):
+            os.environ.pop(env_name, None)
+        self.assertEqual(config.catalog_media_max_count(), 8)
+        self.assertEqual(config.catalog_media_max_bytes(), 5 * 1024 * 1024)
+
+    @override_settings(CATALOG_MEDIA_MAX_COUNT=3, CATALOG_MEDIA_MAX_BYTES=1024)
+    def test_setting_override(self):
+        self.assertEqual(config.catalog_media_max_count(), 3)
+        self.assertEqual(config.catalog_media_max_bytes(), 1024)
+
+    @override_settings(CATALOG_MEDIA_MAX_COUNT=0)
+    def test_zero_count_fails_loudly(self):
+        with self.assertRaises(ImproperlyConfigured):
+            config.catalog_media_max_count()
+
+    @override_settings(CATALOG_MEDIA_MAX_BYTES="huge")
+    def test_non_numeric_bytes_fails_loudly(self):
+        with self.assertRaises(ImproperlyConfigured):
+            config.catalog_media_max_bytes()
+
+
 class ValidateAllTests(SimpleTestCase):
     def test_passes_with_defaults(self):
         config.validate_all()  # should not raise

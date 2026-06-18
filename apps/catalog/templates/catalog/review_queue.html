@@ -1,0 +1,22 @@
+{% extends "catalog/base.html" %}
+{% block title %}Review queue · App Discovery{% endblock %}
+
+{% block content %}
+  <h1>Review queue</h1>
+
+  {% if not rows %}
+    <p>No apps awaiting review.</p>
+  {% else %}
+    <ul>
+      {% for row in rows %}
+        <li>
+          <a href="{% url 'catalog:review-detail' app_id=row.app.id %}">{{ row.app.name }}</a>
+          — submitted by {{ row.owner.email }} at {{ row.submitted_at }}
+          {% if row.duplicate_hint %}
+            <strong role="alert">{{ row.duplicate_hint }} other app(s) share this URL</strong>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endblock %}

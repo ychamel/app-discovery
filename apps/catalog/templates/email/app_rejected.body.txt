@@ -1,0 +1,15 @@
+{% autoescape off %}Thanks for submitting "{{ app_name }}". It isn't listed yet because it did not meet
+the following objective requirement(s):
+
+{% for criterion in failed_criteria %}  - {{ criterion }}
+{% endfor %}
+{% if note %}Reviewer note:
+{{ note }}
+{% endif %}
+These are objective checks, not a judgement of taste. Once you've addressed them you
+can correct the app and resubmit it for review:
+
+App URL: {{ app_url }}
+
+— The App Discovery team
+{% endautoescape %}

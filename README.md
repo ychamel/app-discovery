@@ -58,6 +58,47 @@ GET /taxonomy/clusters      # clusters with their active tags
 In-process consumers read through `apps.taxonomy.selectors` — `is_valid_tag(id)` at their
 write boundary and `resolve_tag(id)` at read (the D-5 contract).
 
+## App catalog (`apps/catalog`)
+
+A developer's self-serve way to submit a web app, run it through an **objective** intake
+gate (five fixed floors — works / not spam / not duplicate / honest metadata / basic
+policy; **never taste**, [D-6](DECISIONS.md)), and produce an owned, correctly-tagged,
+**accepted** app the rest of the platform reads.
+
+```bash
+pip install -e ".[dev]"               # brings in Pillow (image validation)
+python manage.py migrate catalog      # create the four tables (no content)
+```
+
+Uploaded screenshots are written under `MEDIA_ROOT` (defaults to `./media`; serve via a
+web server / object store in production). Per-app media limits are typed tunables
+(`CATALOG_MEDIA_MAX_COUNT`, default 8; `CATALOG_MEDIA_MAX_BYTES`, default 5 MB) — **the
+published media contract `app-pages` must adopt: 1–8 images, PNG/JPEG/WebP, ≤5 MB each.**
+
+Human flows (server-rendered, role-gated):
+
+```
+GET/POST /catalog/submit          # developer: submit an app
+GET      /catalog/apps            # developer: my apps + status + rejection reasons
+GET/POST /catalog/apps/{id}       # developer: edit / withdraw / resubmit / media
+GET      /catalog/review          # admin: FIFO review queue + duplicate hint
+GET/POST /catalog/review/{id}     # admin: five-floor checklist → accept / reject
+```
+
+JSON API (session + role): developer endpoints under `/catalog/api/apps…` (create, mine,
+detail, patch, media, withdraw, resubmit); review under `/catalog/api/review/queue` and
+`/catalog/api/apps/{id}/decision`.
+
+**Reading the catalog downstream:** consumers store **only `App.id`** and read through
+`apps.catalog.selectors.list_catalogued_apps` / `get_catalogued_app`, which return
+**accepted apps only**, with tags resolved via `resolve_tag` and media in stable order
+(the [D-6](DECISIONS.md) contract — adopt it before storing any app reference). Never read
+`catalog_app` directly past this surface.
+
+Rollback: `python manage.py migrate catalog zero` drops the four tables (the shared
+`citext` extension is retained); clear `MEDIA_ROOT` if you also want the uploaded files
+removed.
+
 ## Tests and linting
 
 ```bash

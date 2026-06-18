@@ -29,6 +29,10 @@ DEFAULT_RATE_LIMIT_PER_IP_PER_HOUR = 20
 # cycle/over-long chain (interest-taxonomy DESIGN.md §5a/§10). A handful of merges is
 # realistic; anything beyond this is treated as corrupt data, not a longer chain.
 DEFAULT_TAXONOMY_RESOLVE_MAX_STEPS = 16
+# Per-app screenshot/media bounds (submission-intake DESIGN.md §9, resolves OQ-3). The
+# count cap and the per-file byte ceiling are the published contract `app-pages` adopts.
+DEFAULT_CATALOG_MEDIA_MAX_COUNT = 8
+DEFAULT_CATALOG_MEDIA_MAX_BYTES = 5 * 1024 * 1024  # 5 MB
 
 
 def _resolve_raw(setting_name: str, env_name: str, default: int) -> object:
@@ -91,9 +95,29 @@ def taxonomy_resolve_max_steps() -> int:
     )
 
 
+def catalog_media_max_count() -> int:
+    """Max screenshots/images allowed per submitted app (DESIGN.md §9, OQ-3)."""
+    return _positive_int(
+        "CATALOG_MEDIA_MAX_COUNT",
+        "CATALOG_MEDIA_MAX_COUNT",
+        DEFAULT_CATALOG_MEDIA_MAX_COUNT,
+    )
+
+
+def catalog_media_max_bytes() -> int:
+    """Max byte size accepted for one uploaded app image (DESIGN.md §9, OQ-3)."""
+    return _positive_int(
+        "CATALOG_MEDIA_MAX_BYTES",
+        "CATALOG_MEDIA_MAX_BYTES",
+        DEFAULT_CATALOG_MEDIA_MAX_BYTES,
+    )
+
+
 def validate_all() -> None:
     """Evaluate every tunable so misconfiguration surfaces at startup, not at use."""
     login_token_ttl()
     rate_limit_per_email_per_hour()
     rate_limit_per_ip_per_hour()
     taxonomy_resolve_max_steps()
+    catalog_media_max_count()
+    catalog_media_max_bytes()

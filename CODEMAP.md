@@ -55,6 +55,8 @@ _Built by `identity-accounts` Stage 4. Entries are added as each shared item shi
 - `rate_limit_per_email_per_hour() -> int` — auth-request cap per email (default 5) — `apps/core/config.py`
 - `rate_limit_per_ip_per_hour() -> int` — auth-request cap per client IP (default 20) — `apps/core/config.py`
 - `taxonomy_resolve_max_steps() -> int` — max replaced_by hops `resolve_tag` follows before bailing on a cycle (default 16) — `apps/core/config.py`
+- `catalog_media_max_count() -> int` — max screenshots per submitted app (default 8; submission-intake DESIGN §9) — `apps/core/config.py`
+- `catalog_media_max_bytes() -> int` — max bytes per uploaded app image (default 5 MB; DESIGN §9) — `apps/core/config.py`
 - `validate_all()` — evaluate all tunables at startup (fail loud) — `apps/core/config.py`
 
 ### Email (`apps/core/email.py`)
@@ -69,6 +71,7 @@ _Built by `identity-accounts` Stage 4. Entries are added as each shared item shi
 - `increment(metric, **tags)` — emit a counter event (pluggable; logs today) — `apps/core/observability.py`
 - metric name constants (`REGISTRATION_COMPLETION`, `SIGNIN_SUCCESS`, `AUTH_ERROR`, `ROLE_GATE_DECISION`, `EMAIL_SEND_FAILURE`, `DELETION_FULFILMENT`, `DEVELOPER_ROLE_ADOPTION`, `ADMIN_ROLE_CHANGE`, `SIGNOUT`) — `apps/core/observability.py`
 - taxonomy metric constants (`TAXONOMY_TAG_ADDED`, `TAXONOMY_TAG_RENAMED`, `TAXONOMY_TAG_RETIRED`, `TAXONOMY_REFERENCE_BREAK`, `TAXONOMY_INTEGRITY_VIOLATION`) — `apps/core/observability.py`
+- catalog metric constants (`SUBMISSION_STARTED`, `SUBMISSION_COMPLETED`, `SUBMISSION_CREATED`, `APP_WITHDRAWN`, `APP_RESUBMITTED`, `APP_ACCEPTED`, `APP_REJECTED`, `REVIEW_DECISION`, `TAG_OFF_VOCABULARY_REJECTED`, `DUPLICATE_FLAGGED`) — `apps/core/observability.py`
 - `check_health() -> dict` — DB + email reachability (backs `/health`) — `apps/core/observability.py`
 - `RequestContextFilter` + `RequestContextMiddleware` — inject request id + account UUID into logs — `apps/core/observability.py`, `apps/core/middleware.py`
 
@@ -104,6 +107,26 @@ _Built by `identity-accounts` Stage 4. Entries are added as each shared item shi
 - `get_tag(id) -> Tag | None` — fetch a tag of any status — `apps/taxonomy/selectors.py`
 - `is_valid_tag(id) -> bool` — closed-set validator: True only for an active tag (consumers enforce at their write boundary, AC2) — `apps/taxonomy/selectors.py`
 - `resolve_tag(id) -> Tag | None` — follow `replaced_by` to current meaning; keeps retired refs, cycle-guarded (AC6/AC7) — `apps/taxonomy/selectors.py`
+
+### App catalog — model & gate (`apps/catalog/`)
+- `App` — one submitted web app; UUID `id` is the stable cross-feature reference (D-6); `owner`/`status`/`normalized_url`/`last_submitted_at` — `apps/catalog/models.py`
+- `AppTag` — app↔tag link as a soft `tag_id` UUID (D-5; no DB FK) — `apps/catalog/models.py`
+- `AppMedia` — one ordered screenshot (validated image) — `apps/catalog/models.py`
+- `ReviewDecision` — append-only gate-decision audit row (outcome + failed_criteria) — `apps/catalog/models.py`
+- `Criterion` / `CHECKLIST` / `GATE_RELEVANT_FIELDS` — the fixed five objective floors, no "other" value (AC6) — `apps/catalog/gate.py`
+- `normalize_url(raw) -> str` — single rule for "same app" duplicate signal — `apps/catalog/urlnorm.py`
+
+### App catalog — write surface (`apps/catalog/services.py`, the single mutate path)
+- `submit_app` / `edit_app` / `add_media` / `remove_media` — content writes with the AC1/AC4/§9 boundary invariants — `apps/catalog/services.py`
+- `accept_app` / `reject_app` / `withdraw_app` / `resubmit_app` — lifecycle/decision writes (atomic, row-locked, §7 state machine) — `apps/catalog/services.py`
+- `InvalidTagError` / `MediaLimitError` / `InvalidTransitionError` / `NotOwnerError` — loud write-service failures — `apps/catalog/errors.py`
+
+### App catalog — read surface (`apps/catalog/selectors.py`, the cross-feature substrate — D-6)
+- `get_owned_app(owner, id)` / `list_owned_apps(owner)` — owner-scoped "my apps", any status (no leak, AC8) — `apps/catalog/selectors.py`
+- `list_review_queue() -> list[ReviewRow]` — pending apps FIFO + duplicate hint, no priority field (AC3) — `apps/catalog/selectors.py`
+- `apps_sharing_url(normalized_url, *, exclude=None)` — the duplicate signal (§6c) — `apps/catalog/selectors.py`
+- `list_catalogued_apps()` / `get_catalogued_app(id) -> CatalogApp | None` — **ACCEPTED only**; resolved tags + ordered media (the D-6 downstream contract, AC9) — `apps/catalog/selectors.py`
+- `time_to_decision(app)` / `decision_latencies()` — time-to-decision reporting from stored timestamps (observable, not an SLA) — `apps/catalog/selectors.py`
 
 <!-- Example of the shape this takes once code exists:
 

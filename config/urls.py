@@ -4,6 +4,8 @@ Feature routes are owned by each app and included here. The accounts app
 publishes the auth/profile/admin-role surfaces (DESIGN.md §5/§9).
 """
 
+from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 
@@ -13,5 +15,11 @@ urlpatterns = [
     path("django-admin/", admin.site.urls),
     path("health", health, name="health"),
     path("taxonomy/", include("apps.taxonomy.urls")),
+    path("catalog/", include("apps.catalog.urls")),
     path("", include("apps.accounts.urls")),
 ]
+
+# Serve uploaded app screenshots from MEDIA_ROOT in development only; in production a
+# web server / object store fronts MEDIA_URL (DESIGN.md §9).
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

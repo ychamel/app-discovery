@@ -1,0 +1,9 @@
+{% autoescape off %}Good news — "{{ app_name }}" passed review and is now listed in the catalogue.
+
+App URL: {{ app_url }}
+
+If you edit the name, description, URL, tags, or screenshots, the app returns to
+review so we can re-check it before it goes back into the catalogue.
+
+— The App Discovery team
+{% endautoescape %}

@@ -31,3 +31,26 @@ below as SI-1…SI-7. Stage advanced to `2-design`.
 - **SI-7 — Media at MVP = screenshots/images;** exact slots/limits/formats align with
   [`app-pages`](../app-pages/) in Stage 2 ([unverified] → confirmed as the MVP shape; the
   Architect coordinates exact limits, OQ-3). *Rationale:* brief Constraints.
+
+## Stage-4 build deviations (Senior Engineer, 2026-06-18)
+
+Small implementation choices made while building `apps/catalog`; none change the DESIGN
+contracts (DESIGN §5 surfaces, §11/§12 D-6, the gate, the lifecycle).
+
+- **SI-8 — JSON API is mounted under `catalog/api/…`, pages under `catalog/…`.** DESIGN §5c
+  lists API paths (`/apps`, `/apps/{id}`) and §8 lists page paths (`/apps`, `/apps/{id}`)
+  that would *collide* on `GET /apps/{id}` (JSON vs HTML). Resolved by giving the API its own
+  `api/` prefix. *Rationale:* the design paths are resource-relative; a prefix is an
+  implementation detail that keeps both surfaces over the same services (no second source of
+  truth). *Rejected:* content-negotiation on one path (more surprising; harder to test).
+- **SI-9 — `Pillow` added to `pyproject.toml`** for boundary image validation, exactly as
+  DESIGN §1/§9/§12 anticipated (mirrors how `interest-taxonomy` added `PyYAML`). Not a new
+  stack decision.
+- **SI-10 — `duplicate_flagged` is emitted inside `submit_app`** via a `normalized_url`
+  existence check (the write path reading for its own metric); the consumer-facing duplicate
+  *hint* remains `selectors.apps_sharing_url` (T-07). Keeps the "same app" rule in
+  `urlnorm.normalize_url` as the single source of truth.
+- **SI-11 — `urlnorm.normalize_url` collapses only the four cosmetic classes DESIGN §6c
+  fixes** (scheme case, host case, default port, trailing slash) and deliberately does **not**
+  collapse `www.` — `www.example.com` and `example.com` can serve different apps, and review
+  is manual (SI-2), so over-merging is the worse error. Documented in the module.

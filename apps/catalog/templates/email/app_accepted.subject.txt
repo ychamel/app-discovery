@@ -1,0 +1,1 @@
+Your app "{{ app_name }}" is now in the catalogue

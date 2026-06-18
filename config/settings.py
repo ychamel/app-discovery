@@ -87,6 +87,7 @@ INSTALLED_APPS = [
     "apps.core",
     "apps.accounts",
     "apps.taxonomy",
+    "apps.catalog",
 ]
 
 MIDDLEWARE = [
@@ -209,6 +210,12 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = "static/"
+
+# Uploaded app screenshots live under MEDIA_ROOT and are served at MEDIA_URL
+# (submission-intake DESIGN.md §9). The numeric size/count limits are typed tunables
+# in apps.core.config, not settings, so they share one validated source of truth.
+MEDIA_URL = "media/"
+MEDIA_ROOT = env("MEDIA_ROOT") or str(BASE_DIR / "media")
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
