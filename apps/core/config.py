@@ -33,6 +33,11 @@ DEFAULT_TAXONOMY_RESOLVE_MAX_STEPS = 16
 # count cap and the per-file byte ceiling are the published contract `app-pages` adopts.
 DEFAULT_CATALOG_MEDIA_MAX_COUNT = 8
 DEFAULT_CATALOG_MEDIA_MAX_BYTES = 5 * 1024 * 1024  # 5 MB
+# Return-to-platform evaluation windows (signal-capture DESIGN.md §9). The single source
+# of truth the funnel read path uses to derive returns_3d/returns_14d — so A2's "exact
+# tolerance" is a one-line config change and there is no magic 3/14 in logic.
+DEFAULT_RETURN_WINDOW_SHORT_DAYS = 3
+DEFAULT_RETURN_WINDOW_LONG_DAYS = 14
 
 
 def _resolve_raw(setting_name: str, env_name: str, default: int) -> object:
@@ -113,6 +118,24 @@ def catalog_media_max_bytes() -> int:
     )
 
 
+def return_window_short_days() -> int:
+    """Short return-to-platform window in days (signal-capture DESIGN.md §9)."""
+    return _positive_int(
+        "RETURN_WINDOW_SHORT_DAYS",
+        "RETURN_WINDOW_SHORT_DAYS",
+        DEFAULT_RETURN_WINDOW_SHORT_DAYS,
+    )
+
+
+def return_window_long_days() -> int:
+    """Long return-to-platform window in days (signal-capture DESIGN.md §9)."""
+    return _positive_int(
+        "RETURN_WINDOW_LONG_DAYS",
+        "RETURN_WINDOW_LONG_DAYS",
+        DEFAULT_RETURN_WINDOW_LONG_DAYS,
+    )
+
+
 def validate_all() -> None:
     """Evaluate every tunable so misconfiguration surfaces at startup, not at use."""
     login_token_ttl()
@@ -121,3 +144,5 @@ def validate_all() -> None:
     taxonomy_resolve_max_steps()
     catalog_media_max_count()
     catalog_media_max_bytes()
+    return_window_short_days()
+    return_window_long_days()

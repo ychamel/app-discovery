@@ -103,3 +103,29 @@ decisions go in [/DECISIONS.md](../../DECISIONS.md).*
   **Confirm-with-data nuance:** whether "anonymize-and-retain behavioral data about a deleted user"
   is the desired posture is the one item to revisit with real cohort/legal input — flagged, not
   silently assumed. *(DESIGN §10/§13; brief AC10/A4, SC-6.)*
+
+## Decided at Stage 4 (Senior Engineer, 2026-06-18) — build-time deviations
+
+> Small implementation choices made while building `apps/signals` from
+> [TASKS.md](TASKS.md). Each stays inside the approved D-7 schema + the DESIGN contract;
+> logged here for traceability per CLAUDE.md §6.3 (mirrors how `submission-intake` logged
+> SI-8…SI-11).
+
+- **SC-11 — `occurred_at`'s "defaults to now" lives in `capture`, not as a model/DB default.**
+  DESIGN §4 describes `Impression.occurred_at`/`EngagementEvent.occurred_at` as "defaults to
+  now; an emitter may pass the true show time." Rather than a model-level
+  `default=timezone.now`, the field is **required** and the default-to-now is applied in
+  `capture` (`occurred_at or timezone.now()`). *Why:* `capture` is the single writer (D-7), so
+  keeping the default there makes it the one source of truth and means nothing can persist a
+  row with an unintended timestamp through a path that bypasses the contract; the column has
+  no silent DB default to drift from that rule. Behavior is identical to the DESIGN contract
+  (an emitter may still pass the true show time). *(DESIGN §4/§5a.)*
+- **SC-12 — `capture_error` is incremented on *every* failure (including validation
+  rejections), tagged `kind` + `error`.** Faithful to DESIGN §5d ("on any failure … always
+  increment `capture_error{kind}` … before re-raising") and §10 ("alert on any nonzero
+  `capture_error`"): a refused capture (`UnknownAppError`, `ImpressionMismatchError`, bad
+  surface) is counted and alertable, not just the unexpected-failure case. At the small
+  trusted-cohort MVP scale, emitters pass real app ids and matching impressions, so a nonzero
+  count — whether a rejection or an infra loss — is genuinely worth a look. The happy paths
+  read 0; the deliberate fail-loud tests assert the increment **and** the re-raise. *(DESIGN
+  §5d/§10; brief AC11/R4.)*

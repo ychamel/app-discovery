@@ -17,10 +17,10 @@ Rules:
 | Field              | Value                                                            |
 |--------------------|------------------------------------------------------------------|
 | **Active feature** | `signal-capture`                                                 |
-| **Stage**          | `3-plan`                                                         |
-| **Persona**        | Planner / Tech Lead (see [phase-3-planner.md](process/personas/phase-3-planner.md)) → handing to **Senior Engineer** (Stage 4) |
+| **Stage**          | `5-release`                                                      |
+| **Persona**        | Senior Engineer (Stage 4, see [phase-4-engineer.md](process/personas/phase-4-engineer.md)) → handing to **Release Engineer** (Stage 5) |
 | **Folder**         | [features/signal-capture/](features/signal-capture/)             |
-| **Last updated**   | 2026-06-18 — **DN-6 approved → DESIGN + global D-7 ratified; TASKS.md written; advanced to `3-plan` and handed off to Stage 4.** Planner decomposed [DESIGN.md](features/signal-capture/DESIGN.md) into **[TASKS.md](features/signal-capture/TASKS.md): 9 ordered S/M tasks, no `L`** (the single write path split T-04 impression-anchor / T-05 engagement-events). Risk front-loaded: schema (single-table `kind` discriminator + no-score guarantee + `SET_NULL`/`CASCADE` deletion, T-03), capture invariants + fail-loud (T-04/T-05), derived-not-stored returns (T-07). Full DESIGN-element + AC1–AC11 coverage table. **D-7 finalized APPROVED** in [DECISIONS.md](DECISIONS.md). Next: Senior Engineer builds T-01…T-09. |
+| **Last updated**   | 2026-06-18 — **`signal-capture` BUILT (T-01…T-09), 59 new tests / 374 total green**, ruff clean, no migration drift, reversibility rehearsed. New app `apps/signals/` — the D-7 event corpus: 4 append-only tables (`Impression` anchor + frozen `ImpressionTag` snapshot + single uniform `EngagementEvent` `kind` discriminator + `PlatformVisit`); **structural** no-score (AC9) + no-PII whitelist (AC10); `SET_NULL` anonymize on events / `CASCADE` on visits (SC-10). One `capture.*` write path (7 recorders; app validity via D-6, frozen tag snapshot, impression linkage, **fail-loud `capture_error`**); `PlatformVisitMiddleware` (idempotent, fail-soft-but-counted); one `selectors.*` read path (raw funnel, **returns derived not stored** — SC-9, no N+1); read-only admin. Reused accounts/taxonomy/catalog + core as-is; added 2 return-window tunables + 8 metric constants. CODEMAP + README + PRIVACY.md + .env.example + [TEST_PLAN.md](features/signal-capture/TEST_PLAN.md) (AC1–AC11) done; **D-7 verified APPROVED**; logged Stage-4 deviations **SC-11/SC-12**. Next: Release Engineer releases to local/dev. |
 
 > **Closed out (Stage 6 skipped, reopenable):** `identity-accounts` (2026-06-17, 108
 > tests), `interest-taxonomy` (2026-06-17, 184 tests), and `submission-intake`
@@ -34,32 +34,36 @@ Rules:
 ### Latest session status (CLAUDE.md §6.7 — overwritten each session)
 
 ```
-Stage: 3-plan → 4-build | Feature: signal-capture | Persona: Planner/Tech Lead → Senior Engineer
-Done: DN-6 approved → DESIGN.md + global D-7 ratified (D-7 marked APPROVED in /DECISIONS.md). Decomposed
-      features/signal-capture/DESIGN.md into features/signal-capture/TASKS.md: 9 ordered S/M tasks, no `L`.
-      Order: T-01 scaffold + return-window tunables → T-02 kinds.py (EventKind/Surface closed vocab) →
-      T-03 models + migration (4 tables; single-table `kind` discriminator; no score/weight/rank column;
-      no IP/UA/PII column — both structural; SET_NULL anonymize on events / CASCADE on visits — SC-10) →
-      T-04 capture A (record_impression + frozen tag snapshot + record_platform_visit + errors + metric
-      constants; app validity via D-6; atomic + fail-loud + CAPTURE_ERROR) → T-05 capture B (click_through/
-      subscribe/page_reengagement/share/off_platform_proxy; impression linkage; is_proxy service-set) →
-      T-06 PlatformVisitMiddleware (idempotent, fail-soft-but-counted) + MIDDLEWARE wiring → T-07 selectors
-      (app_funnel/funnel_for_apps/category_impressions; returns DERIVED at read, no backfill — SC-9; raw
-      only; proxy segregated; no N+1) → T-08 read-only admin → T-09 PRIVACY.md + README + .env.example +
-      CODEMAP + finalize D-7 + rollout. Risk front-loaded (T-03/T-04/T-05/T-07 = the §13 sharp edges).
-      Full DESIGN-element + AC1–AC11 coverage table. capture.py = T-04 then T-05 (ordered, no parallel
-      edit); settings.py = T-01 then T-06.
-Verified by: n/a (Stage-3 planning artifact only; no code). Grounded against the live apps/core/config.py
-      (tunable pattern), apps/core/observability.py (metric-constant location), config/settings.py
-      MIDDLEWARE order, and the CODEMAP catalog/taxonomy reuse surface before decomposing.
-Blocked/Deferred: none blocking. Deferred (named growth paths, NOT built — carried from DESIGN): a
+Stage: 4-build → 5-release | Feature: signal-capture | Persona: Senior Engineer → Release Engineer
+Done: Built apps/signals from features/signal-capture/TASKS.md (T-01…T-09), risk-first. 4 append-only
+      tables (Impression anchor + frozen ImpressionTag capture-time Tag.id snapshot + single uniform
+      EngagementEvent `kind` discriminator + per-user-per-day PlatformVisit); raw-only (no score/weight/
+      rank) + privacy whitelist (no IP/UA/geo/referrer/free-text) both STRUCTURAL + tested; SET_NULL
+      anonymize on event user FKs / CASCADE on visits (SC-10). One capture.* write path (record_impression
+      + 5 engagement recorders + record_platform_visit): app validity via catalog.get_catalogued_app (D-6),
+      frozen tag snapshot in one txn, impression linkage (app_id+user match → ImpressionMismatchError),
+      service-set is_proxy, atomic + fail-loud capture_error{kind} on any failure. PlatformVisitMiddleware
+      (idempotent, anonymous-safe, fail-soft-but-counted) wired after auth+request-context. One selectors.*
+      read path (AppFunnel DTO; app_funnel/funnel_for_apps/category_impressions): RAW counts, returns
+      DERIVED at read from impression × PlatformVisit (SC-9, no backfill, windows from config — no magic
+      3/14), proxy segregated, bulk = 2 queries (no N+1). Read-only admin (append-only un-circumventable).
+      Reused accounts/taxonomy/catalog + core as-is (no edits to those apps); added 2 return-window tunables
+      (apps/core/config.py) + 8 metric constants (observability.py) + INSTALLED_APPS + MIDDLEWARE. CODEMAP +
+      README + apps/signals/PRIVACY.md + .env.example + TEST_PLAN.md (AC1–AC11) done; D-7 verified APPROVED.
+Verified by: 374 tests green (315 prior + 59 new signals), `ruff check .` clean, `manage.py check` clean,
+      `makemigrations --check` = no drift. Migration 0001 reversibility rehearsed on the dev DB
+      (migrate → 4 signals_* tables → migrate signals zero → 0 tables → re-apply). capture_error reads 0 on
+      every happy path; the fail-loud tests assert it increments (tagged kind) AND re-raises.
+Blocked/Deferred: none blocking. No live emitter at ship (emitting surfaces out of scope — R6; the only
+      writer is the visit middleware + tests, by design). Deferred named growth paths (NOT built): a
       materialized per-app/per-window funnel projection + a catalog.is_catalogued_app cheap-existence
-      selector (100×); a durable capture outbox (zero-loss); an HTTP/DRF read projection (when
-      developer-dashboard needs it). SC-10 anonymize-and-retain deletion posture flagged to confirm
-      with data (kept SET_NULL so a future purge policy is localized).
+      selector (100×); a durable capture outbox (zero-loss); an HTTP/DRF read projection. Logged Stage-4
+      deviations SC-11 (occurred_at default lives in capture, not the model) + SC-12 (capture_error counts
+      every failure incl. validation rejections, tagged kind+error). SC-10 anonymize-and-retain posture
+      flagged to confirm with data.
 Decisions needed: none.
-Next: Senior Engineer (Stage 4) builds TASKS.md T-01…T-09 risk-first, writes TEST_PLAN.md covering
-      AC1–AC11, keeps CODEMAP current as shared code ships, and ensures CAPTURE_ERROR reads 0 in green.
+Next: Release Engineer (Stage 5) releases signal-capture to local/dev — RELEASE_NOTES.md, rehearse
+      rollout→rollback (migrate signals / migrate signals zero + remove the middleware), re-verify green.
 ```
 
 ---
@@ -71,7 +75,7 @@ proceeds.
 
 | ID | Decision needed | Context | Answer |
 |----|-----------------|---------|--------|
-| _none_ | — | The agent is not blocked. `signal-capture` is in `3-plan` → handing to Stage 4 (Senior Engineer). | — |
+| _none_ | — | The agent is not blocked. `signal-capture` is in `5-release` → handing to the Release Engineer. | — |
 
 > Resolved decisions (DN-1 … DN-6) are summarized under *Decisions Made* below; full
 > rationale lives in the decision logs.
@@ -83,6 +87,7 @@ proceeds.
 A short, human-readable digest. Full rationale lives in [DECISIONS.md](DECISIONS.md)
 (global) or `features/<slug>/DECISIONS.md` (local).
 
+- **Build-SC (2026-06-18)** — **`signal-capture` built (T-01…T-09), 59 new tests / 374 total green**, ruff clean, no migration drift, reversibility rehearsed. New app `apps/signals/` realizing the global **[D-7](DECISIONS.md)** event schema: 4 append-only tables (`Impression` anchor + **frozen** `ImpressionTag` capture-time `Tag.id` snapshot + single uniform `EngagementEvent` `kind` discriminator + per-user-per-day `PlatformVisit`); **structural** no-score (AC9) + no-PII whitelist (AC10); **`SET_NULL` anonymize** on event `user` FKs / **`CASCADE`** on visits (SC-10). One `capture.*` write path (7 recorders: app validity via D-6, frozen tag snapshot in one txn, impression linkage guard, service-set `is_proxy`, **atomic + fail-loud `capture_error{kind}`**); `PlatformVisitMiddleware` (idempotent, fail-soft-but-counted); one `selectors.*` read path (raw `AppFunnel`; **returns derived not stored** — SC-9, windows from config, no N+1; proxy segregated); read-only admin. Reused accounts/taxonomy/catalog + core as-is; added 2 return-window tunables + 8 metric constants. CODEMAP/README/PRIVACY.md/.env.example/[TEST_PLAN.md](features/signal-capture/TEST_PLAN.md) (AC1–AC11) done; **D-7 verified APPROVED**; logged Stage-4 deviations **SC-11/SC-12** in [features/signal-capture/DECISIONS.md](features/signal-capture/DECISIONS.md). Advanced to `5-release` / Release Engineer.
 - **DN-6 → approved (2026-06-18)** — **`signal-capture` DESIGN.md + global [D-7](DECISIONS.md) ratified.** D-7 (the event-schema contract — the platform's near-irreversible spine) marked **APPROVED** in [DECISIONS.md](DECISIONS.md). Advanced to `3-plan`; the Planner decomposed [DESIGN.md](features/signal-capture/DESIGN.md) into **[TASKS.md](features/signal-capture/TASKS.md): 9 ordered S/M tasks, no `L`** (single write path split T-04 impression-anchor / T-05 engagement-events), risk front-loaded on the §13 sharp edges (schema single-table discriminator + no-score + deletion semantics T-03; capture invariants + fail-loud T-04/T-05; derived-not-stored returns T-07). Full AC1–AC11 coverage. Handed to the **Senior Engineer** (Stage 4).
 - **Design-SC (2026-06-18)** — **`signal-capture` [DESIGN.md](features/signal-capture/DESIGN.md) written; awaiting approval (DN-6).** New app `apps/signals/` reusing accounts/taxonomy/catalog (no new stack/auth). The **event schema** is proposed as global **[D-7](DECISIONS.md)**: 4 **append-only** tables — `Impression` (own UUID identity = the anchor) + `ImpressionTag` (**frozen** capture-time `Tag.id` snapshot, AC2) + `EngagementEvent` (**one uniform table**, `kind` discriminator over click_through/subscribe/page_reengagement/share/off_platform_proxy) + `PlatformVisit` (per-user/day return substrate). **One `capture.*` write path** (validates app via D-6, snapshots tags, **fail-loud + `capture_error` counter**; resolves AC11-vs-C5 per-emitter, §5d). **One raw `selectors.app_funnel`** read path — **returns DERIVED at read, not stored** (SC-9, backfill-free). Off-platform proxy = **one flagged-secondary seam, no detector built** (OQ-1/R1). Privacy: stored-fields whitelist + `PRIVACY.md` (AC10); **account deletion = `SET_NULL` anonymize-not-purge** (SC-10 — **resolves the `submission-intake` §13 deferral**). AC1–AC11 all mapped. Logged proposed **D-7**, feature-local **SC-9/SC-10**; resolved **OQ-1/OQ-2/OQ-3**. Raised **DN-6**.
 - **DN-5 → A (2026-06-18)** — **`signal-capture` FEATURE_BRIEF.md approved**; the SC-6 privacy posture (pseudonymous in-platform events keyed to `Account.id`, ToS consent, no auto-purge for the H3 backtest) **ratified by the approval**. Advanced to `2-design`; handed to the Software Architect (event schema = repo-wide decision). Same session: logged the incentive surfaces as two new backlog features — **`app-subscriptions`** (Phase 2) and **`developer-updates`** (Phase 3) — scaffolded + added to [INDEX.md](features/INDEX.md); OQ-4 resolved (SC-8).
@@ -114,6 +119,7 @@ folders remain the full record either way.
 
 | Date       | Stage           | Summary                                                                 |
 |------------|-----------------|-------------------------------------------------------------------------|
+| 2026-06-18 | `4-build`→`5-release` | **Senior Engineer** — built `apps/signals` from [signal-capture/TASKS.md](features/signal-capture/TASKS.md) (T-01…T-09), risk-first. 4 append-only tables (`Impression` anchor + **frozen** `ImpressionTag` snapshot + single uniform `EngagementEvent` `kind` discriminator + `PlatformVisit`); **structural** no-score (AC9) + no-PII whitelist (AC10); **`SET_NULL`** anonymize on events / **`CASCADE`** on visits (SC-10). One `capture.*` write path (7 recorders; app validity via D-6, frozen tag snapshot, impression-linkage guard → `ImpressionMismatchError`, service-set `is_proxy`, **atomic + fail-loud `capture_error{kind}`**); `PlatformVisitMiddleware` (idempotent, anonymous-safe, fail-soft-but-counted, wired after auth+request-context); one `selectors.*` read path (`AppFunnel`; **returns derived at read** — SC-9, windows from config, **2-query bulk no N+1**; proxy segregated); read-only admin. Reused accounts/taxonomy/catalog + core as-is; +2 return-window tunables, +8 metric constants. **59 new tests / 374 total green**, ruff clean, no drift, reversibility rehearsed. CODEMAP/README/[PRIVACY.md](apps/signals/PRIVACY.md)/.env.example/[TEST_PLAN.md](features/signal-capture/TEST_PLAN.md) done; **D-7 verified APPROVED**; logged **SC-11/SC-12**. Advanced to `5-release`. |
 | 2026-06-18 | `2-design`→`3-plan`→`4-build` | **Planner / Tech Lead** (DN-6 approved) — **DESIGN.md + global [D-7](DECISIONS.md) ratified** (D-7 marked APPROVED). Decomposed [signal-capture/DESIGN.md](features/signal-capture/DESIGN.md) into [TASKS.md](features/signal-capture/TASKS.md): **9 ordered S/M tasks, no `L`**. Order: T-01 scaffold (`apps/signals/` + `INSTALLED_APPS` + the two return-window tunables) → T-02 `kinds.py` (closed `EventKind`/`Surface`) → T-03 models + migration (4 append-only tables; **single-table `kind` discriminator**; **no score/weight/rank column** + **no IP/UA/PII column** — both structural; **`SET_NULL` anonymize on events / `CASCADE` on visits** — SC-10) → T-04 capture A (`record_impression` + frozen tag snapshot + `record_platform_visit` + `errors.py` + metric constants; app validity via D-6; atomic + **fail-loud `CAPTURE_ERROR`**) → T-05 capture B (click_through/subscribe/page_reengagement/share/off_platform_proxy; **impression linkage** + service-set `is_proxy`) → T-06 `PlatformVisitMiddleware` (idempotent, **fail-soft-but-counted**) + `MIDDLEWARE` wiring → T-07 selectors (`app_funnel`/`funnel_for_apps`/`category_impressions`; **returns DERIVED at read, no backfill — SC-9**; raw only; proxy segregated; no N+1) → T-08 read-only admin → T-09 PRIVACY.md + README + `.env.example` + CODEMAP + finalize D-7 + rollout. **Risk front-loaded** on the four [DESIGN §13](features/signal-capture/DESIGN.md) sharp edges (T-03/T-04/T-05/T-07). Full DESIGN-element + **AC1–AC11** coverage table; `capture.py`=T-04→T-05 and `settings.py`=T-01→T-06 ordered (no parallel edits). Advanced to `4-build`; handed to **Senior Engineer**. |
 | 2026-06-18 | `2-design`      | **Software Architect** — wrote [signal-capture/DESIGN.md](features/signal-capture/DESIGN.md) via the 14-step protocol. New Django app `apps/signals/` reusing accounts/taxonomy/catalog (no new stack, no new auth). Proposed the **event schema** as global **[D-7](DECISIONS.md)**: **4 append-only tables** — `Impression` (own UUID identity, the anchor every conversion attributes to) + `ImpressionTag` (**frozen** capture-time `Tag.id` snapshot — AC2) + **one uniform `EngagementEvent`** (`kind` discriminator: click_through/subscribe/page_reengagement/share/off_platform_proxy) + `PlatformVisit` (per-user-per-day return substrate). **One `capture.*` write path** (validates app via D-6 `get_catalogued_app`, snapshots tags, **fail-loud + `capture_error`**; the AC11-fail-loud vs C5-non-blocking tension resolved per-emitter, §5d). **One raw `selectors.app_funnel`** read path; **returns DERIVED at read, not stored** (SC-9 — no return-event row, no job, no backfill). Off-platform proxy = **a single flagged-secondary seam, no detector built** (resolves OQ-1; bounds R1/OQ-3). Privacy realized as a **stored-fields whitelist** + `apps/signals/PRIVACY.md` (AC10); **account deletion = `SET_NULL` anonymize-not-purge** (SC-10, **resolves the [submission-intake DESIGN §13](features/submission-intake/DESIGN.md) flag**). All **AC1–AC11 mapped** (§14). Logged proposed **D-7**, feature-local **SC-9/SC-10**; resolved **OQ-1/OQ-2/OQ-3**. **Awaiting approval — raised DN-6** (no Stage advance until approved). |
 | 2026-06-18 | `1-define`→`2-design` | **Product Analyst** (hand-off) — **[signal-capture/FEATURE_BRIEF.md](features/signal-capture/FEATURE_BRIEF.md) APPROVED** (DN-5 → A); SC-6 privacy posture ratified by the approval. At the user's request, **logged the incentive surfaces as two new backlog features**: [app-subscriptions](features/app-subscriptions/) (Phase 2 User loop — user follows apps + update/early-access notices; H1, feeds H3) and [developer-updates](features/developer-updates/) (Phase 3 Dev value — dev posts updates/early-access/talks to subscribers; H2). Both scaffolded with the 7 standard artifacts + a scope seed citing provenance (signal-capture SC-7/SC-8, OQ-4); [INDEX.md](features/INDEX.md) rows added; **OQ-4 resolved**, SC-8 updated. Advanced `signal-capture` to **`2-design`** and handed to the **Software Architect** (event schema = repo-wide, near-irreversible decision → global /DECISIONS.md). |

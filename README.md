@@ -99,6 +99,66 @@ Rollback: `python manage.py migrate catalog zero` drops the four tables (the sha
 `citext` extension is retained); clear `MEDIA_ROOT` if you also want the uploaded files
 removed.
 
+## Behavioral signals (`apps/signals`)
+
+The schema-first measurement spine: an **append-only** corpus of in-platform behavioral
+events — impression → click-through → return-to-platform (3d/14d) → subscribe → on-page
+re-engagement → share — captured **raw** so a future Quality Score can be backtested
+without re-instrumentation (the [D-7](DECISIONS.md) contract). There is **no HTTP surface**
+here — it is instrumentation other surfaces call in-process.
+
+```bash
+python manage.py migrate signals      # create the four tables (no content)
+```
+
+Return-to-platform windows are typed tunables (`RETURN_WINDOW_SHORT_DAYS`, default 3;
+`RETURN_WINDOW_LONG_DAYS`, default 14) — the single source of truth the funnel derives
+returns from (no magic `3`/`14` in logic).
+
+**Emitting a signal (the capture contract — adopt [D-7](DECISIONS.md) before emitting).**
+Every emitting surface (`weekly-digest`, `app-pages`, `app-subscriptions`,
+`developer-updates`) writes **only** through `apps.signals.capture.*` — never the ORM:
+
+```python
+from apps.signals import capture
+from apps.signals.kinds import Surface
+
+imp = capture.record_impression(user, app_id, surface=Surface.DIGEST)
+capture.record_click_through(user, app_id, impression=imp)   # impression REQUIRED
+capture.record_subscribe(user, app_id)                       # impression optional
+capture.record_page_reengagement(user, app_id)
+capture.record_share(user, app_id)
+capture.record_off_platform_proxy(user, app_id, impression=imp)  # flagged secondary
+```
+
+Capture validates the app via `catalog.get_catalogued_app` (D-6), freezes the capture-time
+tag snapshot, links the impression, counts the write, and **fails loud** (any failure
+increments `capture_error{kind}` and re-raises — never silent). Daily return visits are
+recorded automatically by `PlatformVisitMiddleware` for authenticated requests
+(fail-soft-but-counted). How a surface treats a raise is its policy (DESIGN §5d): impression
+capture is corpus-critical; interactive conversions are counted-but-non-blocking.
+
+**Reading the corpus downstream (raw counts only).** Consumers (the future
+developer-dashboard / editorial backtest) read through `apps.signals.selectors`:
+
+```python
+from apps.signals import selectors
+
+funnel = selectors.app_funnel(app_id, start=start, end=end)   # the H3 backtest, raw
+funnels = selectors.funnel_for_apps([app_id, ...], start=start, end=end)  # bulk, no N+1
+```
+
+Returns are **derived at read** (impression × `PlatformVisit`), never stored; the
+off-platform proxy is reported in its own field, never folded into click-throughs. The read
+path is **raw** — **scoring is the consumer's job**, never done in this layer.
+
+Privacy posture (what/why/retention/deletion) is in
+[apps/signals/PRIVACY.md](apps/signals/PRIVACY.md): only pseudonymous in-platform events,
+no IP/UA/PII by schema, no auto-purge, and `SET_NULL` anonymize-on-deletion (SC-10).
+
+Rollback: `python manage.py migrate signals zero` drops the four tables, then remove
+`apps.signals.middleware.PlatformVisitMiddleware` from `MIDDLEWARE`.
+
 ## Tests and linting
 
 ```bash

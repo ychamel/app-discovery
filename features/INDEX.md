@@ -23,7 +23,7 @@ is decision **D2** and belongs to the user.
 |------|-------|-------|---------|--------|------------|------------------|
 | [identity-accounts](identity-accounts/) | 0 Foundation | closed-out | 2026-06-13 | enabler | — | _released local/dev (108 tests green); Stage 6 retrospective skipped per user — outcome review deferred/reopenable_ |
 | [interest-taxonomy](interest-taxonomy/) | 0 Foundation | closed-out | 2026-06-17 | enabler | — | _released local/dev (11 clusters / 67 tags, 184 tests green; rollback rehearsed); Stage 6 retrospective skipped per user (DN-1 A) — live-metrics/real-catalog coverage + outcome report deferred/reopenable_ |
-| [signal-capture](signal-capture/) | 0 Foundation | `4-build` | 2026-06-18 | H3 | identity-accounts | _active — DN-6 approved (DESIGN + global D-7 ratified); TASKS.md written (9 S/M tasks, no `L`); handed to Senior Engineer_ |
+| [signal-capture](signal-capture/) | 0 Foundation | `5-release` | 2026-06-18 | H3 | identity-accounts | _active — built (T-01…T-09), 59 new / 374 total green, ruff clean, no drift, reversibility rehearsed; D-7 verified APPROVED; handed to Release Engineer_ |
 | [submission-intake](submission-intake/) | 1 Catalog | closed-out | 2026-06-17 | H2 | identity-accounts, interest-taxonomy | _released local/dev (apps/catalog, 315 tests green; rollout→rollback rehearsed); established global D-6 catalogued-app contract; Stage 6 retrospective skipped per user (DN-3 A) — live-metrics/outcome report deferred/reopenable_ |
 | [app-pages](app-pages/) | 1 Catalog | backlog | 2026-06-13 | H1, H2 | submission-intake | _backlog_ |
 | [editorial-curation-tools](editorial-curation-tools/) | 1 Catalog | backlog | 2026-06-13 | H1, H3 | interest-taxonomy, submission-intake, weekly-digest | _backlog_ |

@@ -128,6 +128,32 @@ _Built by `identity-accounts` Stage 4. Entries are added as each shared item shi
 - `list_catalogued_apps()` / `get_catalogued_app(id) -> CatalogApp | None` — **ACCEPTED only**; resolved tags + ordered media (the D-6 downstream contract, AC9) — `apps/catalog/selectors.py`
 - `time_to_decision(app)` / `decision_latencies()` — time-to-decision reporting from stored timestamps (observable, not an SLA) — `apps/catalog/selectors.py`
 
+### Behavioral signals — model & vocabulary (`apps/signals/`, the D-7 event schema)
+- `Impression` — one shown instance; UUID `id` is the anchor every conversion attributes to; soft `app_id`, `surface`, `occurred_at` — `apps/signals/models.py`
+- `ImpressionTag` — the **frozen** capture-time `Tag.id` snapshot (soft ref, D-5; never re-derived) — `apps/signals/models.py`
+- `EngagementEvent` — one downstream act in a single uniform table; `kind` discriminator, optional `impression`, `is_proxy` — `apps/signals/models.py`
+- `PlatformVisit` — one per-user-per-UTC-day return tick (the AC4 returns-derivation substrate) — `apps/signals/models.py`
+- `EventKind` / `Surface` — the closed, code-fixed event-kind + surface vocabularies (no free-text) — `apps/signals/kinds.py`
+
+### Behavioral signals — capture write surface (`apps/signals/capture.py`, the single write path — D-7)
+- `record_impression(user, app_id, *, surface, occurred_at=None)` — anchor + frozen tag snapshot in one txn (AC1/AC2) — `apps/signals/capture.py`
+- `record_click_through(user, app_id, *, impression, occurred_at=None)` — conversion, impression **required** (AC3) — `apps/signals/capture.py`
+- `record_subscribe` / `record_page_reengagement` / `record_share(user, app_id, *, impression=None, …)` — engagement acts, impression optional (AC5/AC6) — `apps/signals/capture.py`
+- `record_off_platform_proxy(user, app_id, *, impression, …)` — the flagged **secondary** seam, service-set `is_proxy=True` (AC7/§8) — `apps/signals/capture.py`
+- `record_platform_visit(user, *, on_date=None)` — idempotent per-user-per-day return substrate (AC4) — `apps/signals/capture.py`
+- `UnknownAppError` / `ImpressionMismatchError` — loud capture-boundary failures (never silent, AC11) — `apps/signals/errors.py`
+- `PlatformVisitMiddleware` — authenticated request → idempotent daily visit; fail-soft-but-counted (§5d) — `apps/signals/middleware.py`
+
+### Behavioral signals — read surface (`apps/signals/selectors.py`, the single read path — D-7)
+- `AppFunnel` — the raw per-app funnel DTO (counts + derived returns; **no score/weight/rank field**, AC9) — `apps/signals/selectors.py`
+- `app_funnel(app_id, *, start, end) -> AppFunnel` — per-app raw funnel; returns **derived** at read, no backfill (AC8/SC-9) — `apps/signals/selectors.py`
+- `funnel_for_apps(app_ids, *, start, end) -> list[AppFunnel]` — bulk, two grouped queries, no N+1 (AC9) — `apps/signals/selectors.py`
+- `category_impressions(tag_id, *, start, end) -> int` — per-category impression baseline from the frozen snapshot (AC2) — `apps/signals/selectors.py`
+
+### Behavioral signals — configuration & metrics
+- `return_window_short_days()` / `return_window_long_days()` — return-to-platform windows (defaults 3 / 14) — `apps/core/config.py`
+- signals metric constants (`IMPRESSION_CAPTURED`, `CLICK_THROUGH_CAPTURED`, `SUBSCRIBE_CAPTURED`, `PAGE_REENGAGEMENT_CAPTURED`, `SHARE_CAPTURED`, `PLATFORM_VISIT_CAPTURED`, `OFF_PLATFORM_PROXY_CAPTURED`, `CAPTURE_ERROR`) — `apps/core/observability.py`
+
 <!-- Example of the shape this takes once code exists:
 
 ### Utilities

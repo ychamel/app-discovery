@@ -88,6 +88,7 @@ INSTALLED_APPS = [
     "apps.accounts",
     "apps.taxonomy",
     "apps.catalog",
+    "apps.signals",
 ]
 
 MIDDLEWARE = [
@@ -100,6 +101,9 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     # After auth so request.user is resolvable for log correlation (DESIGN.md §10).
     "apps.core.middleware.RequestContextMiddleware",
+    # After auth + request-context so visits attribute to request.user and failures log
+    # with request context (signal-capture DESIGN.md §5d/§12). Fail-soft-but-counted.
+    "apps.signals.middleware.PlatformVisitMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"

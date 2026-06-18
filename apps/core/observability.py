@@ -48,6 +48,17 @@ REVIEW_DECISION = "review_decision"  # tags: outcome, and per failed criterion o
 TAG_OFF_VOCABULARY_REJECTED = "tag_off_vocabulary_rejected"  # alert: must stay 0 (AC4)
 DUPLICATE_FLAGGED = "duplicate_flagged"
 
+# signal-capture metrics (DESIGN.md §9), 1:1 with the brief's success metrics. The
+# capture-error counter must stay 0 in a healthy system — alert on any nonzero value.
+IMPRESSION_CAPTURED = "impression_captured"
+CLICK_THROUGH_CAPTURED = "click_through_captured"
+SUBSCRIBE_CAPTURED = "subscribe_captured"
+PAGE_REENGAGEMENT_CAPTURED = "page_reengagement_captured"
+SHARE_CAPTURED = "share_captured"
+PLATFORM_VISIT_CAPTURED = "platform_visit_captured"
+OFF_PLATFORM_PROXY_CAPTURED = "off_platform_proxy_captured"  # tagged secondary (AC7)
+CAPTURE_ERROR = "capture_error"  # alert: any nonzero — the AC11/R4 loud-loss signal (tags: kind)
+
 metrics_logger = logging.getLogger("apps.metrics")
 
 
