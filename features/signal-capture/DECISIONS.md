@@ -73,3 +73,33 @@ decisions go in [/DECISIONS.md](../../DECISIONS.md).*
   `app-subscriptions` (Phase 2, user-side: follow apps + update/early-access notices) and
   `developer-updates` (Phase 3, developer-side: post updates / early-access / talk to
   subscribers). Folders scaffolded; [INDEX.md](../INDEX.md) rows added; OQ-4 resolved.
+
+## Decided at Stage 2 (Software Architect, 2026-06-18) — feature-local
+
+> The repo-wide event-schema decision is recorded as global **[D-7](../../DECISIONS.md)**, not
+> here. The two items below are feature-local design calls within that schema, made in
+> [DESIGN.md](DESIGN.md); both are flagged to revisit once real usage/posture data exists.
+
+- **SC-9 — Return-to-platform @3d/@14d is *derived at read*, not a stored event.** A return is a
+  relationship between a stored `Impression` and stored `PlatformVisit` activity (a per-user-per-day
+  idempotent retention tick); the read path (`selectors.app_funnel`) computes "returned within N
+  days" as *∃ a visit in (impression, +N]*. Chosen because a materialized return-event table cannot
+  represent the *not-returned* outcome (an absence) the brief's metric requires ("returned vs. not,
+  per window"), would need a scheduled job, and would risk drift — whereas derivation is exact and
+  **needs no backfill** (AC4/AC8). *Rejected:* (a) a stored `return` event row + a daily job that
+  materializes the windows — invents the absence problem + batch infra; (b) deriving returns from
+  raw page-view/session firehose — over-collects; the per-day visit tick is all the windows need.
+  Scale: one indexed `EXISTS`-aggregate per app at MVP; a materialized per-app/per-window projection
+  is the named 100× growth path (DESIGN §9). *(DESIGN §4/§5b/§6/§13; brief AC4/AC8.)*
+- **SC-10 (PRIVACY) — Account deletion anonymizes, does not purge, the corpus.**
+  `accounts.delete_account` hard-deletes the `Account` row; signal-capture sets the event `user`
+  FKs (`Impression`/`EngagementEvent`) to **`SET_NULL`**, so a deleted user's behavioral facts
+  **survive as anonymized corpus rows** (person unlinked) — respecting the deletion right *and* the
+  no-auto-purge H3 corpus rule (SC-6/A3). `PlatformVisit.user` is **`CASCADE`** (an unlinked daily
+  tick is pure noise once it can't join to a live user's impressions). This **resolves the
+  account-deletion interaction `submission-intake` DESIGN §13 explicitly deferred "when
+  signal-capture keys signals to apps."** *Rejected:* (a) CASCADE all signals — purges the corpus
+  H3 depends on; (b) hard-block deletion while signals exist — violates the user's deletion right.
+  **Confirm-with-data nuance:** whether "anonymize-and-retain behavioral data about a deleted user"
+  is the desired posture is the one item to revisit with real cohort/legal input — flagged, not
+  silently assumed. *(DESIGN §10/§13; brief AC10/A4, SC-6.)*

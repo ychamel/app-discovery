@@ -15,6 +15,22 @@
 - The **event schema** is a repo-wide, near-irreversible decision and must be logged in
   the global [/DECISIONS.md](../../DECISIONS.md). See [DECISIONS.md](DECISIONS.md).
 
+## Resolved at Stage 2 (Software Architect, 2026-06-18) — in [DESIGN.md](DESIGN.md)
+
+- **OQ-1 — RESOLVED (seam, not engine).** The off-platform open/return proxy ships as a **single
+  capture seam** — `capture.record_off_platform_proxy(user, app_id, impression)` writing one
+  flagged-secondary `EngagementEvent(is_proxy=True)` — and **no detector is built** (DESIGN §8).
+  *Which* mechanism resolves an off-platform open (redirect-bounce / return-ping / next-observed-
+  action) is left open as a self-contained future enhancement that calls this one seam; the spine
+  is on-platform (SC-7), so over-building attribution now is explicitly avoided (R1).
+- **OQ-2 — RESOLVED (privacy posture realized).** The SC-6 posture is realized as a **stored-fields
+  whitelist** (no IP/UA/PII columns exist — over-collection unrepresentable), a human-readable
+  `apps/signals/PRIVACY.md` (what/why/retention/deletion — AC10), and the account-deletion semantics
+  **SC-10** (anonymize-not-purge). DESIGN §10.
+- **OQ-3 — RESOLVED (bounded as a known limitation).** The proxy under-count only depresses the
+  *secondary* off-platform number, never funnel completeness (AC7); documented as a limitation with
+  a seam (OQ-1) for a stronger return signal later — not over-built. DESIGN §8/§13.
+
 ## Raised at Stage 1 (Product Analyst, 2026-06-18)
 
 - **OQ-1 — Off-platform attribution proxy mechanism (web-only, now SECONDARY).** After the
