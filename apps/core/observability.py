@@ -59,6 +59,13 @@ PLATFORM_VISIT_CAPTURED = "platform_visit_captured"
 OFF_PLATFORM_PROXY_CAPTURED = "off_platform_proxy_captured"  # tagged secondary (AC7)
 CAPTURE_ERROR = "capture_error"  # alert: any nonzero — the AC11/R4 loud-loss signal (tags: kind)
 
+# app-pages metrics (DESIGN.md §9). The surface's own fail-soft counter: capture is loud
+# *inside* signals (capture_error), silent-but-counted *to the visitor* here (AC7).
+APP_PAGE_RENDERED = "app_page_rendered"  # a page was served (tags: app_id) — coverage/view volume
+APP_PAGE_NOT_AVAILABLE = "app_page_not_available"  # a non-accepted/unknown id was requested (→404)
+# a page emit was caught + dropped (tags: action) — informational, not a hard alert
+APP_PAGE_CAPTURE_DEGRADED = "app_page_capture_degraded"
+
 metrics_logger = logging.getLogger("apps.metrics")
 
 

@@ -27,10 +27,13 @@ class EventKind(models.TextChoices):
 
 
 class Surface(models.TextChoices):
-    """Where an impression was shown. ``DIGEST`` only at MVP (SC-1).
+    """Where an impression was shown. ``DIGEST`` and ``APP_PAGE`` at present.
 
-    Extensible by adding a value (``app_page``, ``feed``) with no migration to the others
-    (DESIGN.md §4) — the impression schema does not change per surface.
+    Extensible by adding a value (``feed``) with no migration to the others (DESIGN.md §4) —
+    the impression schema does not change per surface. ``APP_PAGE`` is the app-pages feature's
+    additive extension (app-pages DESIGN §11): an authenticated page view is recorded as an
+    impression on this surface, distinct and segregated from ``DIGEST`` shows.
     """
 
     DIGEST = "digest", "weekly digest"
+    APP_PAGE = "app_page", "app page"

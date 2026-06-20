@@ -17,10 +17,10 @@ Rules:
 | Field              | Value                                                            |
 |--------------------|------------------------------------------------------------------|
 | **Active feature** | **`app-pages`** (Phase 1 Catalog; dep `submission-intake` ✓)     |
-| **Stage**          | `4-build`                                                       |
-| **Persona**        | **Senior Engineer** (see [CLAUDE.md](CLAUDE.md) §2) — implements [TASKS.md](features/app-pages/TASKS.md) (T-01…T-06) |
+| **Stage**          | `5-release`                                                     |
+| **Persona**        | **Release Engineer** (see [CLAUDE.md](CLAUDE.md) §2) — releases the verified `apps/pages` build per [DESIGN.md](features/app-pages/DESIGN.md) §12; writes `RELEASE_NOTES.md` |
 | **Folder**         | [features/app-pages/](features/app-pages/)                       |
-| **Last updated**   | 2026-06-20 — **DN-10 approved → Planner/Tech Lead decomposed [DESIGN.md](features/app-pages/DESIGN.md) into [TASKS.md](features/app-pages/TASKS.md): 6 ordered tasks (4× S, 2× M; no `L`).** Order is risk- and adopt-before-emit-first: **T-01** `Surface.APP_PAGE` + no-op `signals` migration (must precede any emit, D-7 §12) → **T-02** scaffold `apps/pages` (no model/migration) → **T-03** `emission.py` (the AP-4 authenticated-only + AC7 fail-soft-but-counted core, fake-seam tested) → **T-04** 3 thin views + routes + the `config/urls` include (AC5/6/7/8, §10 security, page-view-impression wiring) → **T-05** uniform template (AC1/2/3/9, A4) → **T-06** docs/CODEMAP/finalize. Full DESIGN-element + AC1–AC9 coverage table in TASKS.md. Advanced to `4-build`. |
+| **Last updated**   | 2026-06-20 — **Senior Engineer built all of [TASKS.md](features/app-pages/TASKS.md) (T-01…T-06); full suite green (417 tests, +43), `ruff` clean, no migration drift.** New Django app **`apps/pages/`** = a pure D-6/D-7 consumer (no model): `Surface.APP_PAGE` + reversible no-op migration `signals/0002` (rehearsed up→down→up); `emission.py` (AP-4 authenticated-only + AC7 fail-soft-but-counted, fake-seam unit-tested); 3 thin views (`app_page`/`try`-redirect/`share`) + `apps/pages/urls.py` + the `config/urls` include (the activation switch); the uniform `app_page.html` (6 same-order slots, structural AC3). [TEST_PLAN.md](features/app-pages/TEST_PLAN.md) maps AC1–AC9 + §6/§7/§10/§11 → tests. CODEMAP + `apps/pages/README.md` + DECISIONS (AP-3/AP-4/AP-5 confirmed) updated. Advanced to `5-release`. |
 
 > **Closed out (Stage 6 skipped, reopenable):** `identity-accounts` (2026-06-17, 108
 > tests), `interest-taxonomy` (2026-06-17, 184 tests), `submission-intake`
@@ -35,31 +35,32 @@ Rules:
 ### Latest session status (CLAUDE.md §6.7 — overwritten each session)
 
 ```
-Stage: 4-build | Feature: app-pages | Persona: Planner/Tech Lead → Senior Engineer
-Done: DN-10 approved → decomposed features/app-pages/DESIGN.md into features/app-pages/TASKS.md: 6 ordered,
-      independently-verifiable tasks (4× S, 2× M; NO `L`). Ordering = risk-first + the one hard constraint
-      "adopt before you emit" (D-7 §12):
-        T-01 (S) add Surface.APP_PAGE + its no-op choices-only signals migration — MUST precede any emit;
-        T-02 (S) scaffold apps/pages (AppConfig, base.html, INSTALLED_APPS) — owns NO model/migration;
-        T-03 (M) emission.py — the feature core + riskiest piece: AP-4 authenticated-only gate + AC7
-              fail-soft-but-counted policy (wraps signals.capture.*, never re-raises into the request),
-              fake-capture-seam unit tested;
-        T-04 (M) 3 thin views (app_page/try-redirect/share) + apps/pages/urls.py + the config/urls include
-              (the activation switch) — AC5/6/7/8, §6 page-view-as-app_page-impression wiring, §10 security
-              (server-side redirect target, imp-mismatch→no event, CSRF on share), 2 view counters;
-        T-05 (M) the uniform app_page.html — 6 same-order slots, empty/partial states (AC1/AC2/AC9),
-              structural uniformity (AC3), accessibility (A4);
-        T-06 (S) README + CODEMAP + rollback note + finalize AP-3/AP-4 (no new .env, no model).
-      Full DESIGN-element coverage table + AC1–AC9 roll-up in TASKS.md. No re-design (every task traces to a
-      DESIGN §); file-collision note ensures no two tasks edit the same file in parallel (tasks are sequential).
-Verified by: n/a (Stage-3 artifact — no code this session; tasks written against apps/catalog.selectors,
-      apps/signals.capture/kinds, apps/core.observability, config/urls + INSTALLED_APPS as-built).
-Blocked/Deferred: none blocking. page_reengagement emission, anonymous/sessionless capture, and a cached D-6
-      projection remain named growth paths (not built — no speculative scope). TEST_PLAN.md is the Stage-4 exit
-      artifact (Senior Engineer), per-AC Given/When/Then → test.
-Decisions needed: none (DN-10 resolved).
-Next: Senior Engineer builds T-01 first (Surface.APP_PAGE + reversible no-op migration; rehearse up/down), then
-      T-02…T-06 in order; each task leaves the system releasable. Produce TEST_PLAN.md covering AC1–AC9.
+Stage: 4-build → 5-release | Feature: app-pages | Persona: Senior Engineer → Release Engineer
+Done: Built all of features/app-pages/TASKS.md (T-01…T-06). New Django app apps/pages/ = a pure D-6/D-7
+      consumer that owns NO model/migration:
+        T-01 Surface.APP_PAGE added to apps/signals/kinds.py + reversible choices-only migration signals/0002
+             (rehearsed migrate 0002→0001→0002, no drift); a record_impression(surface=APP_PAGE) test added.
+        T-02 scaffolded apps/pages (apps.py AppConfig, templates/pages/base.html, INSTALLED_APPS) — owns no model
+             (asserted; makemigrations --check clean).
+        T-03 apps/pages/emission.py — the AP-4 authenticated-only gate + AC7 fail-soft-but-counted wrapper over
+             signals.capture.* (never raises into the request); APP_PAGE_CAPTURE_DEGRADED counter; fake-seam unit tested.
+        T-04 3 thin views (app_page / try-redirect / share) + apps/pages/urls.py + the config/urls include
+             (activation switch). AC5/6/7/8, §6 page-view-as-app_page-impression wiring, §7 loud-500-on-catalog-read,
+             §10 security (server-side redirect target, imp-mismatch→no event, CSRF on share); APP_PAGE_RENDERED/
+             _NOT_AVAILABLE counters; render-latency log.
+        T-05 the uniform app_page.html — 6 same-order slots, empty states (no tags/no media/single image),
+             structural uniformity (AC3 — CatalogApp has no identity/paid field), canonical URL (AC4), alt text (A4).
+        T-06 apps/pages/README.md, CODEMAP entries, DECISIONS AP-3/AP-4/AP-5 confirmed, TEST_PLAN.md (AC1–AC9 +
+             §6/§7/§10/§11 → tests). No new .env keys.
+Verified by: python manage.py test → 417 tests OK (+43); ruff clean (apps config); makemigrations --check no drift;
+      manage.py check clean; migration 0002 reversibility rehearsed.
+Blocked/Deferred: none blocking. Not built (named growth paths, no speculative scope): page_reengagement emission,
+      anonymous/sessionless capture, a cached D-6 projection, no-JS share-capture fallback, richer press-kit apparatus.
+      No live impression *source* exists yet (weekly-digest unbuilt) → cross-surface (digest→click) funnel is exercised
+      only via the app_page surface for now (DESIGN §13 R2).
+Decisions needed: none.
+Next: Release Engineer releases apps/pages to local/dev per DESIGN §12 (additive, no flag; rollback = remove the
+      config/urls include), writes features/app-pages/RELEASE_NOTES.md, rehearses rollout→rollback, updates INDEX.md.
 ```
 
 ---
@@ -111,6 +112,7 @@ folders remain the full record either way.
 
 | Date       | Stage           | Summary                                                                 |
 |------------|-----------------|-------------------------------------------------------------------------|
+| 2026-06-20 | `4-build`→`5-release` | **Senior Engineer** — built all of [app-pages/TASKS.md](features/app-pages/TASKS.md) (T-01…T-06). New Django app **`apps/pages/`**, a **pure D-6/D-7 consumer with no model/migration**: **T-01** `Surface.APP_PAGE` + reversible choices-only migration `signals/0002` (rehearsed up→down→up) → **T-02** scaffold (`apps.py`, `templates/pages/base.html`, `INSTALLED_APPS`; owns no model, asserted) → **T-03** [emission.py](apps/pages/emission.py) (AP-4 authenticated-only + AC7 fail-soft-but-counted over `signals.capture.*`, never re-raises; `APP_PAGE_CAPTURE_DEGRADED`; fake-seam unit-tested) → **T-04** 3 thin views (`app_page`/`try`-redirect/`share`) + [urls.py](apps/pages/urls.py) + the [config/urls](config/urls.py) include (activation switch); §7 loud-500-on-catalog-read, §10 security (server-side redirect target, `imp`-mismatch→no event, CSRF on share), `APP_PAGE_RENDERED`/`_NOT_AVAILABLE` + render-latency log → **T-05** the uniform [app_page.html](apps/pages/templates/pages/app_page.html) (6 same-order slots, empty/single states, **structural** AC3, canonical URL AC4, alt text A4) → **T-06** [README](apps/pages/README.md) + [CODEMAP](CODEMAP.md) + DECISIONS (AP-3/AP-4/AP-5 confirmed) + [TEST_PLAN.md](features/app-pages/TEST_PLAN.md) (AC1–AC9 + §6/§7/§10/§11 → tests). **417 tests OK (+43), `ruff` clean, no migration drift, `check` clean.** Advanced to `5-release`; handed to the **Release Engineer**. |
 | 2026-06-20 | `2-design`→`3-plan`→`4-build` | **Planner / Tech Lead** (DN-10 approved) — decomposed [app-pages/DESIGN.md](features/app-pages/DESIGN.md) into [TASKS.md](features/app-pages/TASKS.md): **6 ordered tasks (4× S, 2× M; no `L`)**, risk- and **adopt-before-emit-first**. **T-01** add `Surface.APP_PAGE` + its no-op choices-only `signals` migration (must precede any emit — D-7 §12) → **T-02** scaffold `apps/pages` (AppConfig/base/`INSTALLED_APPS`; **owns no model/migration**) → **T-03** `emission.py` (the feature core + riskiest piece: **AP-4** authenticated-only + **AC7** fail-soft-but-counted policy over `signals.capture.*`, fake-seam tested) → **T-04** 3 thin views (`app_page`/`try`-redirect/`share`) + `apps/pages/urls.py` + the `config/urls` include (the activation switch; **AC5/6/7/8**, §6 page-view-as-`app_page`-impression wiring, §10 security — server-side redirect target, `imp`-mismatch→no event, CSRF on share) → **T-05** the **uniform** `app_page.html` (6 same-order slots, empty/partial states **AC1/AC2/AC9**, structural uniformity **AC3**, accessibility A4) → **T-06** README/CODEMAP/rollback/finalize. Full **DESIGN-element + AC1–AC9** coverage table; no re-design (every task traces to a DESIGN §); file-collision note (sequential edits, no parallel collisions). Advanced to `4-build`; handed to the **Senior Engineer** (build T-01 first, produce `TEST_PLAN.md`). |
 | 2026-06-20 | `1-define`→`2-design` | **Software Architect** (DN-9 approved) — drafted [app-pages/DESIGN.md](features/app-pages/DESIGN.md) via the 14-step protocol. New Django app **`apps/pages/`** = a **pure D-6/D-7 consumer with no model of its own** (3 thin views: public `app_page` / `try`-redirect / `share` + a fail-soft `emission` helper + one **uniform** server-rendered template), reading the catalog via **[D-6](DECISIONS.md)** `get_catalogued_app` and emitting via **[D-7](DECISIONS.md)** `signals.capture.*`. **Resolved the OQ-2 attribution fork (AP-3):** an authenticated **page view = an `app_page`-surface `Impression`**; the try-it click = a `click_through` **linked to it** (share too) — satisfies D-7's *required* impression with **no contract change** and makes the brief's "CTR per page view" metric measurable; only global-vocab touch = adding **`Surface.APP_PAGE`** (the D-7-pre-authorized **additive** enum value — **no new ADR**). **AP-4:** capture is **authenticated-only**, render fully **anonymous** (resolves AC5 ∩ AC6, bounds R5 crawler inflation). **AP-5:** URL `apps/<App.id>/`, edit-stable + indexable (OQ-4). Full **AC1–AC9 → design-element** map (§14); per-component failure modes (catalog read = loud 500, capture = fail-soft-but-counted, AC7); rollout = additive/no-flag/design-for-deletion. Resolved OQ-1…OQ-4. **Raised DN-10** (approve DESIGN + confirm AP-3 reinterpretation of "impression generation out of scope" + AP-4 anonymous boundary); no Stage advance until approved. |
 | 2026-06-19 | `1-define`      | **Product Analyst** — drafted [app-pages/FEATURE_BRIEF.md](features/app-pages/FEATURE_BRIEF.md): one **uniform, openly-accessible** public page per accepted app (renders media/description/resolved tags/try-it via the **[D-6](DECISIONS.md)** selectors; emits click-through/share via **[D-7](DECISIONS.md)** `capture.*`; **reviews = empty slot only**, owned by `ratings-reviews`). **6 stories / 9 G-W-T ACs / 7 metrics**, in+out scope, 6 constraints + 5 assumptions (verified vs unverified), 5 risks, vision alignment (§1/§4.1/§5.6/§6; proves **H1/H2**, feeds **H3**). Reuses **D-1/D-5/D-6/D-7 as-is — no new global decision**. Logged feature-local **AP-1** (reviews slot-only) / **AP-2** (press-kit = the page itself) + **OQ-1…OQ-4** (OQ-2 = the D-7 `click_through`-requires-impression vs. impression-less-direct-visit fork, flagged for the Architect). **Raised DN-9** (approve brief + confirm the reviews-slot & press-kit boundaries); no Stage advance until approved. |

@@ -1,0 +1,78 @@
+{% extends "pages/base.html" %}
+{% comment %}
+  The uniform app page (DESIGN.md §5c). Every accepted app renders the SAME six slots in
+  the SAME order — slot order and presence are fixed here, never driven by app identity.
+  Uniformity is structural (AC3): the only input is `CatalogApp`, which carries no
+  owner/team/paid field, so no app can render a richer or different page than another.
+{% endcomment %}
+{% block title %}{{ app.name }} · App Discovery{% endblock %}
+
+{% block head %}
+  {# AC4 — the canonical, edit-stable (App.id-keyed) URL, so the page is its own press kit. #}
+  <link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}{% url 'pages:app-page' app_id=app.id %}">
+{% endblock %}
+
+{% block content %}
+<article>
+
+  {# 1. Header — name (always present) + resolved category labels (D-5 via D-6). #}
+  <header>
+    <h1>{{ app.name }}</h1>
+    <ul aria-label="Categories">
+      {% for tag in app.tags %}
+        <li>{{ tag.label }}</li>
+      {% empty %}
+        <li>Uncategorized</li>
+      {% endfor %}
+    </ul>
+  </header>
+
+  {# 2. Media gallery — ordered screenshots (1–8); each image always carries alt text (A4).
+       The slot is always present: with no media it shows a defined placeholder, so an
+       app's layout never collapses differently from another's (AC2). #}
+  <section aria-label="Screenshots">
+    {% for media in app.media %}
+      <figure>
+        <img src="{{ media.url }}" alt="{{ media.alt_text }}">
+      </figure>
+    {% empty %}
+      <p>No screenshots yet.</p>
+    {% endfor %}
+  </section>
+
+  {# 3. Description — always present (D-6 guarantees it). #}
+  <section aria-label="About">
+    <p>{{ app.description }}</p>
+  </section>
+
+  {# 4. Try-it — the primary action; links to the app's stored URL via pages:try, carrying
+       the page-view impression so the conversion attributes to this shown instance. #}
+  <section aria-label="Try it">
+    <a href="{% url 'pages:try' app_id=app.id %}{% if imp %}?imp={{ imp }}{% endif %}">
+      Try {{ app.name }}
+    </a>
+  </section>
+
+  {# 5. Share — POST to pages:share (progressive enhancement). The canonical URL is always
+       copyable below, so the page is shareable even with no JavaScript (AC4). #}
+  <section aria-label="Share">
+    <form method="post" action="{% url 'pages:share' app_id=app.id %}">
+      {% csrf_token %}
+      {% if imp %}<input type="hidden" name="imp" value="{{ imp }}">{% endif %}
+      <button type="submit">Share</button>
+    </form>
+    <label for="share-url">Page link</label>
+    <input id="share-url" type="text" readonly
+           value="{{ request.scheme }}://{{ request.get_host }}{% url 'pages:app-page' app_id=app.id %}">
+  </section>
+
+  {# 6. Reviews — a defined empty slot only (AP-1/AC9). app-pages captures, stores, and shows
+       NO rating data; reviews are owned by the ratings-reviews feature. The slot exists so
+       adding reviews later is not a uniformity-breaking change. #}
+  <section aria-label="Reviews">
+    <h2>Reviews</h2>
+    <p>Reviews coming soon.</p>
+  </section>
+
+</article>
+{% endblock %}

@@ -16,6 +16,10 @@ urlpatterns = [
     path("health", health, name="health"),
     path("taxonomy/", include("apps.taxonomy.urls")),
     path("catalog/", include("apps.catalog.urls")),
+    # The app-pages activation switch (DESIGN.md §12): removing this include rolls the
+    # feature back with zero data migration. /apps/ is free — catalog dev pages live under
+    # catalog/apps/.
+    path("apps/", include("apps.pages.urls")),
     path("", include("apps.accounts.urls")),
 ]
 

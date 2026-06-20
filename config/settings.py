@@ -89,6 +89,7 @@ INSTALLED_APPS = [
     "apps.taxonomy",
     "apps.catalog",
     "apps.signals",
+    "apps.pages",
 ]
 
 MIDDLEWARE = [

@@ -27,7 +27,8 @@ decisions go in [/DECISIONS.md](../../DECISIONS.md).*
 - **Stage / feature:** `2-design` / app-pages (Software Architect)
 - **Decision:** The public page lives at `apps/<App.id (UUID)>/` — keyed on the **stable D-6
   UUID handle**, never on a name/slug — and is **indexable** (no `noindex`; canonical `<link>`
-  = the same URL). Resolves OQ-4.
+  = the same URL). Resolves OQ-4. **Built at Stage 4 — routes in `apps/pages/urls.py` use the
+  `<uuid:app_id>` converter; `app_page.html` emits a canonical `<link>` + copyable URL.**
 - **Why:** AC4 requires a link that **survives metadata edits**; only the immutable `App.id`
   does (a name/slug mutates when the developer edits it). Indexability serves the open-access
   discovery premise (A1, vision §4.1) — nothing on the page is secret.
@@ -41,7 +42,8 @@ decisions go in [/DECISIONS.md](../../DECISIONS.md).*
 - **Decision:** Any visitor — signed-in or **anonymous** — gets the **full page** (AC5).
   Behavioral capture (page-view impression, try-it click-through, share) happens **only for
   authenticated visitors**; an anonymous try-it/share still works but writes **no** event.
-  Resolves the AC5 ∩ AC6 tension. *Raised for confirmation as part of DN-10.*
+  Resolves the AC5 ∩ AC6 tension. **Confirmed: DN-10 → approved (2026-06-20); built in
+  `apps/pages/emission.py` (the `request.user.is_authenticated` gate) at Stage 4.**
 - **Why:** The D-7 corpus is keyed `user × App.id` and `signals.capture.*` requires a real
   authenticated `user`; an anonymous actor has no identity the corpus can attribute returns/
   rings to. Rendering needs no capture, so AC5 (open render) and AC6 (capture for the
@@ -61,7 +63,9 @@ decisions go in [/DECISIONS.md](../../DECISIONS.md).*
   adding **`Surface.APP_PAGE`** to `apps/signals/kinds.py` — the **additive extension D-7
   pre-authorizes** (kinds.py names `app_page` explicitly). Resolves OQ-2. *Raised for
   confirmation as part of DN-10 because it reinterprets the brief's "impression generation is
-  out of scope" bullet (see Why).*
+  out of scope" bullet (see Why).* **Confirmed: DN-10 → approved (2026-06-20); built at Stage 4
+  — `Surface.APP_PAGE` added (`apps/signals/kinds.py` + reversible migration `0002`), page-view
+  impression + linked try-it/share wired through `apps/pages/emission.py`.**
 - **Why:** `signals.capture.record_click_through` **requires** an originating impression, but a
   direct/search visit has no *digest* impression. Treating the page view as the impression (a)
   satisfies that requirement with **no contract change**, (b) is **additive-only** (one enum

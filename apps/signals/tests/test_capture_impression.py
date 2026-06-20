@@ -108,6 +108,14 @@ class RecordImpressionTests(TestCase):
             capture.record_impression(self.user, self.app.id, surface="banner")
         self.assertEqual(Impression.objects.count(), 0)
 
+    def test_app_page_surface_is_accepted(self):
+        """The app-pages additive surface passes _require_surface (DESIGN §11, T-01)."""
+        impression = capture.record_impression(
+            self.user, self.app.id, surface=Surface.APP_PAGE
+        )
+        self.assertEqual(impression.surface, Surface.APP_PAGE)
+        self.assertEqual(Impression.objects.filter(surface="app_page").count(), 1)
+
 
 class RecordPlatformVisitTests(TestCase):
     def setUp(self):

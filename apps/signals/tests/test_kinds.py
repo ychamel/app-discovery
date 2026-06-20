@@ -24,5 +24,6 @@ class EventKindTests(SimpleTestCase):
 
 
 class SurfaceTests(SimpleTestCase):
-    def test_exactly_digest_at_mvp(self):
-        self.assertEqual(set(Surface.values), {"digest"})
+    def test_exactly_the_known_surfaces(self):
+        # digest (signal-capture MVP) + app_page (app-pages additive extension, DESIGN §11).
+        self.assertEqual(set(Surface.values), {"digest", "app_page"})

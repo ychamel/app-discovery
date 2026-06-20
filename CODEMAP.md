@@ -153,6 +153,12 @@ _Built by `identity-accounts` Stage 4. Entries are added as each shared item shi
 ### Behavioral signals — configuration & metrics
 - `return_window_short_days()` / `return_window_long_days()` — return-to-platform windows (defaults 3 / 14) — `apps/core/config.py`
 - signals metric constants (`IMPRESSION_CAPTURED`, `CLICK_THROUGH_CAPTURED`, `SUBSCRIBE_CAPTURED`, `PAGE_REENGAGEMENT_CAPTURED`, `SHARE_CAPTURED`, `PLATFORM_VISIT_CAPTURED`, `OFF_PLATFORM_PROXY_CAPTURED`, `CAPTURE_ERROR`) — `apps/core/observability.py`
+- `Surface.APP_PAGE` — the app-page impression surface (app-pages additive extension, DESIGN §11) — `apps/signals/kinds.py`
+
+### Public app pages (`apps/pages/`, a pure D-6/D-7 consumer — owns no model)
+- `emission.record_page_view(request, app_id) -> UUID | None` / `record_try_click(request, app_id, imp)` / `record_share(request, app_id, imp)` — the **surface-side non-blocking** capture wrapper: authenticated-only (AP-4), fail-soft-but-counted (AC7), never raises into the request — `apps/pages/emission.py`
+- route names `pages:app-page` / `pages:try` / `pages:share` — the public page, try-it redirect, and share endpoint, keyed on `App.id` (AP-5) — `apps/pages/urls.py`
+- app-pages metric constants (`APP_PAGE_RENDERED`, `APP_PAGE_NOT_AVAILABLE`, `APP_PAGE_CAPTURE_DEGRADED`) — `apps/core/observability.py`
 
 <!-- Example of the shape this takes once code exists:
 
