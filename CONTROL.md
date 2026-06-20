@@ -17,10 +17,10 @@ Rules:
 | Field              | Value                                                            |
 |--------------------|------------------------------------------------------------------|
 | **Active feature** | **`app-pages`** (Phase 1 Catalog; dep `submission-intake` ✓)     |
-| **Stage**          | `2-design`                                                       |
-| **Persona**        | **Software Architect** (see [CLAUDE.md](CLAUDE.md) §2) — DESIGN drafted, awaiting approval (DN-10) |
+| **Stage**          | `4-build`                                                       |
+| **Persona**        | **Senior Engineer** (see [CLAUDE.md](CLAUDE.md) §2) — implements [TASKS.md](features/app-pages/TASKS.md) (T-01…T-06) |
 | **Folder**         | [features/app-pages/](features/app-pages/)                       |
-| **Last updated**   | 2026-06-20 — **Software Architect drafted [DESIGN.md](features/app-pages/DESIGN.md)** (14-step protocol). New Django app `apps/pages/` — a **pure D-6/D-7 consumer with no model of its own** (3 thin views + fail-soft `emission` + uniform template). Resolves the **OQ-2 attribution fork**: a page view = an **`app_page`-surface Impression** (try-it = `click_through` linked to it, share links too), adding `Surface.APP_PAGE` as the **D-7 additive extension** — **no new global decision**. Logged **AP-3/AP-4/AP-5**; resolved OQ-1…OQ-4. **Awaiting approval — raised DN-10** (page-view-as-impression reinterprets the brief's "impression generation out of scope" line; + anonymous-capture boundary). No Stage advance until approved. |
+| **Last updated**   | 2026-06-20 — **DN-10 approved → Planner/Tech Lead decomposed [DESIGN.md](features/app-pages/DESIGN.md) into [TASKS.md](features/app-pages/TASKS.md): 6 ordered tasks (4× S, 2× M; no `L`).** Order is risk- and adopt-before-emit-first: **T-01** `Surface.APP_PAGE` + no-op `signals` migration (must precede any emit, D-7 §12) → **T-02** scaffold `apps/pages` (no model/migration) → **T-03** `emission.py` (the AP-4 authenticated-only + AC7 fail-soft-but-counted core, fake-seam tested) → **T-04** 3 thin views + routes + the `config/urls` include (AC5/6/7/8, §10 security, page-view-impression wiring) → **T-05** uniform template (AC1/2/3/9, A4) → **T-06** docs/CODEMAP/finalize. Full DESIGN-element + AC1–AC9 coverage table in TASKS.md. Advanced to `4-build`. |
 
 > **Closed out (Stage 6 skipped, reopenable):** `identity-accounts` (2026-06-17, 108
 > tests), `interest-taxonomy` (2026-06-17, 184 tests), `submission-intake`
@@ -35,25 +35,31 @@ Rules:
 ### Latest session status (CLAUDE.md §6.7 — overwritten each session)
 
 ```
-Stage: 2-design | Feature: app-pages | Persona: Software Architect
-Done: DN-9 approved → advanced to 2-design and drafted features/app-pages/DESIGN.md via the 14-step protocol.
-      New Django app apps/pages/ = a PURE consumer (no model, no migration of its own): 3 thin views
-      (app_page / try-redirect / share) + a fail-soft `emission` helper + one uniform server-rendered template,
-      reading the catalog via D-6 get_catalogued_app and emitting via D-7 signals.capture.*. Resolved the OQ-2
-      attribution fork (AP-3): an authenticated page view = an `app_page`-surface Impression; the try-it click =
-      a click_through LINKED to it (share too) — satisfies D-7's required-impression with NO contract change and
-      makes the brief's "CTR per page view" metric measurable. Only global-vocab touch = adding Surface.APP_PAGE
-      (the D-7-pre-authorized additive enum value; no new ADR). AP-4 = capture is authenticated-only, render is
-      fully anonymous (resolves AC5 ∩ AC6, bounds R5). AP-5 = URL apps/<App.id>/, edit-stable + indexable (OQ-4).
-      Full AC1–AC9 → design-element map (§14); failure modes per component; rollout = additive, no flag,
-      design-for-deletion. Resolved OQ-1…OQ-4.
-Verified by: n/a (Stage-2 artifact — no code this session; contracts read against apps/catalog + apps/signals as-built).
-Blocked/Deferred: Awaiting DESIGN approval (DN-10). No persona/stage advance until answered. page_reengagement
-      emission + anonymous/sessionless capture named as deferred growth paths (not built — no speculative scope).
-Decisions needed: DN-10 (approve DESIGN; confirm AP-3 page-view-as-app_page-impression — it reinterprets the brief's
-      "impression generation out of scope" line; + AP-4 anonymous-capture boundary).
-Next: On approval → set Stage: 3-plan, persona = Planner/Tech Lead, hand off DESIGN.md (sequence the Surface.APP_PAGE
-      edit + no-op signals migration FIRST per D-7 "adopt before you emit"). If not approved, revise per feedback.
+Stage: 4-build | Feature: app-pages | Persona: Planner/Tech Lead → Senior Engineer
+Done: DN-10 approved → decomposed features/app-pages/DESIGN.md into features/app-pages/TASKS.md: 6 ordered,
+      independently-verifiable tasks (4× S, 2× M; NO `L`). Ordering = risk-first + the one hard constraint
+      "adopt before you emit" (D-7 §12):
+        T-01 (S) add Surface.APP_PAGE + its no-op choices-only signals migration — MUST precede any emit;
+        T-02 (S) scaffold apps/pages (AppConfig, base.html, INSTALLED_APPS) — owns NO model/migration;
+        T-03 (M) emission.py — the feature core + riskiest piece: AP-4 authenticated-only gate + AC7
+              fail-soft-but-counted policy (wraps signals.capture.*, never re-raises into the request),
+              fake-capture-seam unit tested;
+        T-04 (M) 3 thin views (app_page/try-redirect/share) + apps/pages/urls.py + the config/urls include
+              (the activation switch) — AC5/6/7/8, §6 page-view-as-app_page-impression wiring, §10 security
+              (server-side redirect target, imp-mismatch→no event, CSRF on share), 2 view counters;
+        T-05 (M) the uniform app_page.html — 6 same-order slots, empty/partial states (AC1/AC2/AC9),
+              structural uniformity (AC3), accessibility (A4);
+        T-06 (S) README + CODEMAP + rollback note + finalize AP-3/AP-4 (no new .env, no model).
+      Full DESIGN-element coverage table + AC1–AC9 roll-up in TASKS.md. No re-design (every task traces to a
+      DESIGN §); file-collision note ensures no two tasks edit the same file in parallel (tasks are sequential).
+Verified by: n/a (Stage-3 artifact — no code this session; tasks written against apps/catalog.selectors,
+      apps/signals.capture/kinds, apps/core.observability, config/urls + INSTALLED_APPS as-built).
+Blocked/Deferred: none blocking. page_reengagement emission, anonymous/sessionless capture, and a cached D-6
+      projection remain named growth paths (not built — no speculative scope). TEST_PLAN.md is the Stage-4 exit
+      artifact (Senior Engineer), per-AC Given/When/Then → test.
+Decisions needed: none (DN-10 resolved).
+Next: Senior Engineer builds T-01 first (Surface.APP_PAGE + reversible no-op migration; rehearse up/down), then
+      T-02…T-06 in order; each task leaves the system releasable. Produce TEST_PLAN.md covering AC1–AC9.
 ```
 
 ---
@@ -65,9 +71,9 @@ proceeds.
 
 | ID | Decision needed | Context | Answer |
 |----|-----------------|---------|--------|
-| **DN-10** | **Approve the `app-pages` [DESIGN.md](features/app-pages/DESIGN.md)?** Two interpretation confirmations bundled in: **(a)** **AP-3** — an authenticated **page view is recorded as an `app_page`-surface D-7 Impression** that the try-it `click_through` (and share) link to. This is how D-7's *required* impression is satisfied with no contract change and how the brief's "click-through rate per page view" metric becomes measurable. It **reinterprets** the brief's "*impression generation is out of scope*" line: app-pages does NOT run the curated-feed/digest allocator — it records an `app_page`-surface shown-instance (distinct, segregated by the `surface` field). Adds `Surface.APP_PAGE` as the **D-7-pre-authorized additive enum value** (no new global ADR). **(b)** **AP-4** — capture is **authenticated-only**; an **anonymous** visitor gets the full page (AC5) and working try-it/share but **no** event is written (resolves AC5 ∩ AC6; bounds R5). | DESIGN reuses D-4/D-5/D-6/D-7 as-is — **no new global decision**. New app `apps/pages/` owns no model (pure consumer). Full AC1–AC9 → design-element map in DESIGN §14. | _pending_ |
+| — | _None open._ The agent is not blocked. | DN-10 resolved → **approved** (see *Decisions Made*). | — |
 
-> Resolved decisions (DN-1 … DN-9) are summarized under *Decisions Made* below; full
+> Resolved decisions (DN-1 … DN-10) are summarized under *Decisions Made* below; full
 > rationale lives in the decision logs.
 
 ---
@@ -81,6 +87,7 @@ Only the **active/just-closed** feature is kept in full here. Once a feature is 
 out, its lifecycle collapses to a single pointer line — the full record lives in that
 feature's `DECISIONS.md` / `RELEASE_NOTES.md` and in [DECISIONS.md](DECISIONS.md).
 
+- **DN-10 → approved (2026-06-20)** — `app-pages` **[DESIGN.md](features/app-pages/DESIGN.md) approved** (AP-3 page-view = `app_page`-surface impression confirmed — reinterprets the brief's "impression generation out of scope" as *not running the curated-feed allocator*, distinct + `surface`-segregated; AP-4 authenticated-only capture / anonymous render confirmed). Planner/Tech Lead decomposed it into [TASKS.md](features/app-pages/TASKS.md) (6 tasks, no `L`); advanced to `4-build`, handed to the Senior Engineer.
 - **DN-9 → approved (2026-06-20)** — `app-pages` **[FEATURE_BRIEF.md](features/app-pages/FEATURE_BRIEF.md) approved** (reviews = slot-only AP-1; press-kit = the page AP-2). Advanced to `2-design`; the Software Architect drafted [DESIGN.md](features/app-pages/DESIGN.md) (see DN-10).
 - **DN-8 → A (2026-06-19)** — **`app-pages` activated** as the next feature (Phase 1 Catalog; dep `submission-intake` ✓), chosen over `interest-profile` (Phase 2). It is the public surface that renders accepted apps (a D-6 consumer) and the widest downstream unblock (`open-search-browse`, `ratings-reviews`, `app-subscriptions`, and via those `weekly-digest`). Folder already scaffolded from backlog; set `Stage: 1-define`, updated [INDEX.md](features/INDEX.md), handed to the Product Analyst.
 - **DN-7 → A (2026-06-18)** — `signal-capture` **closed out**; Stage-6 retrospective **skipped** (outcome review deferred/reopenable — it needs a live emitter, `weekly-digest`, that doesn't exist yet; mirrors `identity-accounts` and DN-1/DN-3). Returned to Coordinator. All four Phase-0/early features now closed-out. Surveyed backlog → `app-pages` (Phase 1) and `interest-profile` (Phase 2) have all deps met. Raised **DN-8** to pick the next feature (D2).
@@ -104,6 +111,7 @@ folders remain the full record either way.
 
 | Date       | Stage           | Summary                                                                 |
 |------------|-----------------|-------------------------------------------------------------------------|
+| 2026-06-20 | `2-design`→`3-plan`→`4-build` | **Planner / Tech Lead** (DN-10 approved) — decomposed [app-pages/DESIGN.md](features/app-pages/DESIGN.md) into [TASKS.md](features/app-pages/TASKS.md): **6 ordered tasks (4× S, 2× M; no `L`)**, risk- and **adopt-before-emit-first**. **T-01** add `Surface.APP_PAGE` + its no-op choices-only `signals` migration (must precede any emit — D-7 §12) → **T-02** scaffold `apps/pages` (AppConfig/base/`INSTALLED_APPS`; **owns no model/migration**) → **T-03** `emission.py` (the feature core + riskiest piece: **AP-4** authenticated-only + **AC7** fail-soft-but-counted policy over `signals.capture.*`, fake-seam tested) → **T-04** 3 thin views (`app_page`/`try`-redirect/`share`) + `apps/pages/urls.py` + the `config/urls` include (the activation switch; **AC5/6/7/8**, §6 page-view-as-`app_page`-impression wiring, §10 security — server-side redirect target, `imp`-mismatch→no event, CSRF on share) → **T-05** the **uniform** `app_page.html` (6 same-order slots, empty/partial states **AC1/AC2/AC9**, structural uniformity **AC3**, accessibility A4) → **T-06** README/CODEMAP/rollback/finalize. Full **DESIGN-element + AC1–AC9** coverage table; no re-design (every task traces to a DESIGN §); file-collision note (sequential edits, no parallel collisions). Advanced to `4-build`; handed to the **Senior Engineer** (build T-01 first, produce `TEST_PLAN.md`). |
 | 2026-06-20 | `1-define`→`2-design` | **Software Architect** (DN-9 approved) — drafted [app-pages/DESIGN.md](features/app-pages/DESIGN.md) via the 14-step protocol. New Django app **`apps/pages/`** = a **pure D-6/D-7 consumer with no model of its own** (3 thin views: public `app_page` / `try`-redirect / `share` + a fail-soft `emission` helper + one **uniform** server-rendered template), reading the catalog via **[D-6](DECISIONS.md)** `get_catalogued_app` and emitting via **[D-7](DECISIONS.md)** `signals.capture.*`. **Resolved the OQ-2 attribution fork (AP-3):** an authenticated **page view = an `app_page`-surface `Impression`**; the try-it click = a `click_through` **linked to it** (share too) — satisfies D-7's *required* impression with **no contract change** and makes the brief's "CTR per page view" metric measurable; only global-vocab touch = adding **`Surface.APP_PAGE`** (the D-7-pre-authorized **additive** enum value — **no new ADR**). **AP-4:** capture is **authenticated-only**, render fully **anonymous** (resolves AC5 ∩ AC6, bounds R5 crawler inflation). **AP-5:** URL `apps/<App.id>/`, edit-stable + indexable (OQ-4). Full **AC1–AC9 → design-element** map (§14); per-component failure modes (catalog read = loud 500, capture = fail-soft-but-counted, AC7); rollout = additive/no-flag/design-for-deletion. Resolved OQ-1…OQ-4. **Raised DN-10** (approve DESIGN + confirm AP-3 reinterpretation of "impression generation out of scope" + AP-4 anonymous boundary); no Stage advance until approved. |
 | 2026-06-19 | `1-define`      | **Product Analyst** — drafted [app-pages/FEATURE_BRIEF.md](features/app-pages/FEATURE_BRIEF.md): one **uniform, openly-accessible** public page per accepted app (renders media/description/resolved tags/try-it via the **[D-6](DECISIONS.md)** selectors; emits click-through/share via **[D-7](DECISIONS.md)** `capture.*`; **reviews = empty slot only**, owned by `ratings-reviews`). **6 stories / 9 G-W-T ACs / 7 metrics**, in+out scope, 6 constraints + 5 assumptions (verified vs unverified), 5 risks, vision alignment (§1/§4.1/§5.6/§6; proves **H1/H2**, feeds **H3**). Reuses **D-1/D-5/D-6/D-7 as-is — no new global decision**. Logged feature-local **AP-1** (reviews slot-only) / **AP-2** (press-kit = the page itself) + **OQ-1…OQ-4** (OQ-2 = the D-7 `click_through`-requires-impression vs. impression-less-direct-visit fork, flagged for the Architect). **Raised DN-9** (approve brief + confirm the reviews-slot & press-kit boundaries); no Stage advance until approved. |
 | 2026-06-19 | `0-coordinator`→`1-define` | **Coordinator** — DN-8 resolved → Option A: **activated `app-pages`** (Phase 1 Catalog; dep `submission-intake` ✓) over `interest-profile` (Phase 2). It is the public surface that renders accepted apps (a D-6 consumer) and the widest downstream unblock (`open-search-browse`, `ratings-reviews`, `app-subscriptions`, and via those `weekly-digest`). Folder already scaffolded from backlog; set `Stage: 1-define`, updated [INDEX.md](features/INDEX.md), handed to the **Product Analyst** to draft [FEATURE_BRIEF.md](features/app-pages/FEATURE_BRIEF.md). |
