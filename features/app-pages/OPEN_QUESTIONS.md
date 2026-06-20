@@ -6,6 +6,21 @@
 
 _None mapped to this feature at scaffold time._
 
+## Resolved in Stage 2 (Software Architect — DESIGN.md)
+
+- **OQ-1 → RESOLVED** (DN-9 + DESIGN §5c): reviews = a defined empty-state slot; no rating
+  data captured/stored/shown (AP-1).
+- **OQ-2 → RESOLVED** (DESIGN §6, AP-3): a page view by an authenticated visitor is recorded
+  as an `app_page`-surface `Impression`; the try-it click is a `click_through` linked to it
+  (share links too). Adds `Surface.APP_PAGE` as the D-7 additive extension. *Bundled into
+  DN-10 for confirmation* because it reinterprets the brief's "impression generation out of
+  scope" bullet.
+- **OQ-3 → RESOLVED** (DN-9 + DESIGN §5c): press kit = the page + stable link + existing media;
+  no separate press apparatus (AP-2).
+- **OQ-4 → RESOLVED** (DESIGN §5a, AP-5): URL = `apps/<App.id>/` (edit-stable), indexable.
+- **New (Stage 2) → AP-4** (bundled into DN-10): capture is authenticated-only; rendering is
+  fully anonymous — resolves the AC5 ∩ AC6 tension.
+
 ## Raised in Stage 1 (Product Analyst)
 
 - **OQ-1 — Reviews slot at MVP.** The breakdown §4.2 MVP slice lists a "reviews block,"
