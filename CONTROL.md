@@ -18,9 +18,9 @@ Rules:
 |--------------------|------------------------------------------------------------------|
 | **Active feature** | **`app-pages`** (Phase 1 Catalog; dep `submission-intake` ✓)     |
 | **Stage**          | `1-define`                                                       |
-| **Persona**        | **Product Analyst** (see [CLAUDE.md](CLAUDE.md) §2) — drafting `FEATURE_BRIEF.md` |
+| **Persona**        | **Product Analyst** (see [CLAUDE.md](CLAUDE.md) §2) — brief drafted, awaiting approval (DN-9) |
 | **Folder**         | [features/app-pages/](features/app-pages/)                       |
-| **Last updated**   | 2026-06-19 — **DN-8 → A: `app-pages` activated.** The public surface that renders accepted apps (a D-6 consumer) and the widest downstream unblock (open-search-browse, ratings-reviews, app-subscriptions, weekly-digest). Coordinator set `Stage: 1-define`, updated [INDEX.md](features/INDEX.md), and handed to the **Product Analyst** to draft [FEATURE_BRIEF.md](features/app-pages/FEATURE_BRIEF.md) from the request + vision doc. |
+| **Last updated**   | 2026-06-19 — **Product Analyst drafted [FEATURE_BRIEF.md](features/app-pages/FEATURE_BRIEF.md)** (6 stories / 9 G-W-T ACs / 7 metrics; reuses D-1/D-5/D-6/D-7 as-is, no new global decision). Logged feature-local **AP-1** (reviews = slot-only) / **AP-2** (press-kit = the page itself) + **OQ-1…OQ-4**. **Awaiting approval — raised DN-9.** No Stage advance until approved. |
 
 > **Closed out (Stage 6 skipped, reopenable):** `identity-accounts` (2026-06-17, 108
 > tests), `interest-taxonomy` (2026-06-17, 184 tests), `submission-intake`
@@ -35,17 +35,20 @@ Rules:
 ### Latest session status (CLAUDE.md §6.7 — overwritten each session)
 
 ```
-Stage: 0-coordinator → 1-define | Feature: none → app-pages | Persona: Coordinator → Product Analyst
-Done: DN-8 resolved → A. Activated app-pages (Phase 1 Catalog; dep submission-intake ✓): the public surface
-      that renders accepted apps (a D-6 consumer) and the widest downstream unblock. Folder already scaffolded
-      from backlog — set Stage: 1-define, updated CONTROL Current State + features/INDEX.md (app-pages →
-      1-define/active). No new artifacts created (the 7 seed files already exist).
-Verified by: n/a (Coordinator/activation — no code change this session).
-Blocked/Deferred: none.
-Decisions needed: none open.
-Next: Product Analyst reads the app-pages request + curated-app-platform-design.md (+ the D-6 catalogued-app
-      contract) and the persona file, then drafts features/app-pages/FEATURE_BRIEF.md. Do NOT run two personas
-      in one session — start the Analyst in the next session.
+Stage: 1-define | Feature: app-pages | Persona: Product Analyst
+Done: Drafted features/app-pages/FEATURE_BRIEF.md from the scope seed + vision (§1/§4.1/§5.6/§6) + breakdown §4.2
+      + the upstream contracts. app-pages = one uniform, openly-accessible public page per accepted app (render
+      media/description/resolved tags/try-it via D-6 selectors; emit click-through/share via D-7 capture.*;
+      reviews = empty slot only). 6 stories / 9 G-W-T ACs / 7 metrics / in+out scope / 6 constraints + 5
+      assumptions (verified vs unverified) / 5 risks / vision alignment. Reuses D-1/D-5/D-6/D-7 as-is — NO new
+      global decision. Logged feature-local AP-1 (reviews slot-only) / AP-2 (press-kit = the page itself) +
+      OQ-1…OQ-4 (OQ-2 = the D-7 "click_through requires an impression" vs impression-less direct-visit fork,
+      flagged for the Architect).
+Verified by: n/a (Stage-1 artifact — no code this session).
+Blocked/Deferred: Awaiting brief approval (DN-9). No persona/stage advance until answered.
+Decisions needed: DN-9 (approve the brief; confirm AP-1/OQ-1 reviews-slot boundary + AP-2/OQ-3 press-kit scope).
+Next: On approval → set Stage: 2-design, persona = Software Architect, hand off the brief (the OQ-2 D-7 click-
+      through-attribution fork is the first thing the Architect resolves). If not approved, revise per feedback.
 ```
 
 ---
@@ -57,7 +60,7 @@ proceeds.
 
 | ID | Decision needed | Context | Answer |
 |----|-----------------|---------|--------|
-| _none_ | The agent is not blocked. `app-pages` is active in Stage `1-define`. | — | — |
+| **DN-9** | **Approve the `app-pages` [FEATURE_BRIEF.md](features/app-pages/FEATURE_BRIEF.md)?** Two scope confirmations bundled in: **(a)** reviews are a **slot-only empty state** at MVP, all review content deferred to `ratings-reviews` (AP-1 / OQ-1); **(b)** "press kit" = the public page + stable link + existing media, **no** separate press-asset download / press-contact / embargo (AP-2 / OQ-3). | Brief: 6 stories / 9 G-W-T ACs / 7 metrics. Reuses D-1/D-5/D-6/D-7 as-is — no new global decision. OQ-2 (D-7 `click_through` requires an impression vs. impression-less direct-visit) is a **Stage-2** design fork, not a Stage-1 blocker. | _unanswered_ |
 
 > Resolved decisions (DN-1 … DN-8) are summarized under *Decisions Made* below; full
 > rationale lives in the decision logs.
@@ -95,6 +98,7 @@ folders remain the full record either way.
 
 | Date       | Stage           | Summary                                                                 |
 |------------|-----------------|-------------------------------------------------------------------------|
+| 2026-06-19 | `1-define`      | **Product Analyst** — drafted [app-pages/FEATURE_BRIEF.md](features/app-pages/FEATURE_BRIEF.md): one **uniform, openly-accessible** public page per accepted app (renders media/description/resolved tags/try-it via the **[D-6](DECISIONS.md)** selectors; emits click-through/share via **[D-7](DECISIONS.md)** `capture.*`; **reviews = empty slot only**, owned by `ratings-reviews`). **6 stories / 9 G-W-T ACs / 7 metrics**, in+out scope, 6 constraints + 5 assumptions (verified vs unverified), 5 risks, vision alignment (§1/§4.1/§5.6/§6; proves **H1/H2**, feeds **H3**). Reuses **D-1/D-5/D-6/D-7 as-is — no new global decision**. Logged feature-local **AP-1** (reviews slot-only) / **AP-2** (press-kit = the page itself) + **OQ-1…OQ-4** (OQ-2 = the D-7 `click_through`-requires-impression vs. impression-less-direct-visit fork, flagged for the Architect). **Raised DN-9** (approve brief + confirm the reviews-slot & press-kit boundaries); no Stage advance until approved. |
 | 2026-06-19 | `0-coordinator`→`1-define` | **Coordinator** — DN-8 resolved → Option A: **activated `app-pages`** (Phase 1 Catalog; dep `submission-intake` ✓) over `interest-profile` (Phase 2). It is the public surface that renders accepted apps (a D-6 consumer) and the widest downstream unblock (`open-search-browse`, `ratings-reviews`, `app-subscriptions`, and via those `weekly-digest`). Folder already scaffolded from backlog; set `Stage: 1-define`, updated [INDEX.md](features/INDEX.md), handed to the **Product Analyst** to draft [FEATURE_BRIEF.md](features/app-pages/FEATURE_BRIEF.md). |
 | 2026-06-18 | `6-post-release`→`0-coordinator` | **Coordinator** — DN-7 resolved → Option A: **`signal-capture` closed out**, Stage-6 retrospective skipped (outcome review deferred/reopenable — needs a live emitter, `weekly-digest`; mirrors `identity-accounts`/`interest-taxonomy`/`submission-intake`). **All four Phase-0/early features now closed-out.** Updated [INDEX.md](features/INDEX.md). Surveyed backlog: with all deps met, **`app-pages`** (Phase 1, the public surface for accepted apps + a D-6 consumer, widest downstream unblock) and **`interest-profile`** (Phase 2) are the two available picks. Raised **DN-8** for the next-feature pick (D2). |
 | 2026-06-18 | `5-release`→`6-post-release` | **Release Engineer** — released `signal-capture` to local/dev. Wrote [RELEASE_NOTES.md](features/signal-capture/RELEASE_NOTES.md) (changes, who's affected + the **[D-7](DECISIONS.md)** action for downstream emitters/readers, operator rollout, gate-based promotion, metric→signal→alert map, rehearsed rollback, known limits). **Rehearsed rollout→rollback on a throwaway Postgres DB** (`signals_release_rehearsal`, dropped after): `migrate` → 4 `signals_*` tables (`signals_impression`/`_impression_tag`/`_engagement_event`/`_platform_visit`) → `check` clean → `migrate signals zero` reverses to **0 `signals_*` tables** (shared `citext` retained) → re-`migrate signals` re-applies (reversible). Re-verified **374 tests / `ruff` / `check` / no drift**. No live emitter at release (emitting surfaces out of scope, R6; only writer is the visit middleware) → production promotion + live-metrics window deferred until `weekly-digest`. Updated [INDEX.md](features/INDEX.md). Raised **DN-7** (run Stage 6 now vs skip, as DN-1/DN-3). Handed to Retrospective Analyst. |
