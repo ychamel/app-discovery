@@ -52,6 +52,55 @@ decisions go in [/DECISIONS.md](../../DECISIONS.md).*
   `developer-dashboard` ("reach = curated users") both depend on this same semantic
   (breakdown §4.2 says ratings-reviews + editorial-curation-tools must agree).
 
+## RR-4: Own mutable store; eligibility frozen-on-the-row and re-derivable (OQ-4)
+- **Date:** 2026-06-20
+- **Stage / feature:** `2-design` / ratings-reviews (Software Architect)
+- **Decision:** Ratings live in this feature's **own table** `ratings_rating` (one row per
+  `(user, app_id)`, **mutable** — editable/removable), distinct from the append-only D-7
+  behavioral tables (A5). The curated-eligibility determination is **frozen on the row** at
+  write time — a non-null `weight_eligible` boolean plus an `eligibility_basis` reason
+  (`curated_digest_impression` / `no_curated_impression` / `curation_unverified`) and the
+  `eligibility_determined_at` instant — yet **re-derivable**, since every input (rater, app,
+  timestamp) is retained and the impression corpus is append-only.
+- **Why:** **AC5 mandates** the determination be *stored and present on 100% of ratings,
+  queryable later* — a derive-at-read-only model would leave it absent until something asks.
+  Freezing satisfies AC5; re-derivability preserves the R1 "record as data, correctable"
+  property at zero extra cost. A rating is *explicit, mutable* opinion, so an own mutable store
+  is the faithful shape — folding it into the append-only, no-score-column signals schema (D-7)
+  would violate that contract.
+- **Alternatives rejected:** (a) **Store ratings as a new `signals` `EngagementEvent` kind** —
+  breaks D-7's append-only + no-score invariants (a rating carries a score, free text, and is
+  editable). (b) **Derive eligibility at read only** — leaves AC5's determination absent;
+  rejected. (c) **Soft-delete on remove** — unneeded for AC8 ("retracted from display");
+  hard-delete is simpler and design-for-deletion.
+- **Consequences:** account deletion `SET_NULL`-anonymizes the rating (retain-for-H3, unlink
+  the person — SC-10 posture); a stronger purge-the-review-text posture is a noted, unbuilt
+  deletion-hook addition. A `recompute_eligibility` management path is the documented growth
+  lever for when a `DIGEST` emitter ships — noted, not built.
+
+## RR-5: The AP-1 slot is filled by a ratings inclusion tag (one-line, fail-soft)
+- **Date:** 2026-06-20
+- **Stage / feature:** `2-design` / ratings-reviews (Software Architect)
+- **Decision:** ratings-reviews fills the empty `app-pages` AP-1 reviews slot via a Django
+  **inclusion template tag** (`{% app_reviews app %}` from `apps.ratings.templatetags.ratings_tags`),
+  changing **only the content** of `app_page.html` slot 6 (the `<section aria-label="Reviews">`,
+  its heading, and its position are unchanged). The tag is **fail-soft** — a display-selector
+  error renders a degraded slot and never raises into the page render (preserving app-pages
+  AC5/AP-1). The gate evidence is read through a **new factual `signals.selectors.has_impression`**
+  selector (a pure `EXISTS`, D-7-compliant) — never a direct `signals_*` read; the curation
+  *judgement* (`CURATED_SURFACES = {DIGEST}`) stays in `ratings.gate`, keeping signals neutral.
+- **Why:** the inclusion tag confines the integration to one template line in the slot app-pages
+  *designed to be fillable* ("adding reviews later is not a uniformity-breaking change"), keeping
+  the closed-out pages view ignorant of ratings internals. Reading impression evidence through a
+  signals selector honors D-7 ("nothing reads `signals_*` directly past the selector surface").
+- **Alternatives rejected:** (a) **pages view fetches ratings data and passes it to the template**
+  — couples the pages view to this feature's data shape. (b) **`ratings` queries `Impression`
+  directly** — violates D-7. (c) **put the DIGEST-=-curation judgement in `signals`** — leaks
+  integrity semantics into the neutral raw store. All rejected.
+- **Consequences:** the only edits outside `apps/ratings/` are one slot's content in
+  `app_page.html`, one `config/urls` include, a few `apps/core` config/metric additions, and one
+  additive reversible index on `signals.Impression`. Rollback restores the one slot line.
+
 ## RR-3: Anyone authenticated may rate; the gate governs weight, not permission
 - **Date:** 2026-06-20
 - **Stage / feature:** `1-define` / ratings-reviews (Product Analyst)

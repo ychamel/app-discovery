@@ -20,7 +20,7 @@ Rules:
 | **Stage**          | `2-design`                                                     |
 | **Persona**        | **Software Architect** (see [CLAUDE.md](CLAUDE.md) §2) — designs [DESIGN.md](features/ratings-reviews/DESIGN.md) from the approved [FEATURE_BRIEF.md](features/ratings-reviews/FEATURE_BRIEF.md); owns its own explicit-signal store (OQ-4/A5), reads D-6 app validity + D-7 `Surface.DIGEST` impression evidence for the gate (RR-2), fills the `app-pages` AP-1 reviews slot, and must decide whether "curated = DIGEST impression" is promoted to a global ADR |
 | **Folder**         | [features/ratings-reviews/](features/ratings-reviews/)         |
-| **Last updated**   | 2026-06-20 — **DN-11 resolved → [ratings-reviews/FEATURE_BRIEF.md](features/ratings-reviews/FEATURE_BRIEF.md) APPROVED; advanced to `2-design`.** Gate = **curated-rating recorded-not-computed** (RR-1) with **curated = a `Surface.DIGEST` D-7 impression** (RR-2, option a; `APP_PAGE` views never count, vision §4.1); "anyone signed-in may rate" confirmed (RR-3). At MVP ~all ratings record *not-eligible* until a `DIGEST` emitter ships (R3 — correct). Handed to the **Software Architect**: owns its own explicit-signal store (OQ-4), reads D-6/D-7, fills the `app-pages` AP-1 slot, and decides whether "curated = DIGEST impression" becomes a global ADR. |
+| **Last updated**   | 2026-06-20 — **[ratings-reviews/DESIGN.md](features/ratings-reviews/DESIGN.md) drafted; raised DN-12 (awaiting approval).** New `apps/ratings/` app with its **own mutable store**; the curated-rating gate **recorded** as a frozen-yet-re-derivable `weight_eligible` flag (OQ-4/RR-4); a new factual `signals.selectors.has_impression` reads gate evidence (D-7-compliant); the AP-1 slot filled by a fail-soft inclusion tag (RR-5); **proposed global [D-8](DECISIONS.md)** promoting "curated = DIGEST impression" repo-wide. No new stack; one additive reversible index on `signals.Impression`. Stays `2-design` until DN-12 is answered. |
 
 > **Closed out (Stage 6 skipped, reopenable):** `identity-accounts` (2026-06-17, 108
 > tests), `interest-taxonomy` (2026-06-17, 184 tests), `submission-intake`
@@ -36,24 +36,25 @@ Rules:
 ### Latest session status (CLAUDE.md §6.7 — overwritten each session)
 
 ```
-Stage: 1-define → 2-design | Feature: ratings-reviews | Persona: Product Analyst → Software Architect
-Done: Drafted + got APPROVED features/ratings-reviews/FEATURE_BRIEF.md (DN-11). 5 stories / 9 G-W-T ACs / 7 metrics /
-      in+out scope / 6 constraints + 5 assumptions / 5 risks / vision alignment, grounded in vision §3.1/§4.1/§4.3/§5.3,
-      breakdown §4.2/§7 Q2, and D-6/D-7/D-5/D-3/D-1 + app-pages AP-1. Core: the curated-rating gate is RECORDED not
-      computed (RR-1 — capture rating + optional review + per-rating curated-eligibility, raw, no scoring); anyone
-      signed-in may rate, gate governs weight not permission (RR-3, vision §4.1). User resolved DN-11: curated = a
-      Surface.DIGEST D-7 impression (RR-2 option a; APP_PAGE views never count). Updated brief A4 → verified, RR-2 →
-      resolved, OQ-1 → resolved; updated INDEX.md (→ 2-design).
-Verified by: n/a (Stage-1 artifact, no code). Inspected the D-7 Surface enum (DIGEST vs APP_PAGE) + signals
-      capture/selectors to anchor R3 and the resolved gate definition.
-Blocked/Deferred: At MVP ~all ratings record not-eligible until a DIGEST emitter (weekly-digest/editorial-curation-tools)
-      ships (R3 — expected, not a blocker). OQ-2 (rating shape) / OQ-3 (abuse OUT) / OQ-4 (store + freeze-vs-derive) are
-      Stage-2 design concerns.
-Decisions needed: none.
-Next: Software Architect writes features/ratings-reviews/DESIGN.md — its own explicit-signal store (OQ-4), reads D-6
-      app validity + D-7 DIGEST impression evidence for the gate, fills the app-pages AP-1 reviews slot; must decide
-      whether "curated = DIGEST impression" is promoted to a global ADR (editorial-curation-tools/developer-dashboard
-      share the semantic).
+Stage: 2-design (awaiting DN-12) | Feature: ratings-reviews | Persona: Software Architect
+Done: Wrote features/ratings-reviews/DESIGN.md via the 14-step protocol. New Django app apps/ratings/ = own MUTABLE store
+      ratings_rating (one row per user×app, editable/removable), reusing catalog D-6 (app validity), signals D-7
+      (impression evidence), accounts D-3 (auth), pages (the AP-1 slot), core (config/metrics). The curated-rating gate
+      is RECORDED as a frozen-yet-re-derivable weight_eligible + eligibility_basis (AC5 needs it on 100% of ratings;
+      re-derivable per R1) — resolving OQ-4/RR-4. No score/weight/rank column → AC6 STRUCTURAL; the "summary" is raw
+      count + distribution, never an average. Gate predicate split cleanly: a new FACTUAL signals.selectors.has_impression
+      (pure EXISTS, D-7-compliant) reads evidence; the curation JUDGEMENT (CURATED_SURFACES={DIGEST}) stays in
+      ratings.gate. AP-1 slot filled by a fail-soft inclusion tag editing ONLY slot-6 content of app_page.html (RR-5).
+      Gate read fails CLOSED (not-eligible + loud metric, rating still stores); display fails SOFT (page still renders).
+      Full AC1–AC9 → design-element map (§13). Logged proposed global D-8 + feature-local RR-4/RR-5; resolved OQ-2/3/4.
+Verified by: n/a (Stage-2 artifact, no code). Inspected signals selectors/kinds/models (confirmed no per-user impression
+      read exists → the new selector), pages views + app_page.html slot 6, catalog D-6 selectors, core config, accounts
+      permissions + LOGIN_URL=/auth/signin, config/urls — to ground every contract (no TBD).
+Blocked/Deferred: At MVP ~all ratings record not-eligible until a DIGEST emitter ships (R3 — expected). Stronger
+      review-text purge-on-deletion + a recompute_eligibility management path are noted growth levers, not built.
+Decisions needed: DN-12 (approve DESIGN + the additive signals.has_impression selector + promoting the gate semantic to
+      global D-8). The Architect does NOT advance to 3-plan until DN-12 is answered.
+Next: On approval — set Stage: 3-plan, hand to the Planner/Tech Lead to decompose DESIGN.md into TASKS.md; ratify D-8.
 ```
 
 ---
@@ -65,10 +66,11 @@ proceeds.
 
 | ID | Decision needed | Context | Answer |
 |----|-----------------|---------|--------|
-| — | _None open._ The agent is not blocked. | DN-11 resolved → **brief approved; curated = DIGEST impression** (see *Decisions Made*). | — |
+| **DN-12** | **Approve [ratings-reviews/DESIGN.md](features/ratings-reviews/DESIGN.md)?** Three things bundled: **(1)** the architecture — a new `apps/ratings/` app with its **own mutable store** (`ratings_rating`), the curated-rating gate **recorded as a frozen-yet-re-derivable** `weight_eligible` flag (OQ-4/RR-4), the AP-1 slot filled via a fail-soft inclusion tag (RR-5), and one **additive reversible** index on `signals.Impression`. **(2)** A **new factual `signals.selectors.has_impression`** selector (a pure `EXISTS`, D-7-compliant) so the gate reads impression evidence without a direct corpus read — confirm this additive D-7 read-surface extension. **(3)** **Promote the gate semantic to global [D-8](DECISIONS.md)** (proposed) — "curated = an organic-curation/`DIGEST` impression; an open `APP_PAGE` view never counts" — since `editorial-curation-tools` / `developer-dashboard` / the Quality Score consumer all share it. | The Architect ran the 14-step protocol; the design honors CLAUDE.md §5 (own table = design-for-deletion, one write/read/gate path, no scoring = AC6 structural, fail-loud gate). No new stack (D-4). The one cross-app schema touch is a reversible index. | _\<approve / approve-with-changes / reject\>_ |
 
 > Resolved decisions (DN-1 … DN-11) are summarized under *Decisions Made* below; full
-> rationale lives in the decision logs.
+> rationale lives in the decision logs. **DN-12 is open** — the Architect does not advance
+> to `3-plan` until it is answered.
 
 ---
 
@@ -108,6 +110,7 @@ folders remain the full record either way.
 
 | Date       | Stage           | Summary                                                                 |
 |------------|-----------------|-------------------------------------------------------------------------|
+| 2026-06-20 | `2-design` (awaiting DN-12) | **Software Architect** — wrote [ratings-reviews/DESIGN.md](features/ratings-reviews/DESIGN.md) via the 14-step protocol. New Django app **`apps/ratings/`** with its **own mutable store** `ratings_rating` (one row per user×app, editable/removable — the deliberate contrast with the append-only D-7 corpus), reusing **D-6** (app validity), **D-7** (impression evidence), **D-3** (auth), `apps/pages` (the AP-1 slot), `apps/core`. The **curated-rating gate is RECORDED** as a **frozen-yet-re-derivable** `weight_eligible` + `eligibility_basis` (AC5 wants it on 100% of ratings; re-derivable per R1) — resolving **OQ-4/RR-4**; **no score/weight/rank column → AC6 structural**, and the "summary" is a raw count + distribution, never an average (the gameable number the gate neutralizes). Split the gate cleanly: a **new factual `signals.selectors.has_impression`** (pure `EXISTS`, D-7-compliant) reads evidence, while the curation **judgement** (`CURATED_SURFACES={DIGEST}`) stays in `ratings.gate` (signals stays neutral). AP-1 slot filled by a **fail-soft inclusion tag** editing only slot-6 *content* of `app_page.html` (**RR-5**); the gate read **fails closed** (not-eligible + loud metric, rating still stores), display **fails soft** (page still renders). Full **AC1–AC9 → design-element** map (§13); per-component failure modes; rollout = additive/no-flag/design-for-deletion with one additive reversible index on `signals.Impression`. Logged **proposed global [D-8](DECISIONS.md)** (promote "curated = DIGEST impression" repo-wide — `editorial-curation-tools`/`developer-dashboard`/Quality Score share it) + feature-local **RR-4/RR-5**; resolved **OQ-2/3/4**. **Raised DN-12** (approve DESIGN + the additive `has_impression` selector + the D-8 promotion); no Stage advance until approved. |
 | 2026-06-20 | `1-define`→`2-design` | **Product Analyst** (DN-11 approved) — drafted + got approved [ratings-reviews/FEATURE_BRIEF.md](features/ratings-reviews/FEATURE_BRIEF.md): the explicit-signal surface + the **curated-rating gate** (vision §4.1, the rule that kills bought ratings). **5 stories / 9 G-W-T ACs / 7 metrics**, in+out scope, 6 constraints + 5 assumptions, 5 risks, vision alignment (§3.1/§4.1/§4.3/§5.3; proves **H1**, feeds **H3**). Core framing **RR-1: the gate is *recorded*, not computed** — capture rating + optional review + a per-rating *curated-eligibility determination*, **raw, no scoring** ("enforceable now, weightable later"); fills the empty `app-pages` **AP-1** reviews slot. **RR-3:** anyone signed-in may rate; the gate governs *weight*, not *permission*; outside ratings displayed-but-unweighted; anonymous can't rate. Reads **D-6** (app validity) + **D-7** impression evidence + **D-3** identity; reuses contracts as-is — **no new global decision**. Logged feature-local **RR-1/RR-2/RR-3** + **OQ-1…OQ-4**. **User resolved DN-11:** brief approved; **curated = a `Surface.DIGEST` D-7 impression** (RR-2 option a; `APP_PAGE` views never count). Updated brief A4/RR-2/OQ-1 → resolved, [INDEX.md](features/INDEX.md) → `2-design`. Advanced to `2-design`; handed to the **Software Architect**. |
 | 2026-06-20 | `6-post-release`→`0-coordinator`→`1-define` | **Coordinator** (user: skip post-release, verify, pick next) — **re-verified `app-pages`** (**417 tests / `ruff` / `check` / no drift**; `apps/pages/` deliverables present & matching [TASKS.md](features/app-pages/TASKS.md) T-01…T-06; 3 routes resolve; [TEST_PLAN.md](features/app-pages/TEST_PLAN.md) covers AC1–AC9), then **skipped the Stage-6 retrospective** and **closed it out** (deferred/reopenable — no prod target/traffic; mirrors the four prior close-outs). Surveyed backlog: `app-pages` newly unblocks **open-search-browse / ratings-reviews / app-subscriptions** (+ long-available `interest-profile`). **User picked `ratings-reviews`** (Phase 2; fills the empty reviews slot `app-pages` left — AP-1; proves H1/H3; unblocks `developer-dashboard`). Scaffold already present; set `Stage: 1-define`, updated [INDEX.md](features/INDEX.md), handed to the **Product Analyst** to draft [FEATURE_BRIEF.md](features/ratings-reviews/FEATURE_BRIEF.md). |
 | 2026-06-20 | `5-release`→`6-post-release` | **Release Engineer** — released **`apps/pages`** to local/dev per [DESIGN §12](features/app-pages/DESIGN.md). Wrote [RELEASE_NOTES.md](features/app-pages/RELEASE_NOTES.md): additive new app owning **no model/migration**; 3 routes (`pages:app-page`/`try`/`share`); **AP-3** page-view = `app_page`-surface impression (the H1 CTR denominator); **AP-4** authed-only capture / anonymous render; the one additive shared-vocab touch = **`Surface.APP_PAGE`** (`signals/0002`, choices-only, reversible). **No feature flag** ("off" = don't include the URLconf); gate-based promotion; metric→signal→alert map tied to brief §5; **first live emitter of D-7 `app_page` impressions**. **Rehearsed rollout→rollback on a throwaway Postgres DB** (`app_pages_release_rehearsal`, dropped): `migrate` → `signals/0002` applied + `Surface.APP_PAGE` live → `check` clean → `migrate signals 0001` unapplies cleanly → re-`migrate signals` re-applies (reversible) → no drift; confirmed `apps/pages` owns **no migration** (primary rollback = remove the `config/urls` include, zero data migration) and the 3 routes resolve. Re-verified **417 tests / `ruff` / `check` / no drift**. Updated [INDEX.md](features/INDEX.md). Advanced to `6-post-release`; handed to the **Retrospective Analyst** (outcome review expected to defer — no prod target/traffic, as the four prior closed-outs). |

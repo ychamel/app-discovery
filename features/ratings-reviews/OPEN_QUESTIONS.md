@@ -7,8 +7,12 @@
 - **OQ-1 — "Curated to app X" definition — ✅ RESOLVED (DN-11, 2026-06-20): option (a),
   `DIGEST`-impression only** (see RR-2). A rating is weight-eligible iff its author has a
   `Surface.DIGEST` D-7 impression of the app; `APP_PAGE` views never count. *Architect
-  follow-up:* whether to promote this to a global ADR (`editorial-curation-tools` /
-  `developer-dashboard` share the semantic). The candidate set considered:
+  follow-up (Stage 2): ✅ DONE — **promoted to proposed global [D-8](../../DECISIONS.md)***
+  (pending DN-12). The gate semantic is repo-wide (`editorial-curation-tools` /
+  `developer-dashboard` / the Quality Score consumer all share it); the curated-surface set
+  lives in one place (`apps.ratings.gate.CURATED_SURFACES`); impression evidence is read via
+  the new factual `signals.selectors.has_impression` (D-7-compliant), not a direct corpus read.
+  The candidate set considered:
   - **(a) DIGEST-impression only** — curated iff the user has a `Surface.DIGEST` impression
     of the app. Clean and forward-compatible, but ~always *not-eligible* at MVP (no `DIGEST`
     emitter yet — R3).
@@ -23,19 +27,24 @@
     human-stand-in (vision §5.4), but couples to an unbuilt feature.
   Must agree with [editorial-curation-tools](../editorial-curation-tools/OPEN_QUESTIONS.md).
 
-- **OQ-2 — Rating shape.** Numeric scale (1–5? 1–10?), and is a written review optional or
-  required? Brief assumes 1–5 + optional text (A1); exact scale/limits set at Stage 2.
+- **OQ-2 — Rating shape — ✅ RESOLVED (Stage 2, DESIGN §5/§10/§15).** Numeric
+  **1..`rating_scale_max()`** (default 5) + **optional** `review_text` ≤
+  `review_text_max_length()` (default 4000 chars); the slot shows `reviews_display_limit()`
+  (default 20) most-recent reviews. Scale/limits are `apps/core/config` tunables (no magic numbers).
 
-- **OQ-3 — Abuse/moderation scope.** Confirm review-bomb/anomaly detection (§4.3), reviewer
-  reputation/calibration (§3.2), profanity/abuse-reporting are **OUT** at MVP (later
-  integrity system); this feature ships authenticated-only + one-per-user + the gate (A3,
-  R4).
+- **OQ-3 — Abuse/moderation scope — ✅ CONFIRMED OUT (Stage 2, DESIGN §7/§15).** Review-bomb/
+  anomaly detection (§4.3), reviewer reputation/calibration (§3.2), profanity/abuse-reporting
+  are **OUT** at MVP (later integrity system). This feature ships authenticated-only +
+  one-per-user (structural volume cap) + the gate (outside brigades land unweighted); request
+  rate-limiting is available (`apps/core/ratelimit`) but unwired given the structural cap.
 
-- **OQ-4 — Storage & eligibility freezing (Stage 2).** Ratings live in this feature's own
-  store, distinct from D-7 behavioral-event tables (A5). Open for design: is the
-  curated-eligibility determination **frozen at capture** (a stored flag, like the D-7
-  frozen tag snapshot) or **re-derived at read** (like D-7's return-@3d/@14d)? Interacts
-  with DN-11 option (c).
+- **OQ-4 — Storage & eligibility freezing — ✅ RESOLVED (Stage 2, DESIGN §4/§11; [RR-4](DECISIONS.md)).**
+  Ratings live in this feature's **own mutable table** `ratings_rating`, distinct from the
+  append-only D-7 tables (A5). The curated-eligibility determination is **frozen on the row**
+  (a non-null `weight_eligible` + `eligibility_basis` + `eligibility_determined_at` — AC5
+  needs it present on 100% of ratings) **and re-derivable** (all inputs + the append-only
+  impression corpus are retained — R1). Derive-at-read-only (DN-11 option c) was rejected
+  because it leaves the AC5 determination absent until something asks.
 
 ## Seeded from the breakdown (§7) — folded into OQ-1
 
