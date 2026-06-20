@@ -29,7 +29,7 @@ is decision **D2** and belongs to the user.
 | [editorial-curation-tools](editorial-curation-tools/) | 1 Catalog | backlog | 2026-06-13 | H1, H3 | interest-taxonomy, submission-intake, weekly-digest | _backlog_ |
 | [interest-profile](interest-profile/) | 2 User loop | backlog | 2026-06-13 | H1 | identity-accounts, interest-taxonomy | _backlog_ |
 | [weekly-digest](weekly-digest/) | 2 User loop | backlog | 2026-06-13 | H1 | editorial-curation-tools, app-pages, signal-capture | _backlog_ |
-| [ratings-reviews](ratings-reviews/) | 2 User loop | `1-define` | 2026-06-20 | H1, H3 | app-pages, signal-capture | _active — fills the empty reviews slot app-pages left (AP-1); deps app-pages ✓ signal-capture ✓; Product Analyst drafting FEATURE_BRIEF_ |
+| [ratings-reviews](ratings-reviews/) | 2 User loop | `2-design` | 2026-06-20 | H1, H3 | app-pages, signal-capture | _active — FEATURE_BRIEF approved (DN-11); curated-rating gate recorded-not-computed (RR-1), curated = DIGEST impression (RR-2); fills AP-1 reviews slot; Architect next_ |
 | [open-search-browse](open-search-browse/) | 2 User loop | backlog | 2026-06-13 | enabler / H3 | app-pages | _backlog_ |
 | [app-subscriptions](app-subscriptions/) | 2 User loop | backlog | 2026-06-18 | H1 (feeds H3) | app-pages, identity-accounts, signal-capture | _backlog — net-new from signal-capture SC-7/SC-8 (OQ-4): user-side engagement loop (follow apps + update/early-access notices) that generates the on-platform signal the corpus measures_ |
 | [developer-dashboard](developer-dashboard/) | 3 Dev value | backlog | 2026-06-13 | H2 | signal-capture, ratings-reviews | _backlog_ |

@@ -17,10 +17,10 @@ Rules:
 | Field              | Value                                                            |
 |--------------------|------------------------------------------------------------------|
 | **Active feature** | **`ratings-reviews`** (Phase 2 User loop; deps `app-pages` ✓ `signal-capture` ✓) |
-| **Stage**          | `1-define`                                                     |
-| **Persona**        | **Product Analyst** (see [CLAUDE.md](CLAUDE.md) §2) — drafts [FEATURE_BRIEF.md](features/ratings-reviews/FEATURE_BRIEF.md) from the request + vision doc; reads the `app-pages` AP-1 reviews-slot boundary (the empty slot this feature fills) and the D-7 `signals.capture.*` contract |
+| **Stage**          | `2-design`                                                     |
+| **Persona**        | **Software Architect** (see [CLAUDE.md](CLAUDE.md) §2) — designs [DESIGN.md](features/ratings-reviews/DESIGN.md) from the approved [FEATURE_BRIEF.md](features/ratings-reviews/FEATURE_BRIEF.md); owns its own explicit-signal store (OQ-4/A5), reads D-6 app validity + D-7 `Surface.DIGEST` impression evidence for the gate (RR-2), fills the `app-pages` AP-1 reviews slot, and must decide whether "curated = DIGEST impression" is promoted to a global ADR |
 | **Folder**         | [features/ratings-reviews/](features/ratings-reviews/)         |
-| **Last updated**   | 2026-06-20 — **`app-pages` verified & closed out (Stage 6 skipped per user); `ratings-reviews` activated.** Coordinator re-verified the `app-pages` build on request (**417 tests / `ruff` / `check` / no drift**; `apps/pages/` deliverables present — emission/3 views/urls/3 templates/README/tests; 3 routes resolve; TEST_PLAN covers AC1–AC9), then skipped the Stage-6 retrospective (mirrors the four prior closed-outs — no prod target/traffic). Surveyed the backlog: `app-pages` newly unblocks **open-search-browse / ratings-reviews / app-subscriptions** (plus the long-available `interest-profile`). User picked **`ratings-reviews`** (fills the empty reviews slot `app-pages` left, AP-1; proves H1/H3; unblocks `developer-dashboard`). Set `Stage: 1-define`, updated [INDEX.md](features/INDEX.md), handed to the Product Analyst. |
+| **Last updated**   | 2026-06-20 — **DN-11 resolved → [ratings-reviews/FEATURE_BRIEF.md](features/ratings-reviews/FEATURE_BRIEF.md) APPROVED; advanced to `2-design`.** Gate = **curated-rating recorded-not-computed** (RR-1) with **curated = a `Surface.DIGEST` D-7 impression** (RR-2, option a; `APP_PAGE` views never count, vision §4.1); "anyone signed-in may rate" confirmed (RR-3). At MVP ~all ratings record *not-eligible* until a `DIGEST` emitter ships (R3 — correct). Handed to the **Software Architect**: owns its own explicit-signal store (OQ-4), reads D-6/D-7, fills the `app-pages` AP-1 slot, and decides whether "curated = DIGEST impression" becomes a global ADR. |
 
 > **Closed out (Stage 6 skipped, reopenable):** `identity-accounts` (2026-06-17, 108
 > tests), `interest-taxonomy` (2026-06-17, 184 tests), `submission-intake`
@@ -36,23 +36,24 @@ Rules:
 ### Latest session status (CLAUDE.md §6.7 — overwritten each session)
 
 ```
-Stage: 6-post-release → 0-coordinator → 1-define | Feature: app-pages (closed) → ratings-reviews | Persona: Coordinator → Product Analyst
-Done: Per user instruction, skipped the app-pages Stage-6 retrospective AND first re-verified the build held up:
-      python manage.py test → 417 tests OK; ruff clean; manage.py check clean; makemigrations --check no drift.
-      Confirmed apps/pages/ deliverables are present and match TASKS.md T-01…T-06 (emission.py, 3 thin views, urls.py,
-      app_page/base/not_available templates, README, 4 test modules); all 3 routes (pages:app-page/try/share) resolve;
-      TEST_PLAN.md covers AC1–AC9. Closed out app-pages (Stage 6 skipped/reopenable — mirrors the four prior close-outs,
-      no prod target/traffic). Surveyed the backlog: app-pages newly unblocks open-search-browse / ratings-reviews /
-      app-subscriptions (interest-profile was already available). User picked ratings-reviews. Activated it:
-      Stage 1-define, updated INDEX.md (app-pages → closed-out; ratings-reviews → 1-define). Scaffold already present
-      (7 standard artifacts from backlog).
-Verified by: 417 tests OK; ruff clean; check clean; no migration drift; apps/pages deliverables + routes + TEST_PLAN
-      coverage inspected directly.
-Blocked/Deferred: app-pages live-metrics/outcome report deferred/reopenable (no prod traffic). No new blockers.
-Decisions needed: none (next-feature pick resolved this session — user chose ratings-reviews).
-Next: Product Analyst drafts features/ratings-reviews/FEATURE_BRIEF.md from the request + vision doc, reading the
-      app-pages AP-1 reviews-slot boundary (the empty slot this feature fills) and the D-7 signals.capture.* contract;
-      will likely surface scope questions (rating model, who can review, moderation) for the user.
+Stage: 1-define → 2-design | Feature: ratings-reviews | Persona: Product Analyst → Software Architect
+Done: Drafted + got APPROVED features/ratings-reviews/FEATURE_BRIEF.md (DN-11). 5 stories / 9 G-W-T ACs / 7 metrics /
+      in+out scope / 6 constraints + 5 assumptions / 5 risks / vision alignment, grounded in vision §3.1/§4.1/§4.3/§5.3,
+      breakdown §4.2/§7 Q2, and D-6/D-7/D-5/D-3/D-1 + app-pages AP-1. Core: the curated-rating gate is RECORDED not
+      computed (RR-1 — capture rating + optional review + per-rating curated-eligibility, raw, no scoring); anyone
+      signed-in may rate, gate governs weight not permission (RR-3, vision §4.1). User resolved DN-11: curated = a
+      Surface.DIGEST D-7 impression (RR-2 option a; APP_PAGE views never count). Updated brief A4 → verified, RR-2 →
+      resolved, OQ-1 → resolved; updated INDEX.md (→ 2-design).
+Verified by: n/a (Stage-1 artifact, no code). Inspected the D-7 Surface enum (DIGEST vs APP_PAGE) + signals
+      capture/selectors to anchor R3 and the resolved gate definition.
+Blocked/Deferred: At MVP ~all ratings record not-eligible until a DIGEST emitter (weekly-digest/editorial-curation-tools)
+      ships (R3 — expected, not a blocker). OQ-2 (rating shape) / OQ-3 (abuse OUT) / OQ-4 (store + freeze-vs-derive) are
+      Stage-2 design concerns.
+Decisions needed: none.
+Next: Software Architect writes features/ratings-reviews/DESIGN.md — its own explicit-signal store (OQ-4), reads D-6
+      app validity + D-7 DIGEST impression evidence for the gate, fills the app-pages AP-1 reviews slot; must decide
+      whether "curated = DIGEST impression" is promoted to a global ADR (editorial-curation-tools/developer-dashboard
+      share the semantic).
 ```
 
 ---
@@ -64,9 +65,9 @@ proceeds.
 
 | ID | Decision needed | Context | Answer |
 |----|-----------------|---------|--------|
-| — | _None open._ The agent is not blocked. | DN-10 resolved → **approved** (see *Decisions Made*). | — |
+| — | _None open._ The agent is not blocked. | DN-11 resolved → **brief approved; curated = DIGEST impression** (see *Decisions Made*). | — |
 
-> Resolved decisions (DN-1 … DN-10) are summarized under *Decisions Made* below; full
+> Resolved decisions (DN-1 … DN-11) are summarized under *Decisions Made* below; full
 > rationale lives in the decision logs.
 
 ---
@@ -80,6 +81,7 @@ Only the **active/just-closed** feature is kept in full here. Once a feature is 
 out, its lifecycle collapses to a single pointer line — the full record lives in that
 feature's `DECISIONS.md` / `RELEASE_NOTES.md` and in [DECISIONS.md](DECISIONS.md).
 
+- **DN-11 → approved (2026-06-20)** — `ratings-reviews` **[FEATURE_BRIEF.md](features/ratings-reviews/FEATURE_BRIEF.md) approved.** The curated-rating gate is **recorded, not computed** (RR-1 — capture rating + optional review + a per-rating curated-eligibility determination, raw, no scoring; the Quality Score is a downstream consumer), and **"curated to app X" = the author has a `Surface.DIGEST` [D-7](DECISIONS.md) impression of the app** (RR-2 option a; `APP_PAGE`/open views never count — vision §4.1). Anyone signed-in may rate; the gate governs *weight*, not *permission*; outside ratings are displayed-but-unweighted (RR-3). At MVP ~all ratings record *not-eligible* until a `DIGEST` emitter exists (R3 — correct). Reuses D-6/D-7/D-5/D-3 as-is — **no new global decision** (the Architect will weigh promoting "curated = DIGEST impression" to a global ADR, since `editorial-curation-tools`/`developer-dashboard` share it). Advanced to `2-design`; handed to the **Software Architect**.
 - **`app-pages` closed out + `ratings-reviews` activated (2026-06-20)** — Coordinator re-verified the `app-pages` build on the user's request (**417 tests / `ruff` / `check` / no drift**; `apps/pages/` deliverables present and matching TASKS.md T-01…T-06; 3 routes resolve; TEST_PLAN covers AC1–AC9), then **skipped the Stage-6 retrospective** per user (outcome review deferred/reopenable — no prod target/traffic; mirrors `identity-accounts`/`interest-taxonomy`/`submission-intake`/`signal-capture`). `app-pages` newly unblocked **open-search-browse / ratings-reviews / app-subscriptions**; user picked **`ratings-reviews`** (fills the empty reviews slot `app-pages` left — AP-1; proves H1/H3; unblocks `developer-dashboard`). Set `Stage: 1-define`, updated [INDEX.md](features/INDEX.md), handed to the Product Analyst.
 - **`app-pages` released local/dev (2026-06-20)** — Release Engineer shipped **`apps/pages/`** (new app owning no model/migration; 3 thin views + the uniform `app_page` template) to local/dev per [DESIGN §12](features/app-pages/DESIGN.md): additive, **no feature flag** ("off" = don't include the URLconf). [RELEASE_NOTES.md](features/app-pages/RELEASE_NOTES.md) written (gate-based promotion, metric→signal→alert map, known limits); **first live emitter of D-7 `app_page` impressions** (AP-3/4/5). **Rollout→rollback rehearsed** on a throwaway Postgres DB — `signals/0002` (the additive `Surface.APP_PAGE` choices-only alter) applies and reverses cleanly (reversible); primary rollback = remove the `config/urls` include (zero data migration, app owns no schema). **417 tests / `ruff` / `check` / no drift** re-verified. Advanced to `6-post-release`. Outcome review deferred (no prod target/traffic — mirrors the four prior closed-outs).
 - **DN-10 → approved (2026-06-20)** — `app-pages` **[DESIGN.md](features/app-pages/DESIGN.md) approved** (AP-3 page-view = `app_page`-surface impression confirmed — reinterprets the brief's "impression generation out of scope" as *not running the curated-feed allocator*, distinct + `surface`-segregated; AP-4 authenticated-only capture / anonymous render confirmed). Planner/Tech Lead decomposed it into [TASKS.md](features/app-pages/TASKS.md) (6 tasks, no `L`); advanced to `4-build`, handed to the Senior Engineer.
@@ -106,6 +108,7 @@ folders remain the full record either way.
 
 | Date       | Stage           | Summary                                                                 |
 |------------|-----------------|-------------------------------------------------------------------------|
+| 2026-06-20 | `1-define`→`2-design` | **Product Analyst** (DN-11 approved) — drafted + got approved [ratings-reviews/FEATURE_BRIEF.md](features/ratings-reviews/FEATURE_BRIEF.md): the explicit-signal surface + the **curated-rating gate** (vision §4.1, the rule that kills bought ratings). **5 stories / 9 G-W-T ACs / 7 metrics**, in+out scope, 6 constraints + 5 assumptions, 5 risks, vision alignment (§3.1/§4.1/§4.3/§5.3; proves **H1**, feeds **H3**). Core framing **RR-1: the gate is *recorded*, not computed** — capture rating + optional review + a per-rating *curated-eligibility determination*, **raw, no scoring** ("enforceable now, weightable later"); fills the empty `app-pages` **AP-1** reviews slot. **RR-3:** anyone signed-in may rate; the gate governs *weight*, not *permission*; outside ratings displayed-but-unweighted; anonymous can't rate. Reads **D-6** (app validity) + **D-7** impression evidence + **D-3** identity; reuses contracts as-is — **no new global decision**. Logged feature-local **RR-1/RR-2/RR-3** + **OQ-1…OQ-4**. **User resolved DN-11:** brief approved; **curated = a `Surface.DIGEST` D-7 impression** (RR-2 option a; `APP_PAGE` views never count). Updated brief A4/RR-2/OQ-1 → resolved, [INDEX.md](features/INDEX.md) → `2-design`. Advanced to `2-design`; handed to the **Software Architect**. |
 | 2026-06-20 | `6-post-release`→`0-coordinator`→`1-define` | **Coordinator** (user: skip post-release, verify, pick next) — **re-verified `app-pages`** (**417 tests / `ruff` / `check` / no drift**; `apps/pages/` deliverables present & matching [TASKS.md](features/app-pages/TASKS.md) T-01…T-06; 3 routes resolve; [TEST_PLAN.md](features/app-pages/TEST_PLAN.md) covers AC1–AC9), then **skipped the Stage-6 retrospective** and **closed it out** (deferred/reopenable — no prod target/traffic; mirrors the four prior close-outs). Surveyed backlog: `app-pages` newly unblocks **open-search-browse / ratings-reviews / app-subscriptions** (+ long-available `interest-profile`). **User picked `ratings-reviews`** (Phase 2; fills the empty reviews slot `app-pages` left — AP-1; proves H1/H3; unblocks `developer-dashboard`). Scaffold already present; set `Stage: 1-define`, updated [INDEX.md](features/INDEX.md), handed to the **Product Analyst** to draft [FEATURE_BRIEF.md](features/ratings-reviews/FEATURE_BRIEF.md). |
 | 2026-06-20 | `5-release`→`6-post-release` | **Release Engineer** — released **`apps/pages`** to local/dev per [DESIGN §12](features/app-pages/DESIGN.md). Wrote [RELEASE_NOTES.md](features/app-pages/RELEASE_NOTES.md): additive new app owning **no model/migration**; 3 routes (`pages:app-page`/`try`/`share`); **AP-3** page-view = `app_page`-surface impression (the H1 CTR denominator); **AP-4** authed-only capture / anonymous render; the one additive shared-vocab touch = **`Surface.APP_PAGE`** (`signals/0002`, choices-only, reversible). **No feature flag** ("off" = don't include the URLconf); gate-based promotion; metric→signal→alert map tied to brief §5; **first live emitter of D-7 `app_page` impressions**. **Rehearsed rollout→rollback on a throwaway Postgres DB** (`app_pages_release_rehearsal`, dropped): `migrate` → `signals/0002` applied + `Surface.APP_PAGE` live → `check` clean → `migrate signals 0001` unapplies cleanly → re-`migrate signals` re-applies (reversible) → no drift; confirmed `apps/pages` owns **no migration** (primary rollback = remove the `config/urls` include, zero data migration) and the 3 routes resolve. Re-verified **417 tests / `ruff` / `check` / no drift**. Updated [INDEX.md](features/INDEX.md). Advanced to `6-post-release`; handed to the **Retrospective Analyst** (outcome review expected to defer — no prod target/traffic, as the four prior closed-outs). |
 | 2026-06-20 | `4-build`→`5-release` | **Senior Engineer** — built all of [app-pages/TASKS.md](features/app-pages/TASKS.md) (T-01…T-06). New Django app **`apps/pages/`**, a **pure D-6/D-7 consumer with no model/migration**: **T-01** `Surface.APP_PAGE` + reversible choices-only migration `signals/0002` (rehearsed up→down→up) → **T-02** scaffold (`apps.py`, `templates/pages/base.html`, `INSTALLED_APPS`; owns no model, asserted) → **T-03** [emission.py](apps/pages/emission.py) (AP-4 authenticated-only + AC7 fail-soft-but-counted over `signals.capture.*`, never re-raises; `APP_PAGE_CAPTURE_DEGRADED`; fake-seam unit-tested) → **T-04** 3 thin views (`app_page`/`try`-redirect/`share`) + [urls.py](apps/pages/urls.py) + the [config/urls](config/urls.py) include (activation switch); §7 loud-500-on-catalog-read, §10 security (server-side redirect target, `imp`-mismatch→no event, CSRF on share), `APP_PAGE_RENDERED`/`_NOT_AVAILABLE` + render-latency log → **T-05** the uniform [app_page.html](apps/pages/templates/pages/app_page.html) (6 same-order slots, empty/single states, **structural** AC3, canonical URL AC4, alt text A4) → **T-06** [README](apps/pages/README.md) + [CODEMAP](CODEMAP.md) + DECISIONS (AP-3/AP-4/AP-5 confirmed) + [TEST_PLAN.md](features/app-pages/TEST_PLAN.md) (AC1–AC9 + §6/§7/§10/§11 → tests). **417 tests OK (+43), `ruff` clean, no migration drift, `check` clean.** Advanced to `5-release`; handed to the **Release Engineer**. |
