@@ -1,7 +1,10 @@
 # FEATURE_BRIEF — app-subscriptions
 
-*Stage 1 artifact (Product Analyst). Status: **awaiting approval** (DN-13). Anchored to
-vision §3.1 / §5.2 / §5.4 / §6 and the `signal-capture` SC-7/SC-8 / OQ-4 origin.*
+*Stage 1 artifact (Product Analyst). Status: **APPROVED 2026-06-21 (DN-13)** — brief
+approved; **AS-3 = option A** (ship the forward-compatible, empty-until-producer notice
+surface now); **AS-5 confirmed** (deletion removes follow state, emitted events follow
+SC-10). Anchored to vision §3.1 / §5.2 / §5.4 / §6 and the `signal-capture` SC-7/SC-8 /
+OQ-4 origin.*
 
 > **Domain terms** (defined once, used throughout):
 > - **Follow** (user-facing) / **subscribe** (the [D-7](../../DECISIONS.md) signal kind):
@@ -121,11 +124,12 @@ signal the Quality Score depends on — without letting that signal be bought (v
   follows, *Then* the failure is surfaced and counted (`capture_error`, per D-7), not
   silently swallowed; the user-visible follow state must not claim success if the durable
   follow was not stored.
-- **AC8 (story 5 — notice surface).** *Given* the followed-apps feed and the working scope
-  of AS-3, *When* a user views it, *Then* it renders update/early-access notices for
-  followed apps **if any exist**, and a clear empty/"no news yet" state otherwise — and it
+- **AC8 (story 5 — notice surface).** *Given* the followed-apps feed (AS-3 = **option A**,
+  in scope per DN-13), *When* a user views it, *Then* it renders update/early-access notices
+  for followed apps **if any exist**, and a clear empty/"no news yet" state otherwise — and it
   never errors on the (current, MVP-normal) condition that no producer has emitted any
-  notice. *(Exact in/out boundary of this AC depends on DN-13 — see AS-3.)*
+  notice. The surface is **forward-compatible**: ready for `developer-updates` (Phase 3) to
+  fill with no rework; authoring notices remains out of scope.
 - **AC9 (privacy — account deletion).** *Given* a user with follows, *When* their account is
   deleted (D-3 / `accounts.delete_account`), *Then* their follow relationships are removed,
   and their already-emitted `subscribe` corpus events are handled per the existing D-7/SC-10
@@ -161,8 +165,8 @@ Measurable from the D-7 corpus / `signals.selectors.*` and this feature's own fo
 - Account-deletion handling of the follow store (AC9), reusing the D-3/SC-10 corpus rule
   as-is for the events.
 - Read-only admin visibility of follow relationships (operability).
-- *(Pending DN-13 / AS-3)* a forward-compatible **notice surface** in the feed with an
-  empty state, ready for `developer-updates` to fill.
+- A forward-compatible **notice surface** in the feed with an empty state, ready for
+  `developer-updates` to fill (AS-3 = option A, confirmed DN-13).
 
 ### Out of scope
 
@@ -200,23 +204,20 @@ Measurable from the D-7 corpus / `signals.selectors.*` and this feature's own fo
 - **AS-2 ✓** — `app-pages` provides the per-app page surface (and an established slot/
   inclusion-tag pattern, used by `ratings-reviews` for AP-1) from which a follow control can
   originate — verified (`apps/pages` closed out 2026-06-20).
-- **AS-3 ⧖ (scope fork — confirm in DN-13)** — Update/early-access **notice generation is
-  out of scope** (it belongs to the unbuilt `developer-updates`). The open question is
-  whether MVP should still ship a **forward-compatible, empty-until-producer notice surface**
-  in the feed now (option A — recommended, mirrors the honest-MVP pattern of
-  `ratings-reviews` D-8 shipping a gate that's ~always not-eligible until a producer exists),
-  or **defer the notice surface entirely** and ship only follow + followed-apps feed now
-  (option B — strictly less to test, but the feed alone is a weaker return pull). This
-  determines the exact in/out of AC8.
+- **AS-3 ✓ (RESOLVED DN-13 = option A)** — Update/early-access **notice generation is out of
+  scope** (it belongs to the unbuilt `developer-updates`). MVP **ships a forward-compatible,
+  empty-until-producer notice surface** in the feed now (option A — mirrors the honest-MVP
+  pattern of `ratings-reviews` D-8 shipping a gate that's ~always not-eligible until a
+  producer exists), ready for `developer-updates` to fill with no rework. This fixes AC8 as
+  in scope.
 - **AS-4 ⧖** — The durable **follow/unfollow state** is this feature's own **mutable** store
   (one current relationship per user×app), distinct from the append-only `subscribe`
   corpus event (mirrors `ratings-reviews`' mutable `ratings_rating` vs. the D-7 corpus).
   Whether **unfollow** needs its own corpus representation (D-7 has no `unfollow` kind) is a
   Stage-2 design question (logged OQ) — the brief does not pre-decide it.
-- **AS-5 ⧖ (privacy)** — Account deletion **removes** a user's follow state (a live
-  relationship, not corpus), while the already-emitted `subscribe` events follow the
-  existing **SC-10** rule (anonymize, not purge). Surfaced for explicit confirmation per
-  CLAUDE.md §6.5 — not silently assumed.
+- **AS-5 ✓ (privacy — CONFIRMED DN-13)** — Account deletion **removes** a user's follow state
+  (a live relationship, not corpus), while the already-emitted `subscribe` events follow the
+  existing **SC-10** rule (anonymize, not purge). Confirmed explicitly per CLAUDE.md §6.5.
 
 ### Risks
 
