@@ -20,7 +20,7 @@ Rules:
 | **Stage**          | `2-design`                                                        |
 | **Persona**        | **Software Architect** (see [CLAUDE.md](CLAUDE.md) §2) — reads the approved [FEATURE_BRIEF.md](features/app-subscriptions/FEATURE_BRIEF.md) + codebase, produces [DESIGN.md](features/app-subscriptions/DESIGN.md). Must fold the open Stage-2 questions: **OQ-3** (does *unfollow* need a D-7 corpus representation? AS-4) and **OQ-4** (where the follow control lives on the app page — reuse the `apps/pages` slot/inclusion-tag pattern, as `ratings-reviews` did for AP-1). Build the AS-3=option A forward-compatible, empty-until-producer notice surface; keep the follow **state** a mutable store (AS-4) distinct from the append-only D-7 corpus; emit **only** `subscribe` through `signals.capture.*` (AC5/AC6) |
 | **Folder**         | [features/app-subscriptions/](features/app-subscriptions/)       |
-| **Last updated**   | 2026-06-21 — **`app-subscriptions` [FEATURE_BRIEF.md](features/app-subscriptions/FEATURE_BRIEF.md) APPROVED (DN-13); advanced to `2-design`.** User answered DN-13: **(1)** brief approved as written; **(3)** AS-5 deletion posture confirmed (deletion removes follow state, emitted `subscribe` events follow SC-10); **(2)** AS-3 = **option A** (ship the forward-compatible, empty-until-producer notice surface now). Product Analyst folded the resolutions into the brief (AC8 fixed in scope, AS-3/AS-5 → resolved) and DECISIONS.md, then handed off (no second persona this session). Reuses D-3/D-6/D-7 — **no new global decision**. OQ-3 (unfollow corpus repr) + OQ-4 (follow-control placement) carried to Stage 2. **Now with the Software Architect for DESIGN.md.** |
+| **Last updated**   | 2026-06-21 — **`app-subscriptions` [DESIGN.md](features/app-subscriptions/DESIGN.md) DRAFTED — awaiting approval (DN-14).** Software Architect ran the 14-step protocol: new app `apps/subscriptions/` owning **one mutable table** `subscriptions_subscription` (near-twin of `apps/ratings/`) with three deliberate contrasts — deletion **CASCADE**s (AS-5/AC9, vs ratings' SET_NULL), the follow-write + its one `subscribe` emit are **one atomic transaction** (M5 1:1 by construction), and a **forward-compatible empty notice seam** (AS-3=A). Resolved **OQ-3** (no D-7 `unfollow` kind at MVP) + **OQ-4** (fail-soft `{% app_follow %}` inclusion tag in a new app-page Follow slot). One additive D-6 read `get_catalogued_apps(ids)` (no N+1). Reuses D-3/D-6/D-7 — **no new global decision**. **Raised DN-14 (approve DESIGN); no Stage advance until approved.** |
 
 > **Closed out (Stage 6 skipped, reopenable):** `identity-accounts` (2026-06-17, 108
 > tests), `interest-taxonomy` (2026-06-17, 184 tests), `submission-intake`
@@ -37,22 +37,28 @@ Rules:
 ### Latest session status (CLAUDE.md §6.7 — overwritten each session)
 
 ```
-Stage: 2-design | Feature: app-subscriptions | Persona: Product Analyst → Software Architect (hand-off)
-Done: DN-13 approved. Folded the resolutions into features/app-subscriptions/FEATURE_BRIEF.md and DECISIONS.md and performed
-      the Stage-1→2 hand-off (no second persona this session). (1) brief APPROVED as written; (2) AS-3 = OPTION A — MVP ships a
-      forward-compatible, empty-until-producer update/early-access NOTICE SURFACE in the followed-apps feed now (authoring stays
-      out → developer-updates, Phase 3) — fixes AC8 as in scope; (3) AS-5 CONFIRMED — account deletion removes follow state,
-      already-emitted `subscribe` events follow the existing SC-10 anonymize-not-purge rule (AC9). Marked AS-3/AS-5 → resolved
-      in DECISIONS.md; AS-1/AS-2/AS-4 carry as working assumptions. Reuses D-3/D-6/D-7 as-is — no new global decision. Updated
-      features/INDEX.md (app-subscriptions → 2-design).
-Verified by: n/a (Stage-1 approval + hand-off; no code this session).
-Blocked/Deferred: none blocking. Carried to Stage 2: OQ-3 (does unfollow need a D-7 corpus repr? AS-4 — D-7 has no `unfollow`
-      kind, adding one is a global-contract change), OQ-4 (exact follow-control placement on the app page). Out: notice
-      AUTHORING (developer-updates), delivery channels (weekly-digest/future), developer-follow, collections.
-Decisions needed: none (DN-13 resolved).
-Next: Software Architect drafts features/app-subscriptions/DESIGN.md from the approved brief — design the mutable follow store
-      (AS-4) vs. the append-only `subscribe` corpus emit (AC5/AC6, signals.capture.* only), the AS-3=A notice surface, and
-      resolve OQ-3/OQ-4.
+Stage: 2-design | Feature: app-subscriptions | Persona: Software Architect (DESIGN drafted — awaiting DN-14)
+Done: Drafted features/app-subscriptions/DESIGN.md via the 14-step protocol. New Django app apps/subscriptions/ owning ONE
+      mutable table subscriptions_subscription (one current follow per user×app) — a near-twin of apps/ratings/ (own mutable
+      store + single write/read path + fail-soft inclusion tag + activation include) with three DELIBERATE CONTRASTS: (1)
+      deletion CASCADEs (AS-5/AC9 — vs ratings' SET_NULL; follow state is live relationship, not corpus, so account.delete()
+      removes it with NO edit to accounts); (2) the follow-write + its ONE `subscribe` emit are one transaction.atomic()
+      (record_subscribe called INSIDE the get_or_create txn, only when created) → M5 (subscribe events == follows) is 1:1 BY
+      CONSTRUCTION, capture failure rolls back the follow (no orphan state) + counts CAPTURE_ERROR (AC5/AC7); (3) a
+      forward-compatible empty-until-producer notice seam notices_for_apps()→[] + Notice DTO (AS-3=A, AC8). RESOLVED OQ-3
+      (NO D-7 `unfollow` kind at MVP — unfollow is an absence D-7 derives, no consumer needs it, additively reversible) and
+      OQ-4 (fail-soft {% app_follow app %} inclusion tag in a new <section aria-label="Follow"> after the header — mirrors the
+      ratings AP-1 slot pattern, viewer-state-driven so uniformity holds). Added one ADDITIVE D-6 read get_catalogued_apps(ids)
+      (bulk, accepted-only, no N+1 feed). Full AC1–AC9 → design-element map (§13); per-component failure modes (§9). Logged
+      AS-DESIGN-1..4 + OQ-3/OQ-4 resolutions in features/app-subscriptions/DECISIONS.md + OPEN_QUESTIONS.md.
+Verified by: n/a (design artifact; no code this session). Contracts cross-checked against the codebase (capture.record_subscribe,
+      catalog selectors, app_page.html slots, accounts.delete_account CASCADE, signals SET_NULL/SC-10).
+Blocked/Deferred: BLOCKED on DN-14 (approve DESIGN). Deferred/flagged-additive: impression linkage on `subscribe`, feed
+      pagination, the OQ-3 `unfollow` kind, the notice producer (developer-updates, Phase 3). Reuses D-3/D-6/D-7 — no new
+      global ADR; the additive catalog read + CASCADE posture are feature-local.
+Decisions needed: DN-14 — approve features/app-subscriptions/DESIGN.md (incl. the OQ-3/OQ-4 resolutions + the additive
+      get_catalogued_apps D-6 read). See Decisions Needed From You.
+Next: On DN-14 approve → ratify DESIGN, hand to the Planner/Tech Lead to decompose it into TASKS.md (Stage 3-plan).
 ```
 
 ---
@@ -64,11 +70,11 @@ proceeds.
 
 | ID | Decision needed | Context | Answer |
 |----|-----------------|---------|--------|
-| _(none)_ | The agent is not currently blocked on any decision. | — | — |
+| **DN-14** | **Approve `app-subscriptions` [DESIGN.md](features/app-subscriptions/DESIGN.md)?** Bundles three calls: **(1)** the architecture — a new app `apps/subscriptions/` with its own **mutable** `subscriptions_subscription` store (CASCADE-on-delete, the deliberate contrast with ratings' SET_NULL), the follow-write + its one `subscribe` emit in **one transaction** (M5 1:1 by construction), the AS-3=A empty notice seam, and an **additive** D-6 read `catalog.get_catalogued_apps(ids)`; **(2) OQ-3** resolved = **no D-7 `unfollow` kind** at MVP (unfollow is an absence D-7 derives; additively reversible if a churn consumer ever needs it); **(3) OQ-4** resolved = a fail-soft `{% app_follow app %}` inclusion tag in a new app-page Follow slot. | Reuses **D-3/D-6/D-7 as-is — no new global ADR**; the additive catalog read + CASCADE posture are feature-local. Full AC1–AC9 → design map in DESIGN §13; alternatives + sacrifices in §11. | _(unanswered)_ |
 
 > Resolved decisions (DN-1 … **DN-13**) are summarized under *Decisions Made* below; full
-> rationale lives in the decision logs. `app-subscriptions` is now at `2-design` with the
-> Software Architect — no open decision blocks it.
+> rationale lives in the decision logs. `app-subscriptions` is at `2-design`; the Software
+> Architect has drafted DESIGN.md and is **blocked on DN-14** before handing to the Planner.
 
 ---
 
@@ -111,6 +117,7 @@ folders remain the full record either way.
 
 | Date       | Stage           | Summary                                                                 |
 |------------|-----------------|-------------------------------------------------------------------------|
+| 2026-06-21 | `2-design` (awaiting DN-14) | **Software Architect** — drafted [app-subscriptions/DESIGN.md](features/app-subscriptions/DESIGN.md) via the 14-step protocol. New Django app **`apps/subscriptions/`** owning **one mutable table** `subscriptions_subscription` (one current follow per user×app) — a **near-twin of `apps/ratings/`** (own mutable store + single write/read path + fail-soft inclusion tag + activation include) with **three deliberate contrasts**: **(1)** deletion **CASCADE**s (AS-5/AC9 — the contrast with ratings' SET_NULL; a follow is live relationship state, not corpus, so `account.delete()` removes it with **no edit to accounts**); **(2)** the follow-write + its **one** `subscribe` emit are **one `transaction.atomic()`** (`record_subscribe` called *inside* the `get_or_create` txn, only when `created`) → **M5 (subscribe events == follows) is 1:1 by construction**, a capture failure rolls back the follow (no orphan state) + counts `CAPTURE_ERROR` (AC5/AC7); **(3)** a **forward-compatible empty-until-producer notice seam** `notices_for_apps()→[]` + `Notice` DTO (AS-3=A, AC8). **Resolved OQ-3** (no D-7 `unfollow` kind at MVP — unfollow is an *absence* D-7 derives like "did-not-return"; no consumer needs it; additively reversible) and **OQ-4** (fail-soft `{% app_follow app %}` inclusion tag in a new `<section aria-label="Follow">` after the header — mirrors the `ratings` AP-1 slot pattern, viewer-state-driven so app-page uniformity holds, one-section rollback). Added one **additive D-6 read** `catalog.get_catalogued_apps(ids)` (bulk, accepted-only — the no-N+1 feed). Full **AC1–AC9 → design-element** map (§13), per-component failure modes (§9), ≥2 alternatives + sacrifices (§11). Logged **AS-DESIGN-1…4** + OQ-3/OQ-4 resolutions in [DECISIONS.md](features/app-subscriptions/DECISIONS.md) + [OPEN_QUESTIONS.md](features/app-subscriptions/OPEN_QUESTIONS.md). Reuses **D-3/D-6/D-7** as-is — **no new global ADR**. **Raised DN-14** (approve DESIGN incl. OQ-3/OQ-4 + the additive `get_catalogued_apps`); **no Stage advance until approved.** |
 | 2026-06-21 | `1-define`→`2-design` | **Product Analyst** (DN-13 approved) — user resolved **DN-13**: **(1)** [app-subscriptions/FEATURE_BRIEF.md](features/app-subscriptions/FEATURE_BRIEF.md) **approved** as written; **(2) AS-3 = option A** — MVP ships a **forward-compatible, empty-until-producer update/early-access notice surface** in the followed-apps feed now (authoring stays out → `developer-updates`, Phase 3), fixing **AC8** as in scope; **(3) AS-5 confirmed** — account deletion **removes** follow state while already-emitted `subscribe` events follow the existing **SC-10** anonymize-not-purge rule (**AC9**). Folded the resolutions into the brief (status → APPROVED, AC8/AS-3/AS-5 updated) and [DECISIONS.md](features/app-subscriptions/DECISIONS.md) (AS-3/AS-5 → resolved; AS-1/AS-2/AS-4 carry as working assumptions), and performed the **Stage-1→2 hand-off only** (no second persona this session): set `Stage: 2-design` + Persona **Software Architect** in Current State, emptied *Decisions Needed* (DN-13 resolved), added its Decisions-Made digest, updated [INDEX.md](features/INDEX.md) (`app-subscriptions` → `2-design`). Reuses **D-3/D-6/D-7** as-is — **no new global decision**. Carried to Stage 2: **OQ-3** (does *unfollow* need a D-7 corpus repr? D-7 has no `unfollow` kind — global-contract change) and **OQ-4** (exact follow-control placement on the app page). Advanced to `2-design`; handed to the **Software Architect** to draft [DESIGN.md](features/app-subscriptions/DESIGN.md). |
 | 2026-06-21 | `1-define` (awaiting DN-13) | **Product Analyst** — drafted [app-subscriptions/FEATURE_BRIEF.md](features/app-subscriptions/FEATURE_BRIEF.md): the Phase-2 user-side **follow loop** (the `signal-capture` SC-7/SC-8 / OQ-4 origin) — follow/unfollow an accepted app from its page + a personal **followed-apps return feed** + emit **exactly one D-7 `subscribe` event per follow** via `signals.capture.*` (D-7 already reserves the `subscribe` kind, so **no new global decision**). **5 stories / 9 G-W-T ACs / 6 metrics** (M3 = follow-driven return @3d/@14d is the headline — the vision §3.1 signal this feature exists to *cause*), explicit in/out scope, 4 constraints + 5 assumptions, 5 risks, vision alignment (§3.1/§5.2/§5.4/§6; proves **H1**, feeds **H3**). Core framing: emit **only `subscribe`** here — return/re-engagement are *caused* here but **captured by the existing `signal-capture` seams** (no double-build, AC6); the follow **state** is this feature's own **mutable** store vs. the append-only corpus event (AS-4). Reuses **D-3/D-6/D-7** as-is. Logged **AS-1…AS-5** ([DECISIONS.md](features/app-subscriptions/DECISIONS.md)), **resolved OQ-1/OQ-2** (digest boundary; exact event set = `subscribe` only) and **raised OQ-3** (does *unfollow* need a corpus kind?) / **OQ-4** (follow-control placement) for Stage 2 ([OPEN_QUESTIONS.md](features/app-subscriptions/OPEN_QUESTIONS.md)). Updated [INDEX.md](features/INDEX.md). **Raised DN-13** (approve brief + the **AS-3** notice-surface scope fork — ship empty-until-producer surface now vs. defer — + the **AS-5** deletion posture); no Stage advance until approved. |
 | 2026-06-21 | `6-post-release`→`0-coordinator`→`1-define` | **Coordinator** (user: skip post-release, start a new feature) — **re-verified the `ratings-reviews` build** (**486 tests / `ruff` / `check` / no drift**), then **skipped the Stage-6 retrospective** and **closed `ratings-reviews` out** (deferred/reopenable — no prod target/traffic + no `DIGEST` emitter to exercise the gate split; mirrors the five prior close-outs). Surveyed the backlog for all-deps-met features: `app-subscriptions`, `interest-profile`, `open-search-browse`, and the **newly-unblocked `developer-dashboard`** (deps `signal-capture` ✓ + `ratings-reviews` ✓). **User picked `app-subscriptions`** (D2) — the Phase-2 user-side engagement loop (follow apps + update/early-access notices) net-new from `signal-capture` SC-7/SC-8 (OQ-4); generates the on-platform signal the corpus measures; unblocks `developer-updates`. Folder already scaffolded (7 artifacts); set `Stage: 1-define`, updated [INDEX.md](features/INDEX.md), handed to the **Product Analyst** to draft [FEATURE_BRIEF.md](features/app-subscriptions/FEATURE_BRIEF.md). |

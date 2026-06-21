@@ -46,3 +46,53 @@ decisions go in [/DECISIONS.md](../../DECISIONS.md).*
 > D-6 (catalogued app), and D-7 (event schema incl. the `subscribe` kind) as-is. The
 > Architect (Stage 2) will weigh whether anything (e.g. unfollow's corpus representation,
 > AS-4/OQ-3) warrants one.
+
+## Design decisions (Stage 2, Software Architect, 2026-06-21 — [DESIGN.md](DESIGN.md))
+
+> Feature-local. **No new global ADR** — the design reuses D-3/D-6/D-7 as-is. Pending user
+> approval of the design (DN-14).
+
+- **AS-DESIGN-1 — `Subscription` is this feature's own mutable store; deletion CASCADEs (the
+  deliberate contrast with ratings' SET_NULL).** One `subscriptions_subscription` row per
+  user×app, `created`/hard-deleted, never versioned (AS-4). The `user` FK is **CASCADE**, so
+  account deletion removes follow state automatically with **no edit to `accounts.delete_account`**
+  (AC9). *Why CASCADE, not SET_NULL:* a follow is live relationship state with no standalone
+  analytic value once the person is gone — the behavioral residue already lives in the retained
+  `subscribe` corpus event (SC-10 anonymize-not-purge, unchanged). A rating, by contrast, *is*
+  eligibility-tagged corpus and must survive unlinked. *Rejected:* deriving follow state from the
+  append-only corpus (no table) — reconstructing mutable current-state from an event log is the
+  complexity AS-4 avoids and forces OQ-3's global change. *(DESIGN §4.)*
+- **AS-DESIGN-2 — the follow write and its one `subscribe` emit are ONE atomic transaction.**
+  `services.follow_app` calls `signals.capture.record_subscribe` (the single D-7 write path)
+  *inside* the same `transaction.atomic()` as the `get_or_create`, and only when a new row was
+  created. So M5 (subscribe events == follows) is **1:1 by construction**, not merely measured:
+  a committed follow ⟺ a committed event; a capture failure rolls back the follow too (no orphan
+  state) and is surfaced + counted via `CAPTURE_ERROR{kind=subscribe}` (AC5/AC7). Calling capture
+  (not bypassing it) honors D-7's single-write-path rule; nesting its `atomic()` as a savepoint
+  and rolling back an *uncommitted* event is not an append-only violation. *(DESIGN §6.1/§14.)*
+- **OQ-3 → RESOLVED: unfollow needs NO D-7 corpus kind (at MVP).** D-7 has no `unfollow` kind;
+  we do not add one. The mutable store already holds current state; unfollow is an *absence*,
+  which D-7 models by read-time derivation (like "did-not-return"), not a stored row; M6
+  (unfollow rate) is read from the `SUBSCRIPTION_UNFOLLOWED` metric; no consumer needs
+  unfollow-as-corpus yet (building it = speculative abstraction, §5.5). Stays additively
+  reversible — a future churn consumer can add the `EventKind` without touching this feature.
+  *Rejected:* OQ-3 = yes (add the kind now). *(DESIGN §8; resolves [OPEN_QUESTIONS.md](OPEN_QUESTIONS.md) OQ-3.)*
+- **OQ-4 → RESOLVED: the follow control is a fail-soft `{% app_follow app %}` inclusion tag in a
+  new app-page Follow slot (after the header).** Mirrors `ratings`' AP-1 slot pattern: a new
+  `<section aria-label="Follow">` immediately after `<header>`, rendering viewer-state (anonymous
+  → "Sign in to follow"; signed-in → Follow/Unfollow). Viewer-state-driven, so app-page
+  uniformity holds; fail-soft so a subscriptions fault never 500s the page; one-section rollback;
+  independent of the ratings slot (no collision). *Rejected:* editing an existing slot's content
+  (no natural home); a header-inline control (clutters identity). *(DESIGN §5f; resolves
+  [OPEN_QUESTIONS.md](OPEN_QUESTIONS.md) OQ-4.)*
+- **AS-DESIGN-3 — additive D-6 read `catalog.get_catalogued_apps(ids)` (no N+1 feed).** The feed
+  resolves N followed `app_id`s in one bulk, accepted-only query (vs O(N) `get_catalogued_app`
+  calls or an unbounded whole-catalog read). This is an **additive D-6 read-surface extension**
+  (same `CatalogApp` shape, accepted-only guarantee preserved), exactly the "one-line selector
+  over the same base queryset" D-6 anticipates — **not a new global ADR**. Mirrors
+  `signals.funnel_for_apps` (bulk) beside `app_funnel` (single). *(DESIGN §4.3.)*
+- **AS-DESIGN-4 — the notice surface is a single empty-until-producer seam (AS-3 = option A).**
+  `notices.notices_for_apps(app_ids) -> list[Notice]` returns `[]` today (no producer); the
+  feed renders notices if any, else "No news yet" (AC8). The `Notice` DTO pins the render
+  contract `developer-updates` (Phase 3) will honor. No producer/registry/provider machinery is
+  built — one repointable function (the honest-MVP pattern of D-8's gate). *(DESIGN §5d/§6.3.)*

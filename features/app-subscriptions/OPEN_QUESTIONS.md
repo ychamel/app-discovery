@@ -30,12 +30,17 @@
 
 ## Raised at Stage 1 (Product Analyst, 2026-06-21) — for Stage 2
 
-- **OQ-3 — Does *unfollow* need a corpus representation?** D-7 reserves a `subscribe`
-  `EngagementEvent` kind but **no `unfollow` kind**. The durable follow *state* (mutable,
-  this feature's store — AS-4) clearly captures the current relationship; whether the
-  append-only corpus should also record an unfollow *fact* (for retention/churn analysis) is
-  a Stage-2 design question. D-7 is additive-only by design, so adding a kind is possible but
-  is a global-contract change — flag, don't pre-decide. *(Brief AS-4.)*
-- **OQ-4 — Where exactly does the follow control live on the app page?** AS-2 assumes the
-  `app-pages` slot / inclusion-tag pattern (as `ratings-reviews` used for AP-1). The precise
-  slot, fail-soft behavior, and interaction with the ratings slot are Stage-2 design.
+- **OQ-3 — RESOLVED at Stage 2 (Software Architect, 2026-06-21): NO `unfollow` corpus kind at
+  MVP.** D-7 reserves `subscribe` but **no `unfollow` kind**, and we do not add one. The mutable
+  follow store (AS-4) is the source of truth for the *current* relationship; unfollow is an
+  *absence*, which D-7 models by read-time derivation (like "did-not-return"), never a stored
+  row; M6 (unfollow rate) is read from the `SUBSCRIPTION_UNFOLLOWED` metric; no consumer needs
+  unfollow-as-corpus yet (building it = speculative abstraction, CLAUDE.md §5.5). Stays additively
+  reversible — a future churn consumer can add the `EventKind` without touching this feature.
+  *(See [DESIGN.md](DESIGN.md) §8 + [DECISIONS.md](DECISIONS.md) OQ-3.)*
+- **OQ-4 — RESOLVED at Stage 2 (Software Architect, 2026-06-21): a fail-soft `{% app_follow app %}`
+  inclusion tag in a new app-page Follow slot, immediately after the header.** Mirrors the
+  `ratings` AP-1 slot pattern; viewer-state-driven (anonymous → "Sign in to follow"; signed-in →
+  Follow/Unfollow), so app-page uniformity holds; fail-soft so a subscriptions fault never 500s
+  the page; one-section rollback; independent of the ratings slot. *(See [DESIGN.md](DESIGN.md)
+  §5f + [DECISIONS.md](DECISIONS.md) OQ-4.)*
