@@ -44,6 +44,10 @@ DEFAULT_RETURN_WINDOW_LONG_DAYS = 14
 DEFAULT_RATING_SCALE_MAX = 5
 DEFAULT_REVIEW_TEXT_MAX_LENGTH = 4000
 DEFAULT_REVIEWS_DISPLAY_LIMIT = 20
+# Followed-apps feed page size (app-subscriptions DESIGN.md §10). Bounds the feed read so it
+# stays O(limit) at 100× follows; the growth path past this is cursor pagination (named, not
+# built — DESIGN §10/§15). No magic number in the selector/view.
+DEFAULT_FOLLOWED_FEED_PAGE_SIZE = 100
 
 
 def _resolve_raw(setting_name: str, env_name: str, default: int) -> object:
@@ -169,6 +173,15 @@ def reviews_display_limit() -> int:
     )
 
 
+def followed_feed_page_size() -> int:
+    """Max followed apps rendered in the personal feed (app-subscriptions DESIGN.md §10/§9)."""
+    return _positive_int(
+        "FOLLOWED_FEED_PAGE_SIZE",
+        "FOLLOWED_FEED_PAGE_SIZE",
+        DEFAULT_FOLLOWED_FEED_PAGE_SIZE,
+    )
+
+
 def validate_all() -> None:
     """Evaluate every tunable so misconfiguration surfaces at startup, not at use."""
     login_token_ttl()
@@ -182,3 +195,4 @@ def validate_all() -> None:
     rating_scale_max()
     review_text_max_length()
     reviews_display_limit()
+    followed_feed_page_size()

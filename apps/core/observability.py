@@ -77,6 +77,16 @@ RATING_REJECTED = "rating_rejected"  # the AC2 boundary-rejection rate (tags: re
 RATING_GATE_UNVERIFIED = "rating_gate_unverified"  # alert: the gate (signals) read failed
 RATING_DISPLAY_DEGRADED = "rating_display_degraded"  # the reviews slot fell back (fail-soft)
 
+# app-subscriptions metrics (DESIGN.md §9.4). Follow adoption/churn are trends; the one
+# actionable alert (M5 capture integrity) is the REUSED signals CAPTURE_ERROR{kind=subscribe}
+# — not re-added here. The three *_DEGRADED counters are display fail-soft health.
+SUBSCRIPTION_FOLLOWED = "subscription_followed"  # M1 adoption, M2 depth — a new follow created
+SUBSCRIPTION_UNFOLLOWED = "subscription_unfollowed"  # M6 unfollow rate — a follow removed
+SUBSCRIPTION_FOLLOW_NOOP = "subscription_follow_noop"  # idempotent re-follow of a current follow
+SUBSCRIPTION_FEED_DEGRADED = "subscription_feed_degraded"  # the feed read fell back (fail-soft)
+SUBSCRIPTION_NOTICE_DEGRADED = "subscription_notice_degraded"  # the notice read fell back
+SUBSCRIPTION_CONTROL_DEGRADED = "subscription_control_degraded"  # the follow slot fell back
+
 metrics_logger = logging.getLogger("apps.metrics")
 
 

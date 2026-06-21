@@ -1,5 +1,6 @@
 {% extends "pages/base.html" %}
 {% load ratings_tags %}
+{% load subscriptions_tags %}
 {% comment %}
   The uniform app page (DESIGN.md §5c). Every accepted app renders the SAME six slots in
   the SAME order — slot order and presence are fixed here, never driven by app identity.
@@ -27,6 +28,14 @@
       {% endfor %}
     </ul>
   </header>
+
+  {# Follow — the app-subscriptions slot, filled via its inclusion tag (DESIGN §5f, OQ-4).
+     Viewer-state-driven, so every accepted app renders the same Follow section (uniformity,
+     AC3); only the viewer's auth/follow state varies. Rollback = remove this section + the
+     {% load subscriptions_tags %} line. Fail-soft: the tag never 500s the page. #}
+  <section aria-label="Follow">
+    {% app_follow app %}
+  </section>
 
   {# 2. Media gallery — ordered screenshots (1–8); each image always carries alt text (A4).
        The slot is always present: with no media it shows a defined placeholder, so an

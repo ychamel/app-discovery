@@ -1,0 +1,33 @@
+{% comment %}
+  The Follow slot's content (app-subscriptions DESIGN.md §5f). Rendered *inside* the app
+  page's <section aria-label="Follow"> — this partial owns the control only; the section and
+  its aria-label live in app_page.html (uniformity, AC3 of app-pages).
+
+  Viewer-state-driven (never app-state-driven), so the slot is identical for every app; only
+  the viewer's auth/follow state varies:
+    * degraded (selector error) → no control, page intact (fail-soft);
+    * anonymous → a "Sign in to follow" link (AC2), no button;
+    * signed-in, not following → a one-click Follow POST form (CSRF);
+    * signed-in, following → an Unfollow POST form (AC1/AC3 reflected).
+{% endcomment %}
+{% if degraded %}
+  <p>Follow is temporarily unavailable.</p>
+{% elif request.user.is_authenticated %}
+  {% if is_following %}
+    <form method="post" action="{% url 'subscriptions:unfollow' app_id=app.id %}">
+      {% csrf_token %}
+      <button type="submit">Unfollow</button>
+    </form>
+  {% else %}
+    <form method="post" action="{% url 'subscriptions:follow' app_id=app.id %}">
+      {% csrf_token %}
+      <button type="submit">Follow</button>
+    </form>
+  {% endif %}
+{% else %}
+  <p>
+    <a href="{% url 'accounts:signin' %}?next={% url 'pages:app-page' app_id=app.id %}">
+      Sign in to follow
+    </a>
+  </p>
+{% endif %}

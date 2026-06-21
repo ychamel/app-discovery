@@ -126,6 +126,7 @@ _Built by `identity-accounts` Stage 4. Entries are added as each shared item shi
 - `list_review_queue() -> list[ReviewRow]` — pending apps FIFO + duplicate hint, no priority field (AC3) — `apps/catalog/selectors.py`
 - `apps_sharing_url(normalized_url, *, exclude=None)` — the duplicate signal (§6c) — `apps/catalog/selectors.py`
 - `list_catalogued_apps()` / `get_catalogued_app(id) -> CatalogApp | None` — **ACCEPTED only**; resolved tags + ordered media (the D-6 downstream contract, AC9) — `apps/catalog/selectors.py`
+- `get_catalogued_apps(ids) -> list[CatalogApp]` — **bulk by-ids**, ACCEPTED only, no N+1; non-accepted/unknown ids silently absent (additive D-6 read, the feed primitive — app-subscriptions DESIGN §4.3) — `apps/catalog/selectors.py`
 - `time_to_decision(app)` / `decision_latencies()` — time-to-decision reporting from stored timestamps (observable, not an SLA) — `apps/catalog/selectors.py`
 
 ### Behavioral signals — model & vocabulary (`apps/signals/`, the D-7 event schema)
@@ -171,6 +172,17 @@ _Built by `identity-accounts` Stage 4. Entries are added as each shared item shi
 - `{% app_reviews app %}` (`ratings_tags`) — the AP-1 reviews-slot inclusion tag; fail-soft (degrades, never 500s the page) — `apps/ratings/templatetags/ratings_tags.py`
 - ratings config tunables `rating_scale_max()` (5) / `review_text_max_length()` (4000) / `reviews_display_limit()` (20) — `apps/core/config.py`
 - ratings metric constants (`RATING_SUBMITTED`, `RATING_UPDATED`, `RATING_REMOVED`, `RATING_REJECTED`, `RATING_GATE_UNVERIFIED`, `RATING_DISPLAY_DEGRADED`) — `apps/core/observability.py`
+
+### App subscriptions (`apps/subscriptions/`, owns one mutable table `subscriptions_subscription`)
+- `Subscription` — one current follow per user×app; **no score/updated_at/soft-delete column** (AC5); `user` FK **CASCADE** (the AS-5/AC9 contrast with ratings' SET_NULL) — `apps/subscriptions/models.py`
+- `services.follow_app(user, app_id) -> bool` / `services.unfollow_app(user, app_id) -> bool` — the single write path; the **only** module importing `signals.capture`; follow row + its one `subscribe` emit in **one `transaction.atomic()`** (M5 1:1 by construction); unfollow is hard-delete, no corpus event (OQ-3) — `apps/subscriptions/services.py`
+- `UnknownAppError` — loud write-boundary failure (→ view 404) — `apps/subscriptions/errors.py`
+- `selectors.is_following(user, app_id) -> bool` / `selectors.followed_apps(user, *, limit) -> list[CatalogApp]` — the single read path (bulk D-6 resolve, accepted-only, no N+1) — `apps/subscriptions/selectors.py`
+- `notices.Notice` (frozen DTO) / `notices.notices_for_apps(ids) -> list[Notice]` — the **empty-until-producer** feed-notice seam (AS-3=A); returns `[]` today, **the one place to repoint** when `developer-updates` ships — `apps/subscriptions/notices.py`
+- route names `subscriptions:follow` / `subscriptions:unfollow` / `subscriptions:feed` — POST mutations + GET feed; `login_required`; keyed on user + `App.id` (no subscription id → no IDOR) — `apps/subscriptions/urls.py`
+- `{% app_follow app %}` (`subscriptions_tags`) — the Follow-slot inclusion tag; fail-soft (degrades, never 500s the page) — `apps/subscriptions/templatetags/subscriptions_tags.py`
+- subscriptions config tunable `followed_feed_page_size()` (100) — the feed cap — `apps/core/config.py`
+- subscriptions metric constants (`SUBSCRIPTION_FOLLOWED`, `SUBSCRIPTION_UNFOLLOWED`, `SUBSCRIPTION_FOLLOW_NOOP`, `SUBSCRIPTION_FEED_DEGRADED`, `SUBSCRIPTION_NOTICE_DEGRADED`, `SUBSCRIPTION_CONTROL_DEGRADED`); the M5 alert reuses signals `CAPTURE_ERROR{kind=subscribe}` — `apps/core/observability.py`
 
 <!-- Example of the shape this takes once code exists:
 

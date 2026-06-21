@@ -97,3 +97,33 @@ decisions go in [/DECISIONS.md](../../DECISIONS.md).*
   feed renders notices if any, else "No news yet" (AC8). The `Notice` DTO pins the render
   contract `developer-updates` (Phase 3) will honor. No producer/registry/provider machinery is
   built — one repointable function (the honest-MVP pattern of D-8's gate). *(DESIGN §5d/§6.3.)*
+
+## Build decisions (Stage 4, Senior Engineer, 2026-06-21 — code + [TEST_PLAN.md](TEST_PLAN.md))
+
+> All Stage-2 decisions built as designed — **no re-design, no new global ADR**. Reuses
+> D-3/D-6/D-7 as-is. The build matched [TASKS.md](TASKS.md) T-01…T-08 exactly.
+
+- **AS-DESIGN-1…4 + OQ-3 + OQ-4 — BUILT as specified.** `apps/subscriptions/` owns one mutable
+  table `subscriptions_subscription` (CASCADE `user` FK — AS-DESIGN-1); `services.follow_app`
+  writes the follow row + its one `record_subscribe` emit in **one `transaction.atomic()`** —
+  a forced-capture-failure test confirms the follow rolls back and `CAPTURE_ERROR{kind=subscribe}`
+  is counted (AS-DESIGN-2); `unfollow_app` emits no corpus event (OQ-3); the `{% app_follow app %}`
+  inclusion tag fills a new fail-soft `<section aria-label="Follow">` after the header (OQ-4);
+  the additive bulk `catalog.get_catalogued_apps(ids)` backs the no-N+1 feed (AS-DESIGN-3); and
+  `notices.notices_for_apps` returns `[]` behind the frozen `Notice` DTO (AS-DESIGN-4). All nine
+  ACs verified in [TEST_PLAN.md](TEST_PLAN.md); full suite green.
+- **One sanctioned cross-feature regression-test update.** The closed-out `apps/pages`
+  `test_template.py` hard-coded "6 slots"; inserting the sanctioned Follow section (DESIGN §5f)
+  makes the structural fingerprint **7** slots. The three assertions were updated to `7` with a
+  note — uniformity (every accepted app renders the same slots) is preserved; only the count
+  changed. No behavioural change to app-pages.
+
+### Named-not-built revisit flags (carried from DESIGN §15)
+- **Impression linkage on `subscribe`** — `record_subscribe` is called without an impression at
+  MVP (optional in D-7); attributing a follow to the shown instance is purely additive.
+- **OQ-3 `unfollow` corpus kind** — add a D-7 `EventKind` + recorder *if* a churn consumer ever
+  needs unfollow-as-corpus. Additive, no change to this feature.
+- **Feed cursor pagination** — `followed_feed_page_size` is a hard cap today; cursor pagination
+  is a one-place change in `followed_apps` + the template if follows-per-user grows large.
+- **Notice producer repoint** — repoint `notices.notices_for_apps` to `developer-updates` when it
+  ships (one place, no feed rework).

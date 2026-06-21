@@ -163,6 +163,26 @@ def get_catalogued_app(app_id) -> CatalogApp | None:
     return _to_catalog_app(app, _resolve_tag_labels([app]))
 
 
+def get_catalogued_apps(app_ids: list[UUID]) -> list[CatalogApp]:
+    """Accepted apps among ``app_ids`` as their D-6 shape — bulk, accepted-only, no N+1.
+
+    The by-ids counterpart to ``get_catalogued_app``, for a consumer (e.g. the followed-apps
+    feed) that resolves many ids at once: reading them one-by-one is O(N) queries, and reading
+    the whole catalogue is unbounded in catalog size. This is two queries regardless of N (the
+    same prefetch + deduped tag resolution as ``list_catalogued_apps``).
+
+    Non-accepted/unknown ids are **silently absent** — same accepted-only guarantee and
+    ``CatalogApp`` shape as the single read; the caller orders the result and handles gaps
+    (a later withdrawal simply drops out). An empty input returns ``[]``.
+    """
+    apps = list(
+        App.objects.filter(pk__in=app_ids, status=App.Status.ACCEPTED)
+        .prefetch_related("media", "app_tags")
+    )
+    resolved = _resolve_tag_labels(apps)
+    return [_to_catalog_app(app, resolved) for app in apps]
+
+
 def _resolve_tag_labels(apps: list[App]) -> dict[UUID, CatalogTag]:
     """Resolve every stored tag_id across ``apps`` once (deduped) → its current CatalogTag.
 

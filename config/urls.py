@@ -23,6 +23,9 @@ urlpatterns = [
     # The ratings-reviews activation switch (DESIGN.md §12): removing this include rolls the
     # feature back with zero data migration. Own prefix — no collision with the pages /apps/.
     path("ratings/", include("apps.ratings.urls")),
+    # The app-subscriptions activation switch (DESIGN.md §15): one half of the rollback (the
+    # other is the app_page.html Follow section). Own prefix — no collision with pages /apps/.
+    path("subscriptions/", include("apps.subscriptions.urls")),
     path("", include("apps.accounts.urls")),
 ]
 

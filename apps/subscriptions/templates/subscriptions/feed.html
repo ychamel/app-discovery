@@ -1,0 +1,52 @@
+{% extends "pages/base.html" %}
+{% comment %}
+  The personal followed-apps feed (app-subscriptions DESIGN.md §5g). Two regions:
+    * Notices — the "reason to come back": update/early-access news about followed apps.
+      Empty until a producer ships (developer-updates, Phase 3) → a clear "No news yet"
+      empty state, never an error (AC8).
+    * Followed apps — the user's current follows, most-recent first, each LINKING to its app
+      page so a click flows through the existing re-engagement/visit seams (AC6). Empty → a
+      clear "not following anything yet" state with a browse pointer (AC4).
+
+  All app/notice text is rendered through Django auto-escaping (no |safe) — XSS-safe (§8).
+{% endcomment %}
+{% block title %}Apps you follow · App Discovery{% endblock %}
+
+{% block content %}
+<h1>Apps you follow</h1>
+
+{# Notices region — the reason to return. Always present; empty state until a producer. #}
+<section aria-label="Notices">
+  <h2>News</h2>
+  {% if notices %}
+    <ul aria-label="Notice list">
+      {% for notice in notices %}
+        <li>
+          <p>{{ notice.title }}</p>
+          <p>{{ notice.summary }}</p>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No news yet.</p>
+  {% endif %}
+</section>
+
+{# Followed-apps region — current follows, each linking to its page (AC6). #}
+<section aria-label="Followed apps">
+  <h2>Your apps</h2>
+  {% if apps %}
+    <ul aria-label="Followed app list">
+      {% for app in apps %}
+        <li>
+          <a href="{% url 'pages:app-page' app_id=app.id %}">{{ app.name }}</a>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    {# No public browse surface exists yet (open-search-browse, future) — a text pointer, not
+       a broken link. Repoint to the browse route when that feature ships. #}
+    <p>You're not following any apps yet. Open an app's page to follow it.</p>
+  {% endif %}
+</section>
+{% endblock %}

@@ -63,22 +63,26 @@ class FullyPopulatedTests(SimpleTestCase):
 
 
 class EmptyAndPartialStateTests(SimpleTestCase):
-    """AC2 — empty/single states keep every slot present with no layout-collapsing variance."""
+    """AC2 — empty/single states keep every slot present with no layout-collapsing variance.
+
+    Slot count is 7: the six original app-page slots + the Follow slot the app-subscriptions
+    feature inserts after the header (a sanctioned, viewer-state-driven section — DESIGN §5f).
+    """
 
     def test_no_tags_shows_uncategorized(self):
         html = _render(_app(tags=[]))
         self.assertIn("Uncategorized", html)
-        self.assertEqual(len(_slot_labels(html)), 6)
+        self.assertEqual(len(_slot_labels(html)), 7)
 
     def test_no_media_shows_placeholder_and_all_slots(self):
         html = _render(_app(media=[]))
         self.assertIn("No screenshots yet", html)
-        self.assertEqual(len(_slot_labels(html)), 6)
+        self.assertEqual(len(_slot_labels(html)), 7)
 
     def test_single_image_renders_and_keeps_all_slots(self):
         html = _render(_app(media=[_media(0)]))
         self.assertEqual(html.count("<img"), 1)
-        self.assertEqual(len(_slot_labels(html)), 6)
+        self.assertEqual(len(_slot_labels(html)), 7)
 
 
 class StructuralUniformityTests(SimpleTestCase):

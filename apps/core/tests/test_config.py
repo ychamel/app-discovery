@@ -82,6 +82,21 @@ class CatalogMediaLimitTests(SimpleTestCase):
             config.catalog_media_max_bytes()
 
 
+class FollowedFeedPageSizeTests(SimpleTestCase):
+    def test_default_when_unset(self):
+        os.environ.pop("FOLLOWED_FEED_PAGE_SIZE", None)
+        self.assertEqual(config.followed_feed_page_size(), 100)
+
+    @override_settings(FOLLOWED_FEED_PAGE_SIZE=25)
+    def test_setting_override(self):
+        self.assertEqual(config.followed_feed_page_size(), 25)
+
+    @override_settings(FOLLOWED_FEED_PAGE_SIZE=0)
+    def test_zero_fails_loudly(self):
+        with self.assertRaises(ImproperlyConfigured):
+            config.followed_feed_page_size()
+
+
 class ValidateAllTests(SimpleTestCase):
     def test_passes_with_defaults(self):
         config.validate_all()  # should not raise

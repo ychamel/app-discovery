@@ -7,6 +7,7 @@ field (AC3), and the time-to-decision reporting value.
 """
 
 import tempfile
+from uuid import uuid4
 
 from django.db import connection
 from django.test import TestCase, override_settings
@@ -124,6 +125,58 @@ class CataloguedAppTests(SelectorTestBase):
         one = len(ctx_one.captured_queries)
 
         self.assertEqual(many, one, "catalogue list query count grows per app (N+1)")
+
+
+class GetCataloguedAppsTests(SelectorTestBase):
+    """The additive bulk by-ids read (app-subscriptions T-01) — accepted-only, no N+1."""
+
+    def test_returns_only_accepted_apps_among_the_ids(self):
+        accepted = self._accept(self._submit(url="https://accepted.example.com"))
+        pending = self._submit(url="https://pending.example.com")
+        rejected = self._submit(url="https://rejected.example.com")
+        services.reject_app(rejected, self.reviewer, failed_criteria=[Criterion.WORKS])
+        withdrawn = self._accept(self._submit(url="https://withdrawn.example.com"))
+        services.withdraw_app(withdrawn)
+
+        result = selectors.get_catalogued_apps(
+            [accepted.id, pending.id, rejected.id, withdrawn.id]
+        )
+
+        self.assertEqual([app.id for app in result], [accepted.id])
+
+    def test_unknown_ids_are_silently_absent(self):
+        accepted = self._accept(self._submit())
+        result = selectors.get_catalogued_apps([accepted.id, uuid4()])
+        self.assertEqual([app.id for app in result], [accepted.id])
+
+    def test_empty_input_returns_empty_list(self):
+        self.assertEqual(selectors.get_catalogued_apps([]), [])
+
+    def test_shape_parity_with_single_read(self):
+        # The bulk read returns the same resolved CatalogApp as the single read for the same app.
+        app = self._accept(self._submit())
+        taxonomy_services.rename_tag(self.tag, label="Renamed Tag")
+        (bulk,) = selectors.get_catalogued_apps([app.id])
+        single = selectors.get_catalogued_app(app.id)
+        self.assertEqual(bulk, single)
+        self.assertEqual([t.label for t in bulk.tags], ["Renamed Tag"])
+
+    def test_does_not_n_plus_one(self):
+        # Resolving three accepted apps costs the same query count as resolving one — the
+        # prefetch + deduped tag resolution means a bounded count independent of N.
+        ids = [
+            self._accept(self._submit(url=f"https://bulk{i}.example.com")).id
+            for i in range(3)
+        ]
+        with CaptureQueriesContext(connection) as ctx_many:
+            selectors.get_catalogued_apps(ids)
+        many = len(ctx_many.captured_queries)
+
+        with CaptureQueriesContext(connection) as ctx_one:
+            selectors.get_catalogued_apps(ids[:1])
+        one = len(ctx_one.captured_queries)
+
+        self.assertEqual(many, one, "bulk catalogue read query count grows per app (N+1)")
 
 
 class ReviewQueueTests(SelectorTestBase):

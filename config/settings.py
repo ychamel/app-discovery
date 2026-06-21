@@ -91,6 +91,7 @@ INSTALLED_APPS = [
     "apps.signals",
     "apps.pages",
     "apps.ratings",
+    "apps.subscriptions",
 ]
 
 MIDDLEWARE = [
