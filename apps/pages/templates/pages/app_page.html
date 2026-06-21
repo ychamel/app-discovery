@@ -1,4 +1,5 @@
 {% extends "pages/base.html" %}
+{% load ratings_tags %}
 {% comment %}
   The uniform app page (DESIGN.md §5c). Every accepted app renders the SAME six slots in
   the SAME order — slot order and presence are fixed here, never driven by app identity.
@@ -66,12 +67,12 @@
            value="{{ request.scheme }}://{{ request.get_host }}{% url 'pages:app-page' app_id=app.id %}">
   </section>
 
-  {# 6. Reviews — a defined empty slot only (AP-1/AC9). app-pages captures, stores, and shows
-       NO rating data; reviews are owned by the ratings-reviews feature. The slot exists so
-       adding reviews later is not a uniformity-breaking change. #}
+  {# 6. Reviews — the AP-1 slot, filled by the ratings-reviews feature via its inclusion tag.
+       Content only: the section, its aria-label, heading, and position are unchanged, so page
+       uniformity (AC3/AP-1) holds. Rollback = restore the one <p>Reviews coming soon.</p>. #}
   <section aria-label="Reviews">
     <h2>Reviews</h2>
-    <p>Reviews coming soon.</p>
+    {% app_reviews app %}
   </section>
 
 </article>

@@ -20,6 +20,9 @@ urlpatterns = [
     # feature back with zero data migration. /apps/ is free — catalog dev pages live under
     # catalog/apps/.
     path("apps/", include("apps.pages.urls")),
+    # The ratings-reviews activation switch (DESIGN.md §12): removing this include rolls the
+    # feature back with zero data migration. Own prefix — no collision with the pages /apps/.
+    path("ratings/", include("apps.ratings.urls")),
     path("", include("apps.accounts.urls")),
 ]
 

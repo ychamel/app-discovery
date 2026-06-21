@@ -38,6 +38,12 @@ DEFAULT_CATALOG_MEDIA_MAX_BYTES = 5 * 1024 * 1024  # 5 MB
 # tolerance" is a one-line config change and there is no magic 3/14 in logic.
 DEFAULT_RETURN_WINDOW_SHORT_DAYS = 3
 DEFAULT_RETURN_WINDOW_LONG_DAYS = 14
+# Ratings & reviews bounds (ratings-reviews DESIGN.md §10). The rating scale ceiling and the
+# review-text length cap are validated at the write boundary; the display limit bounds the
+# reviews slot render so it stays O(limit) at 100× data. No magic numbers in logic.
+DEFAULT_RATING_SCALE_MAX = 5
+DEFAULT_REVIEW_TEXT_MAX_LENGTH = 4000
+DEFAULT_REVIEWS_DISPLAY_LIMIT = 20
 
 
 def _resolve_raw(setting_name: str, env_name: str, default: int) -> object:
@@ -136,6 +142,33 @@ def return_window_long_days() -> int:
     )
 
 
+def rating_scale_max() -> int:
+    """Highest score a rating may carry; the scale is 1..this (ratings-reviews DESIGN.md §10)."""
+    return _positive_int(
+        "RATING_SCALE_MAX",
+        "RATING_SCALE_MAX",
+        DEFAULT_RATING_SCALE_MAX,
+    )
+
+
+def review_text_max_length() -> int:
+    """Max characters accepted in a review body (ratings-reviews DESIGN.md §10)."""
+    return _positive_int(
+        "REVIEW_TEXT_MAX_LENGTH",
+        "REVIEW_TEXT_MAX_LENGTH",
+        DEFAULT_REVIEW_TEXT_MAX_LENGTH,
+    )
+
+
+def reviews_display_limit() -> int:
+    """Max reviews rendered in the app-page reviews slot (ratings-reviews DESIGN.md §10/§9)."""
+    return _positive_int(
+        "REVIEWS_DISPLAY_LIMIT",
+        "REVIEWS_DISPLAY_LIMIT",
+        DEFAULT_REVIEWS_DISPLAY_LIMIT,
+    )
+
+
 def validate_all() -> None:
     """Evaluate every tunable so misconfiguration surfaces at startup, not at use."""
     login_token_ttl()
@@ -146,3 +179,6 @@ def validate_all() -> None:
     catalog_media_max_bytes()
     return_window_short_days()
     return_window_long_days()
+    rating_scale_max()
+    review_text_max_length()
+    reviews_display_limit()

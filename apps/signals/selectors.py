@@ -25,6 +25,7 @@ endpoint at MVP. When the developer-dashboard needs HTTP it adds a thin ``HasRol
 gated read view over these selectors — a one-feature-later addition, not built here.
 """
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
@@ -195,3 +196,34 @@ def category_impressions(tag_id: UUID, *, start: datetime, end: datetime) -> int
         .distinct()
         .count()
     )
+
+
+# --- Factual existence read (the ratings-reviews gate's evidence, D-7-compliant) ----
+def has_impression(
+    user_id,
+    app_id: UUID,
+    *,
+    surfaces: Iterable[str],
+    as_of: datetime | None = None,
+) -> bool:
+    """Does ``user_id`` have an impression of ``app_id`` on one of ``surfaces`` by ``as_of``?
+
+    A pure existence check (an ``EXISTS``) over the impression corpus — **raw, never scored
+    and never judged** (D-7 raw-only). It answers *whether* a show happened on the given
+    surfaces; it does **not** decide what those surfaces *mean*. That judgement (e.g.
+    "a DIGEST impression is organic curation") belongs to the consumer — see
+    ``apps.ratings.gate.CURATED_SURFACES`` — so signals stays the neutral store.
+
+    This is the missing per-user existence read the ratings-reviews gate needs: D-7 forbids
+    reading ``signals_*`` directly past this selector surface, so the gate must read through
+    here. Backed by the ``signals_imp_user_app_idx`` index on ``(user, app_id)``.
+
+    ``as_of`` is an inclusive upper bound: an impression exactly at ``as_of`` counts, one
+    strictly after does not. Omitting it considers impressions at any time.
+    """
+    matches = Impression.objects.filter(
+        user_id=user_id, app_id=app_id, surface__in=list(surfaces)
+    )
+    if as_of is not None:
+        matches = matches.filter(occurred_at__lte=as_of)
+    return matches.exists()

@@ -90,6 +90,7 @@ INSTALLED_APPS = [
     "apps.catalog",
     "apps.signals",
     "apps.pages",
+    "apps.ratings",
 ]
 
 MIDDLEWARE = [

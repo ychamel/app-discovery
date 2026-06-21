@@ -59,6 +59,9 @@ class Impression(models.Model):
         indexes = [
             models.Index(fields=["app_id", "occurred_at"], name="signals_imp_app_time_idx"),
             models.Index(fields=["occurred_at"], name="signals_imp_time_idx"),
+            # Backs the per-user-per-app existence read (selectors.has_impression) that the
+            # ratings-reviews curated-rating gate runs (ratings DESIGN §4.3/§5d). Additive.
+            models.Index(fields=["user", "app_id"], name="signals_imp_user_app_idx"),
         ]
 
     def __str__(self) -> str:

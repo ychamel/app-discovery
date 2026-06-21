@@ -7,6 +7,19 @@ decisions go in [/DECISIONS.md](../../DECISIONS.md).*
 > impression of the app. See RR-2 below. It must agree with
 > [editorial-curation-tools](../editorial-curation-tools/OPEN_QUESTIONS.md).
 
+> **Built (Stage 4-build, 2026-06-21):** RR-4 and RR-5 are **implemented** in `apps/ratings/`,
+> and global **[D-8](../../DECISIONS.md)** (APPROVED) is implemented as `gate.CURATED_SURFACES
+> = frozenset({Surface.DIGEST})` — the single source of "what counts as curation". The
+> eligibility determination is frozen on each `ratings_rating` row (`weight_eligible` +
+> `eligibility_basis` + `eligibility_determined_at`, all NOT NULL) and stamped by the single
+> write path on every write. The gate reads evidence through the new factual
+> `signals.selectors.has_impression` (additive D-7 read surface) and **fails closed + loud**.
+> **Named-not-built growth levers** (per DESIGN §4.2/§5b/§14): a `recompute_eligibility`
+> management path (re-derive determinations when a `DIGEST` emitter ships or the gate
+> definition changes) and a stronger review-text **purge**-on-account-deletion posture (today
+> the row is `SET_NULL`-anonymized, text retained as "a former user"). See
+> [TEST_PLAN.md](TEST_PLAN.md) for per-AC verification.
+
 ## RR-1: The gate is recorded, not computed
 - **Date:** 2026-06-20
 - **Stage / feature:** `1-define` / ratings-reviews (Product Analyst)

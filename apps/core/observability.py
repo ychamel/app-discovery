@@ -66,6 +66,17 @@ APP_PAGE_NOT_AVAILABLE = "app_page_not_available"  # a non-accepted/unknown id w
 # a page emit was caught + dropped (tags: action) — informational, not a hard alert
 APP_PAGE_CAPTURE_DEGRADED = "app_page_capture_degraded"
 
+# ratings-reviews metrics (DESIGN.md §8.4). The gate-split (RATING_SUBMITTED/_UPDATED tagged
+# {weight_eligible, basis}) is the §5 share-eligible metric — expected ~all not-eligible at
+# MVP until a DIGEST emitter ships (R3). The two diagnostic counters below should stay 0 in a
+# healthy system — alert on any nonzero value.
+RATING_SUBMITTED = "rating_submitted"  # tags: weight_eligible, basis — the gate-split metric
+RATING_UPDATED = "rating_updated"  # tags: weight_eligible, basis — re-rate of an existing row
+RATING_REMOVED = "rating_removed"
+RATING_REJECTED = "rating_rejected"  # the AC2 boundary-rejection rate (tags: reason)
+RATING_GATE_UNVERIFIED = "rating_gate_unverified"  # alert: the gate (signals) read failed
+RATING_DISPLAY_DEGRADED = "rating_display_degraded"  # the reviews slot fell back (fail-soft)
+
 metrics_logger = logging.getLogger("apps.metrics")
 
 

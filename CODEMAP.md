@@ -149,6 +149,7 @@ _Built by `identity-accounts` Stage 4. Entries are added as each shared item shi
 - `app_funnel(app_id, *, start, end) -> AppFunnel` — per-app raw funnel; returns **derived** at read, no backfill (AC8/SC-9) — `apps/signals/selectors.py`
 - `funnel_for_apps(app_ids, *, start, end) -> list[AppFunnel]` — bulk, two grouped queries, no N+1 (AC9) — `apps/signals/selectors.py`
 - `category_impressions(tag_id, *, start, end) -> int` — per-category impression baseline from the frozen snapshot (AC2) — `apps/signals/selectors.py`
+- `has_impression(user_id, app_id, *, surfaces, as_of=None) -> bool` — factual per-user-per-app existence read (raw, never judged); the ratings curated-gate evidence (additive D-7 read, ratings DESIGN §5d) — `apps/signals/selectors.py`
 
 ### Behavioral signals — configuration & metrics
 - `return_window_short_days()` / `return_window_long_days()` — return-to-platform windows (defaults 3 / 14) — `apps/core/config.py`
@@ -159,6 +160,17 @@ _Built by `identity-accounts` Stage 4. Entries are added as each shared item shi
 - `emission.record_page_view(request, app_id) -> UUID | None` / `record_try_click(request, app_id, imp)` / `record_share(request, app_id, imp)` — the **surface-side non-blocking** capture wrapper: authenticated-only (AP-4), fail-soft-but-counted (AC7), never raises into the request — `apps/pages/emission.py`
 - route names `pages:app-page` / `pages:try` / `pages:share` — the public page, try-it redirect, and share endpoint, keyed on `App.id` (AP-5) — `apps/pages/urls.py`
 - app-pages metric constants (`APP_PAGE_RENDERED`, `APP_PAGE_NOT_AVAILABLE`, `APP_PAGE_CAPTURE_DEGRADED`) — `apps/core/observability.py`
+
+### Ratings & reviews (`apps/ratings/`, owns one mutable table `ratings_rating`)
+- `Rating` / `EligibilityBasis` — one editable rating per user×app + the recorded curated-gate determination; **no score/weight/rank/average column** (AC6) — `apps/ratings/models.py`
+- `gate.determine_eligibility(user, app_id, *, as_of) -> EligibilityDetermination` / `gate.CURATED_SURFACES` — the curated-rating gate; `CURATED_SURFACES` is the single source of the D-8 definition; fails closed + loud — `apps/ratings/gate.py`
+- `services.submit_rating` / `services.remove_rating` — the single write path (atomic, boundary-validated, gate stamped every write) — `apps/ratings/services.py`
+- `UnknownAppError` / `RatingValidationError` — loud write-boundary failures (→ view 404 / message) — `apps/ratings/errors.py`
+- `selectors.reviews_for_app(app_id, *, limit) -> AppReviews` / `selectors.user_rating(user, app_id) -> Rating | None` — the single display read (count + raw distribution, **no average**; all ratings shown) — `apps/ratings/selectors.py`
+- route names `ratings:submit` / `ratings:remove` — POST + `login_required`; keyed on user + `App.id` (no rating id → no IDOR) — `apps/ratings/urls.py`
+- `{% app_reviews app %}` (`ratings_tags`) — the AP-1 reviews-slot inclusion tag; fail-soft (degrades, never 500s the page) — `apps/ratings/templatetags/ratings_tags.py`
+- ratings config tunables `rating_scale_max()` (5) / `review_text_max_length()` (4000) / `reviews_display_limit()` (20) — `apps/core/config.py`
+- ratings metric constants (`RATING_SUBMITTED`, `RATING_UPDATED`, `RATING_REMOVED`, `RATING_REJECTED`, `RATING_GATE_UNVERIFIED`, `RATING_DISPLAY_DEGRADED`) — `apps/core/observability.py`
 
 <!-- Example of the shape this takes once code exists:
 

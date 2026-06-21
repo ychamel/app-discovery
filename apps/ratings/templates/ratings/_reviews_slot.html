@@ -1,0 +1,70 @@
+{% comment %}
+  The AP-1 reviews slot (ratings-reviews DESIGN.md §5f). Rendered *inside* the app page's
+  existing <section aria-label="Reviews"> — this partial owns the slot's content only; the
+  section, its aria-label, heading, and position stay in app_page.html (uniformity, AC3).
+
+  Three rules hold here:
+    * the "summary" is a count + raw score distribution — NEVER an average (AC6);
+    * every rating shows regardless of weight-eligibility, with no eligibility badge (AC7);
+    * review_text is rendered through Django auto-escaping (no |safe) — XSS-safe (§7).
+{% endcomment %}
+{% if degraded %}
+  <p>Reviews are temporarily unavailable.</p>
+{% else %}
+
+  {# Summary: total count + raw per-score distribution (descriptive, not a score). #}
+  <p>{{ reviews.total_count }} rating{{ reviews.total_count|pluralize }}</p>
+  {% if reviews.total_count %}
+    <ul aria-label="Score distribution">
+      {% for score, count in distribution_rows %}
+        <li>{{ score }}: {{ count }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  {# The reviews list, or the defined empty state (AC4). #}
+  {% if reviews.reviews %}
+    <ul aria-label="Reviews list">
+      {% for review in reviews.reviews %}
+        <li>
+          <p>{{ review.score }} / {{ scale_max }} — {{ review.author_display }}</p>
+          {% if review.review_text %}<p>{{ review.review_text }}</p>{% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No reviews yet — be the first.</p>
+  {% endif %}
+
+  {# The rating form (authenticated) or a sign-in prompt (anonymous, AC3). #}
+  {% if request.user.is_authenticated %}
+    <form method="post" action="{% url 'ratings:submit' app_id=app.id %}">
+      {% csrf_token %}
+      <label for="rating-score">Your rating</label>
+      <select id="rating-score" name="score">
+        {% for value in score_choices %}
+          <option value="{{ value }}"
+            {% if own_rating and own_rating.score == value %}selected{% endif %}>
+            {{ value }}
+          </option>
+        {% endfor %}
+      </select>
+      <label for="rating-text">Review (optional)</label>
+      <textarea id="rating-text" name="review_text">{% if own_rating %}{{ own_rating.review_text }}{% endif %}</textarea>
+      <button type="submit">{% if own_rating %}Update your rating{% else %}Submit rating{% endif %}</button>
+    </form>
+    {% if own_rating %}
+      <form method="post" action="{% url 'ratings:remove' app_id=app.id %}">
+        {% csrf_token %}
+        <button type="submit">Remove your rating</button>
+      </form>
+    {% endif %}
+  {% else %}
+    <p>
+      <a href="{% url 'accounts:signin' %}?next={% url 'pages:app-page' app_id=app.id %}">
+        Sign in to rate
+      </a>
+    </p>
+  {% endif %}
+
+{% endif %}
