@@ -49,8 +49,9 @@ decisions go in [/DECISIONS.md](../../DECISIONS.md).*
 
 ## Design decisions (Stage 2, Software Architect, 2026-06-21 — [DESIGN.md](DESIGN.md))
 
-> Feature-local. **No new global ADR** — the design reuses D-3/D-6/D-7 as-is. Pending user
-> approval of the design (DN-14).
+> Feature-local. **No new global ADR** — the design reuses D-3/D-6/D-7 as-is. **DESIGN
+> approved 2026-06-21 (DN-14)** — AS-DESIGN-1…4 and the OQ-3/OQ-4 resolutions below are
+> ratified and binding on the Planner/Tech Lead's decomposition.
 
 - **AS-DESIGN-1 — `Subscription` is this feature's own mutable store; deletion CASCADEs (the
   deliberate contrast with ratings' SET_NULL).** One `subscriptions_subscription` row per
