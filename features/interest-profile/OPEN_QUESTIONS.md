@@ -26,3 +26,18 @@ not blockers to drafting but should be confirmed before/at Stage 2.
 - **OQ-IP-4 — Interest intensity (deferred).** Flat declared set at MVP (out of scope). If
   "love vs like" weighting is ever wanted, it is an additive change to this feature, named
   not built. Not a DN.
+
+## Stage 2 — Software Architect (2026-06-22, DESIGN.md pending DN-16)
+
+No new blockers raised; the design resolves the Stage-1 working assumptions (IP-3/4/5 — see
+[DECISIONS.md](DECISIONS.md) IP-DESIGN-*). Re-affirmed as out-of-scope, not blockers:
+
+- **OQ-IP-3 — empty-profile digest semantics** — still owned by the **future matcher**; the
+  design only guarantees an empty profile is a representable, handled state here (AC6). No DN.
+- **OQ-IP-4 — interest intensity** — additive later (a per-row strength column + a richer read
+  selector); named, not built. No DN.
+
+Design-surfaced note (not a blocker): the picker's set-replace must **preserve a stored
+reference the active-only picker cannot show** — a *no-successor* retired tag (`retire_tag`
+allows `replaced_by=None`, verified) — to keep AC7/M5 true across edits. Resolved in-design by
+the §7 preserve-on-edit rule (IP-DESIGN-2), not escalated.
