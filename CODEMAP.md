@@ -184,6 +184,17 @@ _Built by `identity-accounts` Stage 4. Entries are added as each shared item shi
 - subscriptions config tunable `followed_feed_page_size()` (100) — the feed cap — `apps/core/config.py`
 - subscriptions metric constants (`SUBSCRIPTION_FOLLOWED`, `SUBSCRIPTION_UNFOLLOWED`, `SUBSCRIPTION_FOLLOW_NOOP`, `SUBSCRIPTION_FEED_DEGRADED`, `SUBSCRIPTION_NOTICE_DEGRADED`, `SUBSCRIPTION_CONTROL_DEGRADED`); the M5 alert reuses signals `CAPTURE_ERROR{kind=subscribe}` — `apps/core/observability.py`
 
+### Interest profile (`apps/interests/`, owns one mutable table `interests_interest`)
+- `Interest` — one declared tag per user×tag; **no score/updated_at/soft-delete column** (AC8); **no parent profile row** (empty = structural default, AC6); `user` FK **CASCADE** (AC9, no `accounts` edit) — `apps/interests/models.py`
+- `selectors.declared_tag_ids(user) -> frozenset[UUID]` — **the future-matcher read contract** (AC8): resolved current `Tag.id`s, deduped; a no-successor retired ref resolves to itself and stays (AC7) — `apps/interests/selectors.py`
+- `selectors.declared_tags(user) -> list[Tag]` (resolved, label-ordered, display) / `selectors.has_declared_interests(user) -> bool` (drives the nudge) / `selectors.count_unresolvable() -> int` (M5 ops invariant, 0 by construction; reuses taxonomy `TAXONOMY_REFERENCE_BREAK`) — `apps/interests/selectors.py`
+- `services.set_interests(user, tag_ids) -> SetResult` / `services.clear_interests(user) -> int` — the single write path; all-or-nothing `is_valid_tag` validation (AC2) + the §7 set-replace **preserve-on-edit** reconcile (AC4 × AC7); **does NOT import `signals.capture`** (IP-5, no D-7 emit) — `apps/interests/services.py`
+- `InterestValidationError` — loud write-boundary failure (→ view re-render + 400) — `apps/interests/errors.py`
+- route names `interests:picker` / `interests:save` / `interests:clear` — GET picker + POST mutations; `login_required`; keyed on `request.user` + `tag_id` (no interest id → no IDOR) — `apps/interests/urls.py`
+- `{% interest_prompt %}` (`interests_tags`) — the onboarding-nudge inclusion tag on `accounts/profile.html`; fail-soft, non-gating (AC3) — `apps/interests/templatetags/interests_tags.py`
+- interests config tunables `interest_suggested_minimum()` (3, copy-only nudge) / `interest_declaration_max()` (500, defensive cap) — `apps/core/config.py`
+- interests metric constants (`INTEREST_DECLARED`, `INTEREST_PROFILE_UPDATED`, `INTEREST_PROFILE_CLEARED`, `INTEREST_DECLARATION_REJECTED`, `INTEREST_PICKER_DEGRADED`, `INTEREST_PROMPT_DEGRADED`); the M5 alert reuses taxonomy `TAXONOMY_REFERENCE_BREAK` — `apps/core/observability.py`
+
 <!-- Example of the shape this takes once code exists:
 
 ### Utilities

@@ -97,6 +97,25 @@ class FollowedFeedPageSizeTests(SimpleTestCase):
             config.followed_feed_page_size()
 
 
+class InterestTunableTests(SimpleTestCase):
+    def test_suggested_minimum_default(self):
+        os.environ.pop("INTEREST_SUGGESTED_MINIMUM", None)
+        self.assertEqual(config.interest_suggested_minimum(), 3)
+
+    def test_declaration_max_default(self):
+        os.environ.pop("INTEREST_DECLARATION_MAX", None)
+        self.assertEqual(config.interest_declaration_max(), 500)
+
+    @override_settings(INTEREST_SUGGESTED_MINIMUM=5)
+    def test_suggested_minimum_override(self):
+        self.assertEqual(config.interest_suggested_minimum(), 5)
+
+    @override_settings(INTEREST_DECLARATION_MAX=0)
+    def test_declaration_max_zero_fails_loudly(self):
+        with self.assertRaises(ImproperlyConfigured):
+            config.interest_declaration_max()
+
+
 class ValidateAllTests(SimpleTestCase):
     def test_passes_with_defaults(self):
         config.validate_all()  # should not raise

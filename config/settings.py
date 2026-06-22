@@ -92,6 +92,7 @@ INSTALLED_APPS = [
     "apps.pages",
     "apps.ratings",
     "apps.subscriptions",
+    "apps.interests",
 ]
 
 MIDDLEWARE = [

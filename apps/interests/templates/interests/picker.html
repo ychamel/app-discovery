@@ -1,0 +1,71 @@
+{% extends "accounts/base.html" %}
+{% comment %}
+  The interest picker (interest-profile DESIGN.md §5.3/§8). A cluster-grouped, active-only,
+  label-bearing checkbox form (AC5) pre-checking the user's resolved declared tags (AC1).
+
+  States:
+    * degraded   — the picker read fail-softed (DESIGN §9): a "couldn't load" page, not a 500.
+    * no vocab   — no active tags exist yet → "none available" copy, no crash.
+    * empty/some — the picker; an empty profile shows a gentle hint (AC6); a "pick a few"
+      hint shows below the suggested minimum (IP-3, copy only — never blocks save).
+
+  All tag label/definition text is rendered through Django auto-escaping (no |safe) — XSS-safe.
+{% endcomment %}
+{% block title %}Your interests · App Discovery{% endblock %}
+
+{% block content %}
+<h1>Your interests</h1>
+
+{% if degraded %}
+  <p role="alert">Couldn't load interests right now — please try again.</p>
+{% else %}
+  {% if messages %}
+    <ul aria-label="Messages">
+      {% for message in messages %}<li>{{ message }}</li>{% endfor %}
+    </ul>
+  {% endif %}
+  {% if error %}
+    <p role="alert">{{ error }}</p>
+  {% endif %}
+
+  {% if not has_any_tag %}
+    <p>No interests are available yet.</p>
+  {% else %}
+    {% if declared_count == 0 %}
+      <p>You haven't picked any interests yet.</p>
+    {% elif declared_count < suggested_minimum %}
+      <p>Pick a few interests so we can tailor what you see.</p>
+    {% endif %}
+
+    <form method="post" action="{% url 'interests:save' %}">
+      {% csrf_token %}
+      {% for row in clusters %}
+        {% if row.tags %}
+          <section aria-label="{{ row.cluster.name }}">
+            <h2>{{ row.cluster.name }}</h2>
+            {% if row.cluster.description %}<p>{{ row.cluster.description }}</p>{% endif %}
+            <ul>
+              {% for item in row.tags %}
+                <li>
+                  <label>
+                    <input type="checkbox" name="tag_id" value="{{ item.tag.id }}"
+                           {% if item.checked %}checked{% endif %}>
+                    {{ item.tag.label }}
+                    {% if item.tag.definition %}— {{ item.tag.definition }}{% endif %}
+                  </label>
+                </li>
+              {% endfor %}
+            </ul>
+          </section>
+        {% endif %}
+      {% endfor %}
+      <button type="submit">Save your interests</button>
+    </form>
+
+    <form method="post" action="{% url 'interests:clear' %}">
+      {% csrf_token %}
+      <button type="submit">Clear all</button>
+    </form>
+  {% endif %}
+{% endif %}
+{% endblock %}

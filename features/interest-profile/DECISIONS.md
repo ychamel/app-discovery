@@ -72,3 +72,31 @@ The cross-feature **read contract** the future matcher consumes is
 `interests.selectors.declared_tag_ids(user) -> frozenset[UUID]` (resolved current `Tag.id`s,
 AC8) — additive-only, published in [CODEMAP.md](../../CODEMAP.md) at build, **not** a new ADR
 (it consumes D-5, it does not amend it).
+
+## Stage 4 — Senior Engineer (built 2026-06-22)
+
+**IP-DESIGN-1…4 are all BUILT, exactly as ratified** — no design deviation, no new global ADR
+(reuses D-3/D-4/D-5):
+
+- **IP-DESIGN-1 (built)** — `apps/interests/models.Interest` is the membership-only store
+  (`(user, tag_id)`, `unique(user, tag_id)` = `interests_one_per_user_tag`, CASCADE user FK,
+  no parent row, no score/`updated_at`); `interests/0001` is additive + reversible. Empty =
+  structural default (AC6). Structural + AC9-deletion tests in `tests/test_models.py`.
+- **IP-DESIGN-2 (built)** — `services.set_interests` implements the §7 set-replace with the
+  named `_preserved_unshowable_ids` helper; the load-bearing no-successor-retire preserve and
+  the successor-normalization cases are unit-tested against **real** `retire_tag` states in
+  `tests/test_services.py`. `clear_interests` bypasses preserve (AC9).
+- **IP-DESIGN-3 (built)** — `services` does **not** import `signals.capture`; an AST-based
+  import-absence test (`tests/test_services.py::NoSignalsCaptureImportTests`) asserts IP-5.
+- **IP-DESIGN-4 (built)** — `{% interest_prompt %}` (`templatetags/interests_tags.py`) is the
+  fail-soft nudge; one content line + `{% load %}` added to `accounts/profile.html`. Render +
+  fail-soft tests in `tests/test_templatetags.py`.
+
+The matcher read contract `selectors.declared_tag_ids` ships published in
+[CODEMAP.md](../../CODEMAP.md) (AC8). Activation switch = the `config/urls` `interests/` include
++ the one `profile.html` line (DESIGN §16).
+
+**Named-not-built revisit flags (DESIGN §18, carried):** onboarding *gating* (revisit when
+`weekly-digest` makes declaration load-bearing); persisted onboarding *dismissal* (if telemetry
+shows re-nudge friction); a cached resolved projection (the D-5 100× growth path); interest
+intensity (OQ-IP-4); an "interest changed" D-7 signal (IP-5) — all additive, none built.

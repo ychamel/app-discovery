@@ -26,6 +26,9 @@ urlpatterns = [
     # The app-subscriptions activation switch (DESIGN.md §15): one half of the rollback (the
     # other is the app_page.html Follow section). Own prefix — no collision with pages /apps/.
     path("subscriptions/", include("apps.subscriptions.urls")),
+    # The interest-profile activation switch (DESIGN.md §16): one half of the rollback (the
+    # other is the {% interest_prompt %} line in accounts/profile.html). Own prefix.
+    path("interests/", include("apps.interests.urls")),
     path("", include("apps.accounts.urls")),
 ]
 

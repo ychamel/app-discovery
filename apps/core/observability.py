@@ -87,6 +87,17 @@ SUBSCRIPTION_FEED_DEGRADED = "subscription_feed_degraded"  # the feed read fell 
 SUBSCRIPTION_NOTICE_DEGRADED = "subscription_notice_degraded"  # the notice read fell back
 SUBSCRIPTION_CONTROL_DEGRADED = "subscription_control_degraded"  # the follow slot fell back
 
+# interest-profile metrics (DESIGN.md §12). Declaration/edit/clear are adoption trends; the
+# one actionable alert is an *unexpected* set_interests write failure (a DB error, not a
+# validation reject). REJECTED is expected and NOT alertable. M5 reference integrity reuses
+# the taxonomy TAXONOMY_REFERENCE_BREAK counter (emitted by resolve_tag) — not re-added here.
+INTEREST_DECLARED = "interest_declared"  # M1 — a save took a profile from 0 → ≥1 tag
+INTEREST_PROFILE_UPDATED = "interest_profile_updated"  # M4 — a change to a non-empty profile
+INTEREST_PROFILE_CLEARED = "interest_profile_cleared"  # clear_interests, or a save to empty
+INTEREST_DECLARATION_REJECTED = "interest_declaration_rejected"  # AC2 reject (expected)
+INTEREST_PICKER_DEGRADED = "interest_picker_degraded"  # the picker read fell back (fail-soft)
+INTEREST_PROMPT_DEGRADED = "interest_prompt_degraded"  # the onboarding nudge fell back (fail-soft)
+
 metrics_logger = logging.getLogger("apps.metrics")
 
 

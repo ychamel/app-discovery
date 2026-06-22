@@ -48,6 +48,12 @@ DEFAULT_REVIEWS_DISPLAY_LIMIT = 20
 # stays O(limit) at 100× follows; the growth path past this is cursor pagination (named, not
 # built — DESIGN §10/§15). No magic number in the selector/view.
 DEFAULT_FOLLOWED_FEED_PAGE_SIZE = 100
+# Interest-profile tunables (interest-profile DESIGN.md §10). The suggested minimum is the
+# "pick a few" picker nudge threshold — copy only, **never a validation floor** (IP-3). The
+# declaration max is a defensive per-save request-size cap (safety, not a product maximum;
+# comfortably above any realistic active-vocabulary size). No magic numbers in logic.
+DEFAULT_INTEREST_SUGGESTED_MINIMUM = 3
+DEFAULT_INTEREST_DECLARATION_MAX = 500
 
 
 def _resolve_raw(setting_name: str, env_name: str, default: int) -> object:
@@ -182,6 +188,24 @@ def followed_feed_page_size() -> int:
     )
 
 
+def interest_suggested_minimum() -> int:
+    """The "pick a few" picker nudge threshold — copy only, never a floor (DESIGN.md §10)."""
+    return _positive_int(
+        "INTEREST_SUGGESTED_MINIMUM",
+        "INTEREST_SUGGESTED_MINIMUM",
+        DEFAULT_INTEREST_SUGGESTED_MINIMUM,
+    )
+
+
+def interest_declaration_max() -> int:
+    """Defensive per-save cap on declared interest ids (safety, not a product max; §10)."""
+    return _positive_int(
+        "INTEREST_DECLARATION_MAX",
+        "INTEREST_DECLARATION_MAX",
+        DEFAULT_INTEREST_DECLARATION_MAX,
+    )
+
+
 def validate_all() -> None:
     """Evaluate every tunable so misconfiguration surfaces at startup, not at use."""
     login_token_ttl()
@@ -196,3 +220,5 @@ def validate_all() -> None:
     review_text_max_length()
     reviews_display_limit()
     followed_feed_page_size()
+    interest_suggested_minimum()
+    interest_declaration_max()
