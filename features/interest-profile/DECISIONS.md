@@ -31,7 +31,7 @@ IP-2** (the two forks); IP-3/IP-4/IP-5 carry as working assumptions into Stage 2
   additive D-7 decision later, not built now. *(Working assumption → Stage 2; not contested
   in DN-15.)*
 
-## Stage 2 — Software Architect (DESIGN.md, pending DN-16, 2026-06-22)
+## Stage 2 — Software Architect (DESIGN.md, RATIFIED — DN-16 approved 2026-06-22)
 
 Reuses **D-3/D-4/D-5** as-is — **no new global ADR** (mirrors `app-subscriptions`/`ratings`).
 Working assumptions IP-3/IP-4/IP-5 are all **committed by the design**: IP-3 → a config
