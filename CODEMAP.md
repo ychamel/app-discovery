@@ -156,6 +156,11 @@ _Built by `identity-accounts` Stage 4. Entries are added as each shared item shi
 - `funnel_for_apps(app_ids, *, start, end) -> list[AppFunnel]` — bulk, two grouped queries, no N+1 (AC9) — `apps/signals/selectors.py`
 - `category_impressions(tag_id, *, start, end) -> int` — per-category impression baseline from the frozen snapshot (AC2) — `apps/signals/selectors.py`
 - `has_impression(user_id, app_id, *, surfaces, as_of=None) -> bool` — factual per-user-per-app existence read (raw, never judged); the ratings curated-gate evidence (additive D-7 read, ratings DESIGN §5d) — `apps/signals/selectors.py`
+- `TrendGranularity` (`DAY`/`WEEK`/`MONTH`) — time-bucket grain for `impression_trend`; maps to UTC `Trunc{Day,Week,Month}` (developer-dashboard DESIGN §5.1) — `apps/signals/selectors.py`
+- `ImpressionBreakdown` / `ImpressionBucket` — frozen DTOs: per-`Surface` impression counts (every `Surface` value zero-filled) for a window / a time bucket — `apps/signals/selectors.py`
+- `impression_breakdown(app_id, *, start, end) -> ImpressionBreakdown` — per-`Surface` reach over a window in ONE grouped query; `total == app_funnel(...).impressions` (invariant); signals stays **neutral** (never judges "curated") (additive D-7 read, developer-dashboard §5.1) — `apps/signals/selectors.py`
+- `impression_breakdown_for_apps(app_ids, *, start, end) -> dict[UUID, ImpressionBreakdown]` — bulk per-`Surface` breakdown for K apps in ONE grouped query, no N+1 (AC9) — `apps/signals/selectors.py`
+- `impression_trend(app_id, *, start, end, granularity) -> list[ImpressionBucket]` — per-`Surface` impressions bucketed by `granularity`, **sparse** ascending (caller densifies); ONE grouped query, bounded by the window's granularity (AC10/M6) — `apps/signals/selectors.py`
 
 ### Behavioral signals — configuration & metrics
 - `return_window_short_days()` / `return_window_long_days()` — return-to-platform windows (defaults 3 / 14) — `apps/core/config.py`
@@ -205,6 +210,14 @@ _Built by `identity-accounts` Stage 4. Entries are added as each shared item shi
 - failure split: the core `search_catalogue` read fails **loud** (→ 500 + `DISCOVERY_LISTING_DEGRADED`, never a fake empty state); the facet sidebar fails **soft** (results render + `DISCOVERY_FACETS_DEGRADED`); invalid/retired/unknown `tag`/`cluster` is ignored, not an error (AC3) — `apps/discovery/views.py`
 - discovery config tunables `discovery_page_size()` (24) / `discovery_page_size_max()` (100) / `discovery_query_max_length()` (200) — `apps/core/config.py`
 - discovery metric constants (`DISCOVERY_BROWSE_RENDERED`, `DISCOVERY_SEARCH_PERFORMED`, `DISCOVERY_TAG_FILTERED`, `DISCOVERY_ZERO_RESULTS` = M3, `DISCOVERY_FACETS_DEGRADED`, `DISCOVERY_LISTING_DEGRADED` = the one alert); **no D-7 emit** (M2 click-through derived from app-pages' `APP_PAGE` impressions) — `apps/core/observability.py`
+
+### Developer dashboard (`apps/dashboard/`, a pure D-3/D-6/D-7/D-8 read consumer — owns no model)
+- route names `dashboard:my-apps` (`/dashboard/`) + `dashboard:app` (`/dashboard/apps/<uuid>/`) — GET-only, `login_required` + `require_role(developer)`; a read-only owner-scoped view of an accepted app's reception; **imports nothing from `signals.capture`** (AC8 structural — viewing emits no D-7 impression, AST-enforced in `tests/test_imports.py`) — `apps/dashboard/urls.py`, `apps/dashboard/views.py`
+- `reception.build_my_apps_summaries(owner, *, window) -> list[ReceptionSummary]` / `reception.build_app_reception(owner, app_id, *, window) -> AppReception | None` — the composition layer: bounded my-apps list (no N+1, AC9) + the per-app reach/funnel/reviews assembly; owner-scope ⇒ `None` (→404); curated-first via `ratings.gate.CURATED_SURFACES`; trend densified onto a continuous axis — `apps/dashboard/reception.py`
+- failure split: the core reception (signals) read **fails loud** (→500 + `DASHBOARD_RECEPTION_DEGRADED`, the one alert, never a fake-empty page); the reviews slot **fails soft** (`DASHBOARD_REVIEWS_DEGRADED`, stays 200) — `apps/dashboard/views.py`, `apps/dashboard/reception.py`
+- `windows.REPORTING_WINDOWS` (the fixed 8: 1w/2w/1m/3m/6m/1y/3y/all + per-window `TrendGranularity`) + `windows.resolve_window(key, *, now) -> ResolvedWindow` (fail-safe: unknown/blank → `DEFAULT_WINDOW_KEY`, never raises, AC7) — a **code-fixed table, no `config` entry** — `apps/dashboard/windows.py`
+- `charts.build_sparkline(buckets) -> SparklineSvg | None` — pure inline-SVG polyline geometry (total + curated line), stdlib only, no app imports, no JS; `None` for an empty/all-zero window — `apps/dashboard/charts.py`
+- dashboard metric constants (`DASHBOARD_MY_APPS_VIEWED`, `DASHBOARD_RECEPTION_VIEWED`, `DASHBOARD_ACCESS_DENIED`, `DASHBOARD_RECEPTION_DEGRADED` = the one alert, `DASHBOARD_REVIEWS_DEGRADED`, `DASHBOARD_NONEMPTY_RECEPTION` = M3) — `apps/core/observability.py`
 
 <!-- Example of the shape this takes once code exists:
 

@@ -97,6 +97,10 @@ INSTALLED_APPS = [
     "apps.subscriptions",
     "apps.interests",
     "apps.discovery",
+    # The developer-dashboard half of its activation switch (DESIGN.md §12): this line +
+    # the config/urls dashboard/ include. The app owns no model — removing both is the
+    # entire rollback, zero data migration.
+    "apps.dashboard",
 ]
 
 MIDDLEWARE = [

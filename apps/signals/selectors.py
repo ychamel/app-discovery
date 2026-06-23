@@ -30,6 +30,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
+from django.db import models
 from django.db.models import (
     Count,
     DateField,
@@ -39,10 +40,10 @@ from django.db.models import (
     OuterRef,
     Q,
 )
-from django.db.models.functions import TruncDate
+from django.db.models.functions import TruncDate, TruncDay, TruncMonth, TruncWeek
 
 from apps.core import config
-from apps.signals.kinds import EventKind
+from apps.signals.kinds import EventKind, Surface
 from apps.signals.models import EngagementEvent, Impression, PlatformVisit
 
 
@@ -227,3 +228,141 @@ def has_impression(
     if as_of is not None:
         matches = matches.filter(occurred_at__lte=as_of)
     return matches.exists()
+
+
+# --- Surface-aware + time-bucketed reach reads (the developer-dashboard, §5.1) ----
+# These are additive: the funnel reads above are unchanged, and like every read here
+# signals stays NEUTRAL — it counts impressions per Surface and never decides which
+# surface "means" curation (that judgement is ratings.gate.CURATED_SURFACES, the D-8
+# source, composed by the dashboard). No model/migration/index: both reads are GROUP BY
+# aggregates over signals_impression, filtered by (app_id, occurred_at) and so backed by
+# the existing signals_imp_app_time_idx.
+class TrendGranularity(models.TextChoices):
+    """Time-bucket grain for ``impression_trend``. Truncates ``occurred_at`` in UTC."""
+
+    DAY = "day", "day"
+    WEEK = "week", "week"
+    MONTH = "month", "month"
+
+
+# Each grain truncates to the start of its period as a *datetime* (UTC midnight / Monday /
+# first-of-month), so ImpressionBucket.bucket_start is uniformly a datetime across grains.
+# (TruncDate would return a bare date for DAY and break that uniformity.)
+_TRUNC_BY_GRANULARITY = {
+    TrendGranularity.DAY: TruncDay,
+    TrendGranularity.WEEK: TruncWeek,
+    TrendGranularity.MONTH: TruncMonth,
+}
+
+
+@dataclass(frozen=True)
+class ImpressionBreakdown:
+    """Per-``Surface`` impression counts for one app over a window (developer-dashboard §5.1).
+
+    ``by_surface`` enumerates **every** ``Surface`` value zero-filled, so a surface with no
+    impressions reads ``0`` (the honest zero, AC4) and a surface added later appears
+    automatically with no caller change (AC3). ``total`` equals ``app_funnel(...).impressions``
+    for the same window — the §4.2 integrity invariant (both count Impression rows).
+    """
+
+    app_id: UUID
+    total: int
+    by_surface: dict[str, int]
+
+
+@dataclass(frozen=True)
+class ImpressionBucket:
+    """One time bucket of an app's impressions, split per ``Surface`` (developer-dashboard §5.1).
+
+    ``bucket_start`` is the truncated UTC bucket key. ``by_surface`` enumerates every
+    ``Surface`` value zero-filled; ``total`` is their sum.
+    """
+
+    bucket_start: datetime
+    total: int
+    by_surface: dict[str, int]
+
+
+def _zero_filled_surfaces() -> dict[str, int]:
+    """A fresh per-``Surface`` counter map, every value zero (the honest-zero baseline, AC4)."""
+    return {surface: 0 for surface in Surface.values}
+
+
+def impression_breakdown(
+    app_id: UUID, *, start: datetime, end: datetime
+) -> ImpressionBreakdown:
+    """Per-``Surface`` impression counts over ``[start, end]`` — ONE grouped query (AC3/AC4).
+
+    ``by_surface`` enumerates ``Surface.values`` zero-filled; ``total`` is their sum and equals
+    ``app_funnel(app_id, start, end).impressions`` (the §4.2 invariant). Raw counts only — no
+    ordering, score, or weight. Backed by ``signals_imp_app_time_idx``.
+    """
+    by_surface = _zero_filled_surfaces()
+    rows = (
+        Impression.objects.filter(app_id=app_id, occurred_at__range=(start, end))
+        .values("surface")
+        .annotate(count=Count("pk"))
+    )
+    for row in rows:
+        by_surface[row["surface"]] = row["count"]
+    return ImpressionBreakdown(
+        app_id=app_id, total=sum(by_surface.values()), by_surface=by_surface
+    )
+
+
+def impression_breakdown_for_apps(
+    app_ids: list[UUID], *, start: datetime, end: datetime
+) -> dict[UUID, ImpressionBreakdown]:
+    """Bulk per-``Surface`` breakdown for several apps in ONE grouped query — no N+1 (AC9).
+
+    Every requested app is present in the result (apps with no impressions get an all-zero
+    breakdown); keyed by ``app_id``. The query count is constant regardless of how many apps
+    are asked for — the bulk counterpart to ``funnel_for_apps``.
+    """
+    by_app = {app_id: _zero_filled_surfaces() for app_id in app_ids}
+    rows = (
+        Impression.objects.filter(app_id__in=app_ids, occurred_at__range=(start, end))
+        .values("app_id", "surface")
+        .annotate(count=Count("pk"))
+    )
+    for row in rows:
+        by_app[row["app_id"]][row["surface"]] = row["count"]
+    return {
+        app_id: ImpressionBreakdown(
+            app_id=app_id, total=sum(by_surface.values()), by_surface=by_surface
+        )
+        for app_id, by_surface in by_app.items()
+    }
+
+
+def impression_trend(
+    app_id: UUID,
+    *,
+    start: datetime,
+    end: datetime,
+    granularity: TrendGranularity,
+) -> list[ImpressionBucket]:
+    """Impressions over ``[start, end]`` bucketed by ``granularity``, split per ``Surface`` (AC10).
+
+    ONE grouped query. Returns only buckets with ≥1 impression — **sparse** on the time axis,
+    ascending by ``bucket_start`` (the caller densifies to a continuous axis). Truncation is in
+    UTC. Bucket count is bounded by the granularity the window chose (windows.py §4.3), so this
+    holds at 100× corpus (M6).
+    """
+    trunc = _TRUNC_BY_GRANULARITY[granularity]
+    rows = (
+        Impression.objects.filter(app_id=app_id, occurred_at__range=(start, end))
+        .annotate(bucket=trunc("occurred_at", tzinfo=UTC))
+        .values("bucket", "surface")
+        .annotate(count=Count("pk"))
+    )
+    by_bucket: dict[datetime, dict[str, int]] = {}
+    for row in rows:
+        surfaces = by_bucket.setdefault(row["bucket"], _zero_filled_surfaces())
+        surfaces[row["surface"]] = row["count"]
+    return [
+        ImpressionBucket(
+            bucket_start=bucket, total=sum(surfaces.values()), by_surface=surfaces
+        )
+        for bucket, surfaces in sorted(by_bucket.items())
+    ]

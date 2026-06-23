@@ -57,6 +57,18 @@ The DESIGN decisions, mapping to [DESIGN.md](DESIGN.md). All **RATIFIED** on the
 DESIGN-approval decision (DN-DD-DESIGN in [CONTROL.md](../../CONTROL.md)) — binding for Stage 3.
 **Resolves OQ-DD-4.** **No new global ADR** — reuses D-3/D-5/D-6/D-7/D-8.
 
+> **Stage 4 status (Senior Engineer, 2026-06-24): DD-DESIGN-1…5 all BUILT** across T-01…T-06,
+> as specified, with no contract deviation. Implementation note (no contract change):
+> `impression_trend` uses `TruncDay` (not `TruncDate`) for the DAY grain so `ImpressionBucket.
+> bucket_start` is uniformly a `datetime` across all three granularities — this *honours* the
+> declared DTO type (`bucket_start: datetime`); a bare `TruncDate` would have returned a `date`
+> for DAY and broken that uniformity. The two `reception` composition entry points take a
+> `ResolvedWindow` (the §4.3 resolved form carrying the `ReportingWindow` + concrete
+> `start`/`end`/`granularity`) rather than a bare `ReportingWindow` — these signatures are
+> internal (§5.4: the DTOs/composition are template+test only; the irreversible public surface
+> is the two URL routes + the two selector signatures, both as designed). Full per-AC
+> verification is in [TEST_PLAN.md](TEST_PLAN.md).
+
 ### DD-DESIGN-1: New model-less consumer app `apps/dashboard/` — RATIFIED
 - **Decision:** The dashboard is a stateless consumer app (mirrors `apps/pages/` +
   `apps/discovery/`) owning **no model, migration, table, or index**. Activation *and* rollback

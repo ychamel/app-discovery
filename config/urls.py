@@ -33,6 +33,10 @@ urlpatterns = [
     # entire activation — and removing it is the entire rollback (zero data migration). Own
     # prefix; no collision with the pages /apps/ surface.
     path("discover/", include("apps.discovery.urls")),
+    # The developer-dashboard activation switch (DESIGN.md §12): this single include (plus the
+    # "apps.dashboard" INSTALLED_APPS line) is the entire activation — and removing them is the
+    # entire rollback, zero data migration (the app owns no schema). Own prefix; no collision.
+    path("dashboard/", include("apps.dashboard.urls")),
     path("", include("apps.accounts.urls")),
 ]
 

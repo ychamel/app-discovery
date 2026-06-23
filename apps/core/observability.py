@@ -110,6 +110,18 @@ DISCOVERY_ZERO_RESULTS = "discovery_zero_results"  # M3 — a query/filter retur
 DISCOVERY_FACETS_DEGRADED = "discovery_facets_degraded"  # the facet sidebar read fell back
 DISCOVERY_LISTING_DEGRADED = "discovery_listing_degraded"  # alert: the core results read raised
 
+# developer-dashboard metrics (DESIGN.md §8). View counts (MY_APPS/RECEPTION_VIEWED) are usage
+# trends; NONEMPTY_RECEPTION is M3 (a viewed app whose funnel is non-zero); ACCESS_DENIED is the
+# owner-scope/probing signal. The one actionable alert is RECEPTION_DEGRADED — a core reception
+# (signals) read raised, so the surface 500s rather than lie with a fake-empty page (R1).
+# REVIEWS_DEGRADED is the fail-soft reviews-slot health (informational, not an alert).
+DASHBOARD_MY_APPS_VIEWED = "dashboard_my_apps_viewed"
+DASHBOARD_RECEPTION_VIEWED = "dashboard_reception_viewed"  # tags: window
+DASHBOARD_ACCESS_DENIED = "dashboard_access_denied"  # a non-owner/non-existent app id (→404)
+DASHBOARD_RECEPTION_DEGRADED = "dashboard_reception_degraded"  # alert: the core read raised (→500)
+DASHBOARD_REVIEWS_DEGRADED = "dashboard_reviews_degraded"  # the reviews slot fell back (fail-soft)
+DASHBOARD_NONEMPTY_RECEPTION = "dashboard_nonempty_reception"  # M3 — a viewed app, non-zero funnel
+
 metrics_logger = logging.getLogger("apps.metrics")
 
 

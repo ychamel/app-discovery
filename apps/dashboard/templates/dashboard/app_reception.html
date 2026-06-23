@@ -1,0 +1,114 @@
+{% extends "dashboard/base.html" %}
+{% comment %}
+Screen B — one owned app's reception (DESIGN.md §6), five sections top-to-bottom: header +
+window selector, Reach (curated-first breakdown), Reach trend (inline SVG + <table> fallback),
+Engagement funnel (off-platform proxy shown separately), Reviews (no average). Server-rendered,
+no JS; all values auto-escaped (no |safe).
+{% endcomment %}
+{% block title %}{{ reception.app_name }} · Developer dashboard{% endblock %}
+{% block content %}
+
+{# 1. Header + the 8-window selector, active key highlighted #}
+<header>
+  <p><a href="{% url 'dashboard:my-apps' %}?window={{ reception.window.key }}">← My apps</a></p>
+  <h1>{{ reception.app_name }}</h1>
+  <nav aria-label="Reporting window">
+    <ul>
+      {% for w in windows %}
+        <li>
+          {% if w.key == reception.window.key %}
+            <strong aria-current="true">{{ w.label }}</strong>
+          {% else %}
+            <a href="?window={{ w.key }}">{{ w.label }}</a>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  </nav>
+</header>
+
+{# 2. Reach — combined total, then the per-source breakdown, curated first/highlighted #}
+<section aria-labelledby="reach-heading">
+  <h2 id="reach-heading">Reach</h2>
+  <p>{{ reception.reach.total }} impression{{ reception.reach.total|pluralize }} shown</p>
+  <ul>
+    {% for source in reception.reach.surfaces %}
+      <li>
+        {% if source.is_curated %}<strong>{{ source.label }} (curated)</strong>{% else %}{{ source.label }}{% endif %}:
+        {{ source.count }} shown
+        {% if source.is_curated and source.count == 0 %}
+          <span>— no curated shows yet</span>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+</section>
+
+{# 3. Reach trend — inline SVG (total + distinguished curated line) + exact-number table #}
+<section aria-labelledby="trend-heading">
+  <h2 id="trend-heading">Reach trend ({{ reception.reach.trend.granularity_label }})</h2>
+  {% if reception.reach.trend.is_empty %}
+    <p>No impressions in this window.</p>
+  {% else %}
+    {% with svg=reception.reach.trend.sparkline %}
+      <svg viewBox="0 0 {{ svg.width }} {{ svg.height }}" role="img"
+           aria-label="Impressions over time: total and curated lines">
+        <polyline fill="none" stroke="#333" stroke-width="2" points="{{ svg.total_points }}" />
+        <polyline fill="none" stroke="#1a7" stroke-width="2" stroke-dasharray="4 2"
+                  points="{{ svg.curated_points }}" />
+      </svg>
+    {% endwith %}
+    <table>
+      <caption>Impressions per bucket (total and curated)</caption>
+      <thead>
+        <tr><th scope="col">Bucket</th><th scope="col">Total</th><th scope="col">Curated</th></tr>
+      </thead>
+      <tbody>
+        {% for bucket in reception.reach.trend.buckets %}
+          <tr><td>{{ bucket.label }}</td><td>{{ bucket.total }}</td><td>{{ bucket.curated }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+</section>
+
+{# 4. Engagement funnel — off-platform proxy on its own line, never folded in (AC5) #}
+<section aria-labelledby="funnel-heading">
+  <h2 id="funnel-heading">Engagement funnel</h2>
+  {% with funnel=reception.funnel %}
+    <ul>
+      <li>Impressions: {{ funnel.impressions }}</li>
+      <li>Click-throughs: {{ funnel.click_throughs }}</li>
+      <li>Returns within {{ funnel.short_days }} days: {{ funnel.returns_short }}</li>
+      <li>Returns within {{ funnel.long_days }} days: {{ funnel.returns_long }}</li>
+      <li>Subscribes: {{ funnel.subscribes }}</li>
+      <li>On-page re-engagements: {{ funnel.page_reengagements }}</li>
+      <li>Shares: {{ funnel.shares }}</li>
+    </ul>
+    <p>Off-platform proxy (secondary): {{ funnel.off_platform_proxy }}</p>
+  {% endwith %}
+</section>
+
+{# 5. Reviews — count + raw distribution + recent list, no average (AC6); degraded affordance #}
+<section aria-labelledby="reviews-heading">
+  <h2 id="reviews-heading">Reviews</h2>
+  {% if not reception.reviews.available %}
+    <p>Reviews unavailable right now.</p>
+  {% else %}
+    <p>{{ reception.reviews.total_count }} review{{ reception.reviews.total_count|pluralize }}</p>
+    <ul>
+      {% for score, count in reception.reviews.distribution.items %}
+        <li>{{ score }}: {{ count }}</li>
+      {% endfor %}
+    </ul>
+    <ul>
+      {% for review in reception.reviews.reviews %}
+        <li>
+          <p>{{ review.score }} — {{ review.author_display }} ({{ review.created_at }})</p>
+          <p>{{ review.review_text }}</p>
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+</section>
+{% endblock %}

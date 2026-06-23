@@ -1,0 +1,45 @@
+{% extends "dashboard/base.html" %}
+{% comment %}
+Screen A — the developer's accepted apps (DESIGN.md §6). One window selector applies to the
+whole list; each card links to the per-app reception view. The own-nothing state is a 200
+(AC2). Server-rendered, no JS; all values auto-escaped.
+{% endcomment %}
+{% block title %}My apps · Developer dashboard{% endblock %}
+{% block content %}
+<h1>My apps</h1>
+
+<nav aria-label="Reporting window">
+  <ul>
+    {% for w in windows %}
+      <li>
+        {% if w.key == active_window.key %}
+          <strong aria-current="true">{{ w.label }}</strong>
+        {% else %}
+          <a href="?window={{ w.key }}">{{ w.label }}</a>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+</nav>
+
+{% if summaries %}
+  <ul>
+    {% for summary in summaries %}
+      <li>
+        <h2>
+          <a href="{% url 'dashboard:app' app_id=summary.app_id %}?window={{ active_window.key }}">
+            {{ summary.app_name }}
+          </a>
+        </h2>
+        <p>Reach: {{ summary.total_impressions }} shown ({{ summary.curated_impressions }} curated)</p>
+        <p>Click-throughs: {{ summary.click_throughs }}</p>
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <section>
+    <p>You have no accepted apps yet.</p>
+    <p><a href="{% url 'catalog:submit' %}">Submit an app</a></p>
+  </section>
+{% endif %}
+{% endblock %}
