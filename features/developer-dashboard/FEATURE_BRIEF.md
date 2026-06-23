@@ -1,7 +1,9 @@
 # FEATURE_BRIEF — developer-dashboard
 
-*Stage 1 artifact (Product Analyst). Status: **DRAFT — awaiting approval (DN-19)**. Drafted
-2026-06-23. Grounds every dependency in code; proposes no new global ADR.*
+*Stage 1 artifact (Product Analyst). Status: **APPROVED** (DN-19, 2026-06-24 — brief approved;
+DN-19.a expanded the reach scope to a Steam-style per-source impression breakdown + curated-line
+trend; DN-19.b expanded the window set; DN-19.c hidden as recommended). Drafted 2026-06-23,
+revised on approval 2026-06-24. Grounds every dependency in code; proposes no new global ADR.*
 
 ## Coordinator scope seed (source: breakdown §4.3)
 
@@ -54,10 +56,15 @@ faithfully from the captured D-7 / D-8 corpus, scoped strictly to their own apps
 - **Reception** — the platform's record of how an app was received: its *reach*,
   *engagement funnel*, and *incoming reviews*. Read-only; this feature presents it, it does
   not produce or score it.
-- **Reach** — how many times / to how many the app was *shown*. Split into **curated reach**
-  (impressions on an *organic-curation* surface — today `Surface.DIGEST`, per the **D-8**
-  gate) and **open reach** (`Surface.APP_PAGE` and other self-driven views). "Shown to N
-  *matched* users" is the curated half.
+- **Reach** — how many times / to how many the app was *shown*. Presented as a **combined
+  impressions total plus a per-source breakdown** keyed on the `Surface` vocabulary — today
+  `DIGEST` and `APP_PAGE`, extensible to future surfaces (search, direct-link, generated-link,
+  feed) with no dashboard rewrite (DN-19.a; modelled on Steam's impressions-by-source view).
+  **Curated reach** (impressions on an *organic-curation* surface — `Surface.DIGEST`, per the
+  **D-8** gate) is surfaced **first / highlighted** as the most important source ("shown to N
+  *matched* users" — the H2 story); all other surfaces are **open reach** (`APP_PAGE` and
+  self-driven views). A reach **trend over time** plots impressions across the window with the
+  **curated (`DIGEST`) series as its own distinguished line** (DN-19.a).
 - **Engagement funnel** — the raw per-app counts from `signals.selectors.app_funnel`:
   impressions → click-throughs → returns @ short/long window → subscribes →
   page-reengagements → shares, with the off-platform proxy reported separately (D-7 §5b).
@@ -76,8 +83,10 @@ faithfully from the captured D-7 / D-8 corpus, scoped strictly to their own apps
   each with a reception summary, so that I can see at a glance which of my apps are getting
   traction.
 - **S2 — Reach for one app.** As a **developer**, I want to see how many times my app was
-  shown — split into curated (matched-audience) reach and open reach — so that I can tell
-  whether the platform is putting it in front of its core ring (H2).
+  shown — a combined total plus a per-source breakdown (curated `DIGEST` first/highlighted,
+  then open `APP_PAGE` and any later sources) and a trend over time with a distinguished
+  curated line — so that I can tell whether the platform is putting it in front of its core
+  ring (H2) and where the rest of my reach is coming from.
 - **S3 — Engagement funnel for one app.** As a **developer**, I want the funnel from
   impressions through click-throughs, returns, subscribes, re-engagement and shares, so that
   I can see not just that my app was shown but that people *acted on it and came back*.
@@ -97,14 +106,23 @@ faithfully from the captured D-7 / D-8 corpus, scoped strictly to their own apps
   no apps (or is not in the `developer` role), *When* it requests the dashboard or any app's
   reception view, *Then* it is shown an empty/own-nothing state (own-nothing) or denied, and
   no other developer's reception is ever returned.
-- **AC3 (S2) — reach is split curated vs open.** *Given* an app with 5 `DIGEST` impressions
-  and 20 `APP_PAGE` impressions in the window, *When* the developer views its reach, *Then*
-  curated reach reads **5** and open reach reads **20**, labelled distinctly, matching the
-  **D-8** definition of "curated".
-- **AC4 (S2) — honest zero, not a blank.** *Given* an accepted app with **no** curated
-  (`DIGEST`) impressions (the MVP reality until a digest emitter ships), *When* the developer
-  views its reach, *Then* curated reach reads **0** explicitly (an honest zero with a "no
-  curated shows yet" affordance), never a hidden/blank or a fabricated number.
+- **AC3 (S2) — reach is a combined total + per-source breakdown.** *Given* an app with 5
+  `DIGEST` and 20 `APP_PAGE` impressions in the window, *When* the developer views its reach,
+  *Then* they see a **combined total of 25** plus a per-source breakdown — **`DIGEST` = 5**
+  (curated, shown **first / highlighted**) and **`APP_PAGE` = 20** (open) — each `Surface`
+  labelled distinctly, matching the **D-8** definition of "curated". A surface added later
+  (e.g. search, direct-link) appears in the same breakdown **without a dashboard rewrite**
+  (the breakdown enumerates the `Surface` vocabulary, not a hardcoded two-way split).
+- **AC4 (S2) — honest zero, not a blank.** *Given* an accepted app with **no** impressions on
+  a given source (the MVP reality for `DIGEST` until a digest emitter ships), *When* the
+  developer views its reach, *Then* that source reads **0** explicitly (an honest zero with a
+  "no curated shows yet" affordance for `DIGEST`), never a hidden/blank or a fabricated number.
+- **AC10 (S2) — reach trend with a distinguished curated line.** *Given* an app with
+  impressions spread across the selected window, *When* the developer views the reach trend,
+  *Then* impressions are plotted over time bucketed to the window, with the **curated
+  (`DIGEST`) series drawn as its own distinguished line** separate from open impressions.
+  *(User-selectable series/subsets in the graph are explicitly deferred — DN-19.a "maybe
+  later"; MVP draws the total + the curated line.)*
 - **AC5 (S3) — funnel matches the corpus.** *Given* an app with known D-7 events in the
   window, *When* the developer views its funnel, *Then* every displayed count
   (impressions, click-throughs, returns short/long, subscribes, page-reengagements, shares)
@@ -115,9 +133,11 @@ faithfully from the captured D-7 / D-8 corpus, scoped strictly to their own apps
   raw per-score distribution, and the recent review list (via `reviews_for_app`), and **no
   computed average / star score / rank** is presented anywhere (D-8 §AC6).
 - **AC7 (S5) — window bounds the figures.** *Given* an app with events both inside and
-  outside the selected window, *When* the developer changes the window, *Then* the reach and
-  funnel figures recompute to count only events whose `occurred_at` falls in that window
-  (window-derived returns honoured), and the "all-time" option counts every event.
+  outside the selected window, *When* the developer picks a window from the fixed set —
+  **last week / 2 weeks / month / 3 months / 6 months / year / 3 years / all-time** (DN-19.b,
+  config-driven) — *Then* the reach, breakdown, trend and funnel figures recompute to count
+  only events whose `occurred_at` falls in that window (window-derived returns honoured), and
+  the "all-time" option counts every event.
 - **AC8 (cross-cutting) — read-only, never an allocation lever.** *Given* any reception view,
   *When* the developer interacts with it, *Then* nothing the dashboard exposes lets them
   change their app's allocation, ranking, or position, and no action on the dashboard mutates
@@ -147,14 +167,17 @@ faithfully from the captured D-7 / D-8 corpus, scoped strictly to their own apps
 
 - A **read-only** developer-facing surface listing the developer's **accepted** apps (D-6),
   each with a reception summary, and a per-app reception view.
-- **Reach** for an app, split **curated (`DIGEST`) vs open (`APP_PAGE`)** per the D-8 gate.
+- **Reach** for an app as a **combined total + per-source breakdown** over the `Surface`
+  vocabulary (curated `DIGEST` first/highlighted, then open `APP_PAGE` and any later-added
+  surfaces) per the D-8 gate, **plus an impressions-over-time trend** with the curated
+  (`DIGEST`) series as a distinguished line (DN-19.a).
 - The **engagement funnel** for an app, read from `signals.selectors.app_funnel` /
   `funnel_for_apps` (impressions, click-throughs, returns short/long, subscribes,
   page-reengagements, shares, off-platform proxy shown separately).
 - **Incoming reviews** for an app via `ratings.selectors.reviews_for_app` (count +
   distribution + recent list, no average).
-- A **bounded reporting window** selector (recent window(s) + all-time) — exact set is
-  DN-19.b.
+- A **fixed config-driven reporting window** selector — **last week / 2 weeks / month /
+  3 months / 6 months / year / 3 years / all-time** (DN-19.b).
 - **Owner-scoping** and developer-role gating on every read.
 
 ### Out of scope (and why it's safe to defer)
@@ -162,9 +185,11 @@ faithfully from the captured D-7 / D-8 corpus, scoped strictly to their own apps
 - **Quality Score, ring position, score components, impression *allocation*** (vision §6
   Dev-facing) — the score/allocator do not exist at MVP (breakdown §3, deferred); the
   dashboard shows **raw reception only**. Surfacing a score now would be fabricating one.
-- **Retention *curves* / time-series charts** — MVP shows windowed **counts** (returns
-  @short/long are point figures the corpus already derives); curve shape is a later
-  visualization, not a new signal.
+- **Retention *curves* / funnel time-series, and user-selectable graph series** — MVP draws
+  **one** trend (impressions over time with the curated line, AC10) and otherwise windowed
+  **counts**; plotting the *funnel* over time, retention-curve shape, and a UI to pick which
+  series/subsets to chart are deferred (DN-19.a "maybe later"). (The impressions trend itself
+  **is** in scope — see In scope / AC10.)
 - **Any write / action** — no re-boost, no "talk to subscribers", no update posting
   (that is `developer-updates`); no editing reviews. Read-only (AC8).
 - **Per-review weight-eligibility shown to the developer** — the gate flag is internal
@@ -189,7 +214,7 @@ faithfully from the captured D-7 / D-8 corpus, scoped strictly to their own apps
 | C4 | A developer's owned apps come from `catalog.selectors.list_owned_apps(owner)` / `get_owned_app(owner, id)` — **owner-scoped** by construction (D-6). The dashboard filters to **accepted** apps for reception. | **verified** — [apps/catalog/selectors.py](../../apps/catalog/selectors.py) |
 | C5 | Authentication + the `developer` role gate come from `apps/accounts` (D-3); the dashboard adds no identity surface. | **verified** — D-3 |
 | C6 | Per the selector docstring, the signals read surface is **internal/admin, in-process only**; a developer-facing read is "a thin role-gated view over these selectors — a one-feature-later addition, not built [in signals]." This feature *is* that addition. | **verified** — [apps/signals/selectors.py](../../apps/signals/selectors.py) lines 23–26 |
-| C7 | `app_funnel` total `impressions` counts **all** surfaces; a per-surface (curated/open) split needs a read that distinguishes `Surface`. Whether that is a new signals selector or a dashboard-side read is a **Stage-2 design** call (do not assume here). | **unverified — design concern** |
+| C7 | `app_funnel.impressions` counts **all** surfaces collapsed and is **not time-bucketed**; the per-source breakdown (AC3) *and* the over-time trend (AC10) both need a new **surface-aware + time-bucketed** read that distinguishes `Surface` and groups by time. This is a **Stage-2 design** call (OQ-DD-4) — it must live in `signals.selectors` (preserving D-7: nothing reads `signals_*` directly), never a dashboard-side raw-table read. The breakdown enumerates the `Surface` vocabulary so new surfaces appear automatically (§5.2 design-for-change). | **verified gap — design concern** ([apps/signals/selectors.py](../../apps/signals/selectors.py), [apps/signals/kinds.py](../../apps/signals/kinds.py)) |
 | C8 | Returns @ short/long windows are config tunables (no magic 3/14), derived at read; the dashboard reuses them, it does not redefine windows. | **verified** — D-7 §SC-9 |
 | C9 | Performance: my-apps list must be bounded-query (AC9) via `funnel_for_apps`; per-app views are 2-query reads (D-7). Targets follow D-2 ("scale as we go") — no hard global budget, but designs must hold at 100×. | **verified posture** — D-2 |
 | C10 | Privacy: reviews already anonymize deleted-account authors ("a former user"); reach/funnel figures are **aggregate counts**, never per-identified-user lists — the dashboard exposes no PII the dependencies don't already publish. | **verified** — D-7/D-8 |
@@ -215,23 +240,24 @@ through the audience (vision §2–§4), never bought (AC8).
 
 ---
 
-## Decisions needed (raised as DN-19)
+## Decisions resolved (DN-19 — answered 2026-06-24)
 
-The brief is approvable as drafted; these three scoping calls are bundled for the same
-approval (logged in [OPEN_QUESTIONS.md](OPEN_QUESTIONS.md), recommendations in
-[DECISIONS.md](DECISIONS.md) as PROPOSED):
+The brief is **APPROVED** with the three bundled scoping calls answered (full record in
+[DECISIONS.md](DECISIONS.md) DD-1…DD-3, now RESOLVED; questions closed in
+[OPEN_QUESTIONS.md](OPEN_QUESTIONS.md)):
 
-- **DN-19.a — Curated/open reach split in the MVP?** *Recommend **yes***: report curated
-  (`DIGEST`) and open (`APP_PAGE`) reach **separately** (AC3/AC4). The split *is* the H2
-  story ("shown to N *matched* users") and the D-8 gate's whole point; collapsing it to one
-  "reach" number would hide exactly what proves H2. Cost: needs a surface-aware read (C7,
-  a Stage-2 design item).
-- **DN-19.b — Reporting window set.** *Recommend* a small **fixed** set driven by config —
-  e.g. **last 7 days / last 30 days / all-time** — not arbitrary per-developer custom ranges
-  (deferred). Keeps the read bounded and the UI simple while satisfying S5/AC7.
-- **DN-19.c — Show per-review weight-eligibility to the owning developer?** *Recommend **no**
-  at MVP* (keep it out — consistent with D-8 §AC7 and R2); the developer sees review
-  *content* and the distribution, not "which reviews count". Revisit when a Quality Score
+- **DN-19.a — reach presentation → EXPANDED.** Not a binary split but a **combined
+  impressions total + per-source breakdown** over the `Surface` vocabulary (Steam-style),
+  with **curated `DIGEST` first/highlighted** as the most important source and an
+  **impressions-over-time trend carrying a distinguished curated line** (AC3/AC4/AC10).
+  User-selectable graph series are deferred. Cost: a surface-aware **and time-bucketed** read
+  in `signals.selectors` (C7 / OQ-DD-4 — Stage-2 design).
+- **DN-19.b — window set → EXPANDED.** Fixed config-driven set: **last week / 2 weeks /
+  month / 3 months / 6 months / year / 3 years / all-time** (no arbitrary custom ranges).
+- **DN-19.c — per-review weight-eligibility → HIDDEN** (as recommended): the developer sees
+  review *content* + distribution, not "which reviews count". Revisit when a Quality Score
   consumes the gate.
 
-No new **global** ADR is proposed — the feature reuses **D-3/D-5/D-6/D-7/D-8 as-is**.
+No new **global** ADR is proposed — the feature reuses **D-3/D-5/D-6/D-7/D-8 as-is**. The
+surface-aware/time-bucketed read (OQ-DD-4) is an **additive read-surface extension** to the
+closed `signals` app, carried to Stage 2.
