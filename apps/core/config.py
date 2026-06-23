@@ -54,6 +54,14 @@ DEFAULT_FOLLOWED_FEED_PAGE_SIZE = 100
 # comfortably above any realistic active-vocabulary size). No magic numbers in logic.
 DEFAULT_INTEREST_SUGGESTED_MINIMUM = 3
 DEFAULT_INTEREST_DECLARATION_MAX = 500
+# Open-search-browse discovery tunables (open-search-browse DESIGN.md §8/§10). The page size
+# is the browse/search result count per page; the max is the clamp ceiling an explicit
+# page_size request is bounded to (a defensive cap, never reached by the UI). The query max
+# length bounds the keyword string accepted at the view boundary. No magic numbers in the
+# selector/view — these are the change-cheap constants (DESIGN §8).
+DEFAULT_DISCOVERY_PAGE_SIZE = 24
+DEFAULT_DISCOVERY_PAGE_SIZE_MAX = 100
+DEFAULT_DISCOVERY_QUERY_MAX_LENGTH = 200
 
 
 def _resolve_raw(setting_name: str, env_name: str, default: int) -> object:
@@ -206,6 +214,33 @@ def interest_declaration_max() -> int:
     )
 
 
+def discovery_page_size() -> int:
+    """Browse/search results shown per discovery page (open-search-browse DESIGN.md §8/§10)."""
+    return _positive_int(
+        "DISCOVERY_PAGE_SIZE",
+        "DISCOVERY_PAGE_SIZE",
+        DEFAULT_DISCOVERY_PAGE_SIZE,
+    )
+
+
+def discovery_page_size_max() -> int:
+    """Clamp ceiling for an explicit discovery page_size request (DESIGN.md §6.1/§10)."""
+    return _positive_int(
+        "DISCOVERY_PAGE_SIZE_MAX",
+        "DISCOVERY_PAGE_SIZE_MAX",
+        DEFAULT_DISCOVERY_PAGE_SIZE_MAX,
+    )
+
+
+def discovery_query_max_length() -> int:
+    """Max characters accepted in a discovery keyword query (DESIGN.md §6.3/§8)."""
+    return _positive_int(
+        "DISCOVERY_QUERY_MAX_LENGTH",
+        "DISCOVERY_QUERY_MAX_LENGTH",
+        DEFAULT_DISCOVERY_QUERY_MAX_LENGTH,
+    )
+
+
 def validate_all() -> None:
     """Evaluate every tunable so misconfiguration surfaces at startup, not at use."""
     login_token_ttl()
@@ -222,3 +257,6 @@ def validate_all() -> None:
     followed_feed_page_size()
     interest_suggested_minimum()
     interest_declaration_max()
+    discovery_page_size()
+    discovery_page_size_max()
+    discovery_query_max_length()

@@ -17,13 +17,17 @@ Owner reads are owner-scoped: a non-owner's id is indistinguishable from "not fo
 (AC8 — no leak, no enumeration).
 """
 
+from collections.abc import Collection
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from math import ceil
 from uuid import UUID
 
-from django.db.models import Count
+from django.contrib.postgres.search import SearchQuery, SearchRank
+from django.db.models import Count, Subquery
 
-from apps.catalog.models import App, ReviewDecision
+from apps.catalog.models import App, AppTag, ReviewDecision
+from apps.core import config
 from apps.taxonomy import selectors as taxonomy
 
 
@@ -135,6 +139,111 @@ def _url_share_counts(normalized_urls: list[str]) -> dict[str, int]:
         .annotate(n=Count("id"))
     )
     return {url: n for url, n in rows}
+
+
+# --- Open discovery surface (paginated, DB-pushed; open-search-browse §6.1) --
+@dataclass(frozen=True)
+class CatalogPage:
+    """One page of the accepted catalogue, already in final neutral order (DESIGN §6.1)."""
+
+    apps: list[CatalogApp]  # the page; each element is the existing D-6 CatalogApp shape
+    total: int  # total accepted apps matching the filter (for "N results" + page count)
+    page: int  # 1-based page actually returned (clamped into range)
+    page_size: int  # the page size applied
+    has_next: bool  # page < ceil(total / page_size)
+
+
+def search_catalogue(
+    *,
+    query: str | None = None,
+    tag_ids: Collection[UUID] | None = None,
+    page: int = 1,
+    page_size: int | None = None,
+) -> CatalogPage:
+    """The open discovery read: a neutrally-ordered page of accepted apps (DESIGN §6.1, AC9).
+
+    The one place that knows how to *query* the catalogue for a page — keyword match, tag-set
+    filter, neutral ordering, and pagination, all pushed into the database so the work per
+    page is bounded regardless of catalogue size (the existing ``list_catalogued_apps``
+    materializes the whole catalogue and cannot scale to a paginated surface).
+
+    Coercion: ``query`` is stripped (blank ⇒ browse mode); ``tag_ids`` is the **already
+    expanded** match set (discovery, not catalog, owns merge resolution — clean separation);
+    ``page`` is clamped to ``[1, last_page]``; ``page_size`` defaults to
+    ``config.discovery_page_size()`` and is clamped to ``[1, config.discovery_page_size_max()]``.
+
+    Filter: always ``status=ACCEPTED`` (pending/rejected/withdrawn are unrepresentable in a
+    result, AC1/AC2); ``+`` an FTS match when ``query`` is given; ``+`` carrying a tag in
+    ``tag_ids`` when given. Keyword and tag compose (AND).
+
+    Order — the AC5 invariant, only neutral non-purchasable keys: keyword present →
+    relevance, then ``accepted_at`` DESC, then ``id``; keyword absent → ``accepted_at`` DESC,
+    then ``id``. ``id`` is the stable final tie-break (deterministic pagination). **No
+    payment/tier/score/impression term participates** — position-neutrality is structural.
+
+    Returns a valid (possibly empty) page; raises only on a genuine DB failure — never a fake
+    empty page that would hide an outage (DESIGN §7/§9).
+    """
+    keyword = (query or "").strip()
+    size = _clamp_page_size(page_size)
+
+    matches = _accepted_matching(keyword, tag_ids)
+    total = matches.count()
+    last_page = max(1, ceil(total / size)) if total else 1
+    current_page = min(max(page, 1), last_page)
+    offset = (current_page - 1) * size
+
+    ordered = _apply_neutral_order(matches, keyword)
+    page_apps = list(
+        ordered.prefetch_related("media", "app_tags")[offset : offset + size]
+    )
+    resolved = _resolve_tag_labels(page_apps)
+    return CatalogPage(
+        apps=[_to_catalog_app(app, resolved) for app in page_apps],
+        total=total,
+        page=current_page,
+        page_size=size,
+        has_next=current_page < last_page,
+    )
+
+
+def _clamp_page_size(page_size: int | None) -> int:
+    """Resolve and clamp the page size to ``[1, discovery_page_size_max()]`` (DESIGN §6.1)."""
+    size = config.discovery_page_size() if page_size is None else page_size
+    return max(1, min(size, config.discovery_page_size_max()))
+
+
+def _accepted_matching(keyword: str, tag_ids: Collection[UUID] | None):
+    """The accepted-only queryset filtered by keyword (FTS) and/or tag set — no ordering yet.
+
+    The tag filter is expressed as ``id IN (app_tags carrying a wanted tag)`` rather than a
+    join, so a multi-tag app is counted once with no ``.distinct()`` (which would otherwise
+    collide with ordering by the ``SearchRank`` annotation in Postgres).
+    """
+    queryset = App.objects.filter(status=App.Status.ACCEPTED)
+    if keyword:
+        queryset = queryset.filter(
+            search_vector=SearchQuery(keyword, search_type="websearch")
+        )
+    if tag_ids:
+        carrier_ids = AppTag.objects.filter(tag_id__in=tag_ids).values("app_id")
+        queryset = queryset.filter(id__in=Subquery(carrier_ids))
+    return queryset
+
+
+def _apply_neutral_order(queryset, keyword: str):
+    """Order by neutral, non-purchasable keys only — the AC5/M5 position-neutrality invariant.
+
+    Keyword present → keyword relevance, then newest-accepted, then id; keyword absent →
+    newest-accepted, then id. ``id`` is the deterministic final tie-break. No paid/tier/
+    score/impression input exists here, so position cannot be bought (DESIGN §6.1).
+    """
+    if keyword:
+        ranked = queryset.annotate(
+            rank=SearchRank("search_vector", SearchQuery(keyword, search_type="websearch"))
+        )
+        return ranked.order_by("-rank", "-accepted_at", "id")
+    return queryset.order_by("-accepted_at", "id")
 
 
 # --- Downstream catalogue (ACCEPTED only; AC9/D-6) ---------------------------

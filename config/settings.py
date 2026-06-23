@@ -83,6 +83,9 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    # The documented home of SearchVectorField/GinIndex/SearchRank — the Postgres FTS the
+    # open discovery surface searches over (open-search-browse DESIGN.md §5b/§16).
+    "django.contrib.postgres",
     "rest_framework",
     "apps.core",
     "apps.accounts",
@@ -93,6 +96,7 @@ INSTALLED_APPS = [
     "apps.ratings",
     "apps.subscriptions",
     "apps.interests",
+    "apps.discovery",
 ]
 
 MIDDLEWARE = [

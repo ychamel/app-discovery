@@ -29,6 +29,10 @@ urlpatterns = [
     # The interest-profile activation switch (DESIGN.md §16): one half of the rollback (the
     # other is the {% interest_prompt %} line in accounts/profile.html). Own prefix.
     path("interests/", include("apps.interests.urls")),
+    # The open-search-browse activation switch (DESIGN.md §11/§16): this single include is the
+    # entire activation — and removing it is the entire rollback (zero data migration). Own
+    # prefix; no collision with the pages /apps/ surface.
+    path("discover/", include("apps.discovery.urls")),
     path("", include("apps.accounts.urls")),
 ]
 

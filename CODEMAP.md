@@ -107,6 +107,7 @@ _Built by `identity-accounts` Stage 4. Entries are added as each shared item shi
 - `get_tag(id) -> Tag | None` — fetch a tag of any status — `apps/taxonomy/selectors.py`
 - `is_valid_tag(id) -> bool` — closed-set validator: True only for an active tag (consumers enforce at their write boundary, AC2) — `apps/taxonomy/selectors.py`
 - `resolve_tag(id) -> Tag | None` — follow `replaced_by` to current meaning; keeps retired refs, cycle-guarded (AC6/AC7) — `apps/taxonomy/selectors.py`
+- `tag_ids_resolving_to(active_id) -> frozenset[UUID]` — **reverse of `resolve_tag`**: an active tag + its transitive merge predecessors (the ids that *mean* it now), for a merge-correct tag filter (open-search-browse AC3); tolerant of a bad id (→ `frozenset()`), bounded by vocabulary size not catalogue — `apps/taxonomy/selectors.py`
 
 ### App catalog — model & gate (`apps/catalog/`)
 - `App` — one submitted web app; UUID `id` is the stable cross-feature reference (D-6); `owner`/`status`/`normalized_url`/`last_submitted_at` — `apps/catalog/models.py`
@@ -127,6 +128,10 @@ _Built by `identity-accounts` Stage 4. Entries are added as each shared item shi
 - `apps_sharing_url(normalized_url, *, exclude=None)` — the duplicate signal (§6c) — `apps/catalog/selectors.py`
 - `list_catalogued_apps()` / `get_catalogued_app(id) -> CatalogApp | None` — **ACCEPTED only**; resolved tags + ordered media (the D-6 downstream contract, AC9) — `apps/catalog/selectors.py`
 - `get_catalogued_apps(ids) -> list[CatalogApp]` — **bulk by-ids**, ACCEPTED only, no N+1; non-accepted/unknown ids silently absent (additive D-6 read, the feed primitive — app-subscriptions DESIGN §4.3) — `apps/catalog/selectors.py`
+- `search_catalogue(*, query=None, tag_ids=None, page=1, page_size=None) -> CatalogPage` — **the paginated, DB-pushed open-discovery read** (open-search-browse §6.1): ACCEPTED only; FTS keyword + handed-in tag-set filter (compose AND); **neutral order only** (`SearchRank`/`accepted_at`/`id` — no purchasable key, AC5/M5); constant query count per page at any catalogue size (no N+1, AC9); a valid empty page is never an error, a DB failure is loud — `apps/catalog/selectors.py`
+- `CatalogPage` — frozen DTO: `apps: list[CatalogApp]` (the page, in final order) + `total`/`page`/`page_size`/`has_next` — `apps/catalog/selectors.py`
+- `services._search_vector_expr() -> SearchVector` — the **single definition** of the catalogue FTS formula (name weight A + description weight B); reused by `submit_app`/`edit_app` maintenance and the backfill migration so the field list lives in one place (open-search-browse §5b/§8) — `apps/catalog/services.py`
+- `App.accepted_at` (nullable; newest-first browse-order key, stamped only in `accept_app`) + `App.search_vector` (nullable `SearchVectorField`, maintained only in `submit_app`/`edit_app`); composite index `(status, -accepted_at)` + `search_vector` GIN — additive open-search-browse columns, written only via the catalog write path (no drift) — `apps/catalog/models.py`
 - `time_to_decision(app)` / `decision_latencies()` — time-to-decision reporting from stored timestamps (observable, not an SLA) — `apps/catalog/selectors.py`
 
 ### Behavioral signals — model & vocabulary (`apps/signals/`, the D-7 event schema)
@@ -194,6 +199,12 @@ _Built by `identity-accounts` Stage 4. Entries are added as each shared item shi
 - `{% interest_prompt %}` (`interests_tags`) — the onboarding-nudge inclusion tag on `accounts/profile.html`; fail-soft, non-gating (AC3) — `apps/interests/templatetags/interests_tags.py`
 - interests config tunables `interest_suggested_minimum()` (3, copy-only nudge) / `interest_declaration_max()` (500, defensive cap) — `apps/core/config.py`
 - interests metric constants (`INTEREST_DECLARED`, `INTEREST_PROFILE_UPDATED`, `INTEREST_PROFILE_CLEARED`, `INTEREST_DECLARATION_REJECTED`, `INTEREST_PICKER_DEGRADED`, `INTEREST_PROMPT_DEGRADED`); the M5 alert reuses taxonomy `TAXONOMY_REFERENCE_BREAK` — `apps/core/observability.py`
+
+### Open discovery surface (`apps/discovery/`, a pure D-5/D-6 read consumer — owns no model)
+- route name `discovery:browse` (`/discover/`) — GET, **AllowAny (no `login_required`, AC8)**: browse (newest-accepted-first) / keyword search / single-axis tag|cluster filter over the accepted catalogue, rendered via `catalogue.html`; **imports nothing from `signals`** (AC6 structural — a self-driven view never confers curated eligibility) — `apps/discovery/urls.py`, `apps/discovery/views.py`
+- failure split: the core `search_catalogue` read fails **loud** (→ 500 + `DISCOVERY_LISTING_DEGRADED`, never a fake empty state); the facet sidebar fails **soft** (results render + `DISCOVERY_FACETS_DEGRADED`); invalid/retired/unknown `tag`/`cluster` is ignored, not an error (AC3) — `apps/discovery/views.py`
+- discovery config tunables `discovery_page_size()` (24) / `discovery_page_size_max()` (100) / `discovery_query_max_length()` (200) — `apps/core/config.py`
+- discovery metric constants (`DISCOVERY_BROWSE_RENDERED`, `DISCOVERY_SEARCH_PERFORMED`, `DISCOVERY_TAG_FILTERED`, `DISCOVERY_ZERO_RESULTS` = M3, `DISCOVERY_FACETS_DEGRADED`, `DISCOVERY_LISTING_DEGRADED` = the one alert); **no D-7 emit** (M2 click-through derived from app-pages' `APP_PAGE` impressions) — `apps/core/observability.py`
 
 <!-- Example of the shape this takes once code exists:
 

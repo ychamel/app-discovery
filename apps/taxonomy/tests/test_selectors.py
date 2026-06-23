@@ -79,6 +79,60 @@ class ResolveTagTests(TestCase):
         )
 
 
+class TagIdsResolvingToTests(TestCase):
+    """The reverse of resolve_tag (open-search-browse §6.2): predecessors that mean a tag now."""
+
+    def setUp(self):
+        self.cluster = services.add_cluster("productivity", "Productivity")
+
+    def _tag(self, slug, label):
+        return services.add_tag(slug, label, clusters=[self.cluster])
+
+    def test_singleton_resolves_to_itself(self):
+        tag = self._tag("todo-app", "To-do app")
+        self.assertEqual(selectors.tag_ids_resolving_to(tag.id), frozenset({tag.id}))
+
+    def test_merge_chain_includes_all_transitive_predecessors(self):
+        # X → W → Y (X merged into W, W merged into Y): resolving to Y matches all three (AC3).
+        x = self._tag("x", "X")
+        w = self._tag("w", "W")
+        y = self._tag("y", "Y")
+        services.retire_tag(x, replaced_by=w)
+        services.retire_tag(w, replaced_by=y)
+        self.assertEqual(
+            selectors.tag_ids_resolving_to(y.id), frozenset({x.id, w.id, y.id})
+        )
+
+    def test_branching_merges_include_both_predecessors(self):
+        # Two tags merged into the same active tag → both predecessors are included.
+        a = self._tag("a", "A")
+        b = self._tag("b", "B")
+        target = self._tag("target", "Target")
+        services.retire_tag(a, replaced_by=target)
+        services.retire_tag(b, replaced_by=target)
+        self.assertEqual(
+            selectors.tag_ids_resolving_to(target.id),
+            frozenset({a.id, b.id, target.id}),
+        )
+
+    def test_unknown_id_returns_empty_set(self):
+        self.assertEqual(selectors.tag_ids_resolving_to(uuid.uuid4()), frozenset())
+
+    def test_malformed_id_returns_empty_set_not_an_error(self):
+        self.assertEqual(selectors.tag_ids_resolving_to("not-a-uuid"), frozenset())
+
+    def test_query_count_bounded_by_chain_depth_not_catalogue_size(self):
+        # The walk touches only the vocabulary (never App): one existence check + one query
+        # per frontier level. A 2-hop chain = existence + 3 frontier steps = 4 queries.
+        x = self._tag("x", "X")
+        w = self._tag("w", "W")
+        y = self._tag("y", "Y")
+        services.retire_tag(x, replaced_by=w)
+        services.retire_tag(w, replaced_by=y)
+        with self.assertNumQueries(4):
+            selectors.tag_ids_resolving_to(y.id)
+
+
 class ListSelectorTests(TestCase):
     def setUp(self):
         self.c1 = services.add_cluster("productivity", "Productivity")

@@ -1,0 +1,102 @@
+{% extends "discovery/base.html" %}
+{% comment %}
+  The open discovery surface (DESIGN.md §6.4). Five states, all rendered here:
+  results · zero-results · empty-catalogue · facet-degraded · (error = a loud 500, never here).
+  Every result card links to the app's stable App.id app-page (AC4). Order is decided entirely
+  by the catalog primitive (newest-accepted / relevance) — this template never reorders, so
+  position-neutrality (AC5) cannot be subverted in the view layer. All app/tag text is rendered
+  through Django auto-escaping (no |safe).
+{% endcomment %}
+{% block title %}Discover apps · App Discovery{% endblock %}
+
+{% block content %}
+<h1>Discover apps</h1>
+
+{# Search box — reflects the current q; carries the active tag/cluster so search composes
+   with the filter (AND). A real GET form, so it works without JavaScript (C7). #}
+<form method="get" action="{% url 'discovery:browse' %}" role="search">
+  <label for="discovery-q">Search apps</label>
+  <input id="discovery-q" type="search" name="q" value="{{ query }}"
+         placeholder="Search by name or description">
+  {% if selected_tag %}<input type="hidden" name="tag" value="{{ selected_tag }}">{% endif %}
+  {% if selected_cluster %}<input type="hidden" name="cluster" value="{{ selected_cluster }}">{% endif %}
+  <button type="submit">Search</button>
+</form>
+
+<div class="discovery-layout">
+
+  {# --- Facet sidebar (active tags grouped by cluster) — fails soft (DESIGN §9). --- #}
+  <aside aria-label="Filters">
+    {% if facets_degraded %}
+      <p>Filters are unavailable right now.</p>
+    {% else %}
+      {% if selected_tag or selected_cluster or query %}
+        <p><a href="{% url 'discovery:browse' %}">Clear filters</a></p>
+      {% endif %}
+      {% for cluster in clusters %}
+        {% if cluster.tags.all %}
+          <section aria-label="{{ cluster.name }}">
+            <h2><a href="{% url 'discovery:browse' %}?cluster={{ cluster.id }}">{{ cluster.name }}</a></h2>
+            <ul>
+              {% for tag in cluster.tags.all %}
+                <li>
+                  <a href="{% url 'discovery:browse' %}?tag={{ tag.id }}"
+                     {% if tag.id|stringformat:'s' == selected_tag %}aria-current="true"{% endif %}>
+                    {{ tag.label }}
+                  </a>
+                </li>
+              {% endfor %}
+            </ul>
+          </section>
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+  </aside>
+
+  {# --- Results / empty states. --- #}
+  <section aria-label="Results">
+    {% if page.apps %}
+      <p>{{ page.total }} result{{ page.total|pluralize }}</p>
+      <ul class="app-list">
+        {% for app in page.apps %}
+          <li>
+            <article>
+              <a href="{% url 'pages:app-page' app_id=app.id %}">
+                {% if app.media %}
+                  <img src="{{ app.media.0.url }}" alt="{{ app.media.0.alt_text }}">
+                {% endif %}
+                <h3>{{ app.name }}</h3>
+              </a>
+              <p>{{ app.description|truncatechars:200 }}</p>
+              <ul aria-label="Categories">
+                {% for tag in app.tags %}
+                  <li><a href="{% url 'discovery:browse' %}?tag={{ tag.id }}">{{ tag.label }}</a></li>
+                {% endfor %}
+              </ul>
+            </article>
+          </li>
+        {% endfor %}
+      </ul>
+
+      {# Pagination — prev/next + "page X of Y"; preserves q/tag/cluster across pages. #}
+      <nav aria-label="Pagination">
+        {% if page.page > 1 %}
+          <a rel="prev" href="{% url 'discovery:browse' %}?{% if query %}q={{ query|urlencode }}&{% endif %}{% if selected_tag %}tag={{ selected_tag }}&{% endif %}{% if selected_cluster %}cluster={{ selected_cluster }}&{% endif %}page={{ page.page|add:'-1' }}">Previous</a>
+        {% endif %}
+        <span>Page {{ page.page }}</span>
+        {% if page.has_next %}
+          <a rel="next" href="{% url 'discovery:browse' %}?{% if query %}q={{ query|urlencode }}&{% endif %}{% if selected_tag %}tag={{ selected_tag }}&{% endif %}{% if selected_cluster %}cluster={{ selected_cluster }}&{% endif %}page={{ page.page|add:'1' }}">Next</a>
+        {% endif %}
+      </nav>
+
+    {% elif query or selected_tag or selected_cluster %}
+      {# Zero-results: a well-formed query/filter matched nothing; the catalogue is non-empty. #}
+      <p>No apps match your search. <a href="{% url 'discovery:browse' %}">Clear filters</a></p>
+    {% else %}
+      {# Empty catalogue: no accepted apps at all yet. #}
+      <p>No apps in the catalogue yet.</p>
+    {% endif %}
+  </section>
+
+</div>
+{% endblock %}

@@ -58,6 +58,44 @@ def is_valid_tag(tag_id: UUID) -> bool:
         return False
 
 
+def tag_ids_resolving_to(active_id: UUID) -> frozenset[UUID]:
+    """All stored tag ids that resolve to ``active_id`` now (open-search-browse DESIGN.md §6.2).
+
+    Returns ``{active_id}`` plus its **transitive merge predecessors** — every tag whose
+    ``replaced_by`` chain leads to ``active_id``. This is the reverse of ``resolve_tag``: a
+    catalogue tag filter on ``active_id`` must also match a retired predecessor that now
+    *means* ``active_id``, so the filter stays consistent with the resolved labels the
+    catalogue displays (AC3).
+
+    Tolerant of bad input like ``is_valid_tag`` — an unknown / non-UUID / malformed id yields
+    ``frozenset()`` and never raises (the caller validates with ``is_valid_tag`` first). The
+    walk is bounded by **vocabulary size** (small, slow-growing reference data), not catalogue
+    size — a deliberate, documented bound (DESIGN §5.2/§14). If the vocabulary ever grows huge,
+    a recursive CTE replaces the walk behind this same signature.
+    """
+    try:
+        if not Tag.objects.filter(pk=active_id).exists():
+            return frozenset()
+    except (ValidationError, ValueError, TypeError):
+        return frozenset()
+
+    resolved: set[UUID] = {active_id}
+    frontier: set[UUID] = {active_id}
+    while frontier:
+        # The inverse of the replaced_by FK (related_name="replaces"): the tags merged
+        # directly into anything in the current frontier, minus those already collected.
+        predecessors = set(
+            Tag.objects.filter(replaced_by_id__in=frontier)
+            .exclude(pk__in=resolved)
+            .values_list("id", flat=True)
+        )
+        if not predecessors:
+            break
+        resolved |= predecessors
+        frontier = predecessors
+    return frozenset(resolved)
+
+
 def resolve_tag(tag_id: UUID) -> Tag | None:
     """Resolve a stored tag id to its current meaning (AC6/AC7).
 

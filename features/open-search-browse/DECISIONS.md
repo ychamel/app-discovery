@@ -109,3 +109,36 @@ decisions go in [/DECISIONS.md](../../DECISIONS.md).*
 > `search_vector` columns + `search_catalogue` (D-6) and `tag_ids_resolving_to` (D-5) are
 > **additive extensions of existing read surfaces** indexed in [CODEMAP.md](../../CODEMAP.md)
 > at build, changing no cross-feature rule.
+
+## Stage 4 — Senior Engineer (BUILT — 2026-06-23; 676 tests green)
+
+All six ratified design decisions are **built** exactly as designed; no contract, interface,
+or schema changed from the ratified [DESIGN.md](DESIGN.md):
+
+- **OSB-DESIGN-1 — `catalog.selectors.search_catalogue -> CatalogPage`** — **BUILT** (T-05).
+  Paginated, DB-pushed, constant-query-count-per-page (the AC9 scale assertion holds at 5 vs
+  50 apps) over the unchanged `CatalogApp` DTO.
+- **OSB-DESIGN-2 — `catalog_app.accepted_at`** — **BUILT** (T-01 schema + composite index,
+  T-02 stamped/re-stamped in `accept_app`, T-03 backfilled from the latest accept decision).
+- **OSB-DESIGN-3 — `catalog_app.search_vector` Postgres FTS** — **BUILT** (T-01 column + GIN
+  + `django.contrib.postgres`, T-02 maintained in `submit_app`/`edit_app` via the single
+  `_search_vector_expr`, T-03 backfilled). Name(A)+description(B) only (OQ-OSB-4).
+- **OSB-DESIGN-4 — `taxonomy.selectors.tag_ids_resolving_to`** — **BUILT** (T-04), bounded
+  predecessor walk; tolerant of a bad id; query count bounded by chain depth, not catalogue.
+- **OSB-DESIGN-5 — no D-7 emit at MVP** — **BUILT** (T-06): `apps/discovery/` imports nothing
+  from `signals` (an AST import-absence test enforces it). M2 stays derived from app-pages.
+- **OSB-DESIGN-6 — model-less `apps/discovery/` consumer app** — **BUILT** (T-06): one
+  `config/urls` `discover/` include = the whole activation/rollback; owns no table.
+
+**One implementation note (no contract change).** The DESIGN §6.1 sketch describes the tag
+filter as a join `app_tags__tag_id IN tag_ids` with `.distinct()`. The build instead filters
+`id IN (Subquery over AppTag carrying a wanted tag)` — the **same contract** (only carriers,
+deduped, composes AND with keyword) but it avoids the Postgres "`SELECT DISTINCT` … ORDER BY
+expressions must appear in select list" conflict between `.distinct()` and ordering by the
+`SearchRank` annotation. Dedup is inherent to `id IN`, so no `.distinct()` is needed and
+keyword∧tag composition orders correctly. Verified by the AC3 dedup + keyword∧tag-compose tests.
+
+**Named, not built (revisit on real traffic, per DESIGN §16):** OFFSET → keyset pagination if
+deep paging gets hot (swappable behind the same `CatalogPage` contract); a non-curated
+`Surface.SEARCH` D-7 emit once M2 needs first-party measurement (OQ-OSB-3); tag-label / fuzzy /
+semantic search if the M3 zero-result rate is high (OQ-OSB-4).

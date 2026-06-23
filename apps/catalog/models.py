@@ -21,6 +21,8 @@ import uuid
 
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
+from django.contrib.postgres.indexes import GinIndex
+from django.contrib.postgres.search import SearchVectorField
 from django.db import models
 
 from apps.catalog.gate import Criterion
@@ -66,6 +68,16 @@ class App(models.Model):
     )
     # Set on each entry into pending: FIFO queue order AND the time-to-decision start point.
     last_submitted_at = models.DateTimeField()
+    # The one source of truth for "when this app (last) entered the accepted catalogue" —
+    # the newest-accepted-first browse-order key (open-search-browse DESIGN.md §5a). Stamped
+    # only inside accept_app's transaction (re-stamped on re-acceptance); NULL until accepted,
+    # so a never-accepted app — which is never catalogued — never appears in a result set.
+    accepted_at = models.DateTimeField(null=True)
+    # The stored, GIN-indexed full-text index of name(weight A) + description(weight B), the
+    # keyword-relevance search substrate (open-search-browse DESIGN.md §5b). Maintained only in
+    # the catalog write path (submit_app/edit_app) via catalog.services._search_vector_expr —
+    # no other code writes it, so the stored vector cannot drift. NULL until first maintained.
+    search_vector = SearchVectorField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -75,6 +87,12 @@ class App(models.Model):
         indexes = [
             models.Index(fields=["status"], name="catalog_app_status_idx"),
             models.Index(fields=["normalized_url"], name="catalog_app_normurl_idx"),
+            # The accepted-only, newest-first browse page = one index range scan (AC9).
+            models.Index(
+                fields=["status", "-accepted_at"], name="catalog_app_status_acc_idx"
+            ),
+            # GIN over the FTS column backs keyword search at 100× catalogue size (AC9).
+            GinIndex(fields=["search_vector"], name="catalog_app_search_gin"),
         ]
 
     def __str__(self) -> str:

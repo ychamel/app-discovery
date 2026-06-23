@@ -98,6 +98,18 @@ INTEREST_DECLARATION_REJECTED = "interest_declaration_rejected"  # AC2 reject (e
 INTEREST_PICKER_DEGRADED = "interest_picker_degraded"  # the picker read fell back (fail-soft)
 INTEREST_PROMPT_DEGRADED = "interest_prompt_degraded"  # the onboarding nudge fell back (fail-soft)
 
+# open-search-browse metrics (DESIGN.md §11). Browse/search/tag-filter render counts are
+# usage trends; ZERO_RESULTS is M3 (high rate ⇒ revisit search per OQ-OSB-4); FACETS_DEGRADED
+# is informational chrome health. The one actionable alert is LISTING_DEGRADED — a core
+# results read raised / the open surface 500s. No D-7 signal is emitted (AC6); M2 click-through
+# is derived from app-pages' existing APP_PAGE impressions.
+DISCOVERY_BROWSE_RENDERED = "discovery_browse_rendered"
+DISCOVERY_SEARCH_PERFORMED = "discovery_search_performed"
+DISCOVERY_TAG_FILTERED = "discovery_tag_filtered"
+DISCOVERY_ZERO_RESULTS = "discovery_zero_results"  # M3 — a query/filter returned total == 0
+DISCOVERY_FACETS_DEGRADED = "discovery_facets_degraded"  # the facet sidebar read fell back
+DISCOVERY_LISTING_DEGRADED = "discovery_listing_degraded"  # alert: the core results read raised
+
 metrics_logger = logging.getLogger("apps.metrics")
 
 

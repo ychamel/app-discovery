@@ -61,6 +61,26 @@ class AppModelTests(TestCase):
         forbidden = {"price", "payment", "tier", "budget", "brand", "priority", "fast_lane"}
         self.assertEqual(field_names & forbidden, set())
 
+    def test_accepted_at_and_search_vector_are_nullable_additive_columns(self):
+        # open-search-browse T-01/DESIGN §5: both browse-order/search columns are additive
+        # and nullable — an app that has never been accepted/maintained carries NULL.
+        accepted_at = App._meta.get_field("accepted_at")
+        search_vector = App._meta.get_field("search_vector")
+        self.assertTrue(accepted_at.null)
+        self.assertTrue(search_vector.null)
+        app = self._make_app()
+        self.assertIsNone(app.accepted_at)
+        self.assertIsNone(app.search_vector)
+
+    def test_browse_order_and_search_indexes_present(self):
+        # AC9: the accepted-only ordered browse is one index range scan, search is GIN-backed.
+        index_names = {index.name for index in App._meta.indexes}
+        self.assertIn("catalog_app_status_acc_idx", index_names)
+        self.assertIn("catalog_app_search_gin", index_names)
+        # The pre-existing indexes are untouched (additive change).
+        self.assertIn("catalog_app_status_idx", index_names)
+        self.assertIn("catalog_app_normurl_idx", index_names)
+
 
 class AppTagModelTests(TestCase):
     def setUp(self):

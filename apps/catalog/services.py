@@ -22,6 +22,7 @@ or Django ``ValidationError`` — never swallowed.
 
 import uuid
 
+from django.contrib.postgres.search import SearchVector
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
 from django.db import transaction
@@ -46,6 +47,29 @@ _UNSET = object()
 _ALLOWED_IMAGE_FORMATS = {"PNG": "png", "JPEG": "jpg", "WEBP": "webp"}
 
 _validate_http_url = URLValidator(schemes=["http", "https"])
+
+
+# --- Full-text search index (the single source of the search formula) --------
+def _search_vector_expr() -> SearchVector:
+    """The one definition of the catalogue's full-text index: name(A) + description(B).
+
+    The search field list and their weights live here and nowhere else (open-search-browse
+    DESIGN.md §5b/§8) — changing what is searchable is a one-function edit (then a
+    re-backfill). Used by ``submit_app``/``edit_app`` to maintain ``App.search_vector`` and
+    by the T-03 backfill data migration (imported, not re-stated), so the formula cannot
+    drift between the write path and the backfill.
+    """
+    return SearchVector("name", weight="A") + SearchVector("description", weight="B")
+
+
+def _maintain_search_vector(app: App) -> None:
+    """Recompute and store ``app.search_vector`` from its own name/description columns.
+
+    Runs one ``UPDATE ... SET search_vector = <expr>`` so the vector is computed in the
+    database from the row's current text — called only where name/description change
+    (``submit_app`` on create, ``edit_app`` on a text edit), inside the same transaction.
+    """
+    App.objects.filter(pk=app.pk).update(search_vector=_search_vector_expr())
 
 
 # --- Submission --------------------------------------------------------------
@@ -78,6 +102,7 @@ def submit_app(owner, *, name, description, url, tag_ids, media) -> App:
     for position, upload in enumerate(media_list):
         _store_media(app, upload, position=position)
 
+    _maintain_search_vector(app)
     _flag_duplicate_if_any(app)
     observability.increment(observability.SUBMISSION_CREATED, app_id=str(app.id))
     return app
@@ -124,6 +149,10 @@ def edit_app(app, *, name=_UNSET, description=_UNSET, url=_UNSET, tag_ids=_UNSET
     if update_fields:
         update_fields.append("updated_at")
         app.save(update_fields=update_fields)
+    # Recompute the FTS vector only when a searched field (name/description) actually changed
+    # — a tags-only or url-only edit leaves it untouched (DESIGN.md §5b, no needless rewrite).
+    if changed_fields & {"name", "description"}:
+        _maintain_search_vector(app)
     _return_to_review_if_accepted(app, changed_fields)
     return app
 
@@ -350,7 +379,10 @@ def accept_app(app, reviewer) -> ReviewDecision:
         failed_criteria=[],
     )
     locked.status = App.Status.ACCEPTED
-    locked.save(update_fields=["status", "updated_at"])
+    # The single place accepted_at is stamped (re-stamped on re-acceptance) — the one source
+    # of truth for newest-accepted-first browse order (DESIGN.md §5a). Set nowhere else.
+    locked.accepted_at = timezone.now()
+    locked.save(update_fields=["status", "accepted_at", "updated_at"])
     observability.increment(observability.APP_ACCEPTED, app_id=str(locked.id))
     observability.increment(observability.REVIEW_DECISION, outcome="accepted")
     _sync(app, locked)
@@ -455,4 +487,5 @@ def _sync(app, locked) -> None:
     """Reflect the locked row's committed state back onto the caller's in-memory app."""
     app.status = locked.status
     app.last_submitted_at = locked.last_submitted_at
+    app.accepted_at = locked.accepted_at
     app.updated_at = locked.updated_at
