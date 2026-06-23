@@ -1,7 +1,7 @@
 # DESIGN — open-search-browse
 
-*Stage 2 artifact (Software Architect). Status: **DRAFT — awaiting approval** (raises
-DN-18). Reads the **APPROVED** [FEATURE_BRIEF.md](FEATURE_BRIEF.md) + the codebase.
+*Stage 2 artifact (Software Architect). Status: **APPROVED — DN-18 (2026-06-23)**;
+ratified, binding for Stage 3 planning. Reads the **APPROVED** [FEATURE_BRIEF.md](FEATURE_BRIEF.md) + the codebase.
 Produces the architecture, data design, interface contracts, UX, and rollout for the
 open discovery surface. Traces every AC to ≥1 design element (§15). No "TBD" in any
 contract (persona exit criteria).*

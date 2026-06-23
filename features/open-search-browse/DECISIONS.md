@@ -46,7 +46,7 @@ decisions go in [/DECISIONS.md](../../DECISIONS.md).*
 > global ADR proposed at Stage 1.** Stage 2 will weigh whether a new non-curated
 > `Surface` value is needed (would be an additive D-7 extension, not a new global rule).
 
-## Stage 2 — Software Architect (PROPOSED — awaiting DN-18; see [DESIGN.md](DESIGN.md) §14)
+## Stage 2 — Software Architect (RATIFIED — DN-18 approved 2026-06-23; binding for Stage 3; see [DESIGN.md](DESIGN.md) §14)
 
 - **OSB-DESIGN-1 — A paginated, DB-pushed query primitive `catalog.selectors.search_catalogue`
   is *the* open-surface read.** The existing D-6 `list_catalogued_apps()` materializes the
@@ -56,7 +56,7 @@ decisions go in [/DECISIONS.md](../../DECISIONS.md).*
   `CatalogApp` DTO. **Why:** AC9 / §5.2 (works at 100×, bounded per page, no N+1) and D-6
   one-source-of-truth (catalogue queries belong to the catalog read surface).
   *Rejected:* slicing `list_catalogued_apps()` per page (re-loads + re-resolves the whole
-  catalogue each page). **Status: PROPOSED** (DN-18).
+  catalogue each page). **Status: RATIFIED** (DN-18, 2026-06-23).
 
 - **OSB-DESIGN-2 — Add `accepted_at` to `catalog_app` as the neutral browse-order key.**
   An additive nullable column stamped inside `accept_app`'s transaction (re-stamped on
@@ -65,7 +65,7 @@ decisions go in [/DECISIONS.md](../../DECISIONS.md).*
   "newest-accepted-first" needs the real acceptance time as one source of truth; no such
   field exists today. *Rejected:* per-query subquery over `ReviewDecision.created_at`
   (un-indexable, muddy re-acceptance); `last_submitted_at`-as-proxy (semantically the
-  pre-acceptance submission, can invert true order). **Status: PROPOSED** (DN-18).
+  pre-acceptance submission, can invert true order). **Status: RATIFIED** (DN-18, 2026-06-23).
 
 - **OSB-DESIGN-3 — Keyword search = Postgres FTS (`SearchVectorField` + GIN + `SearchRank`),
   name(weight A) + description(weight B).** A stored `search_vector` column maintained only
@@ -74,7 +74,7 @@ decisions go in [/DECISIONS.md](../../DECISIONS.md).*
   Requires adding `django.contrib.postgres` to `INSTALLED_APPS`. **Why:** OQ-OSB-2 mandates
   relevance order, which `icontains` cannot give, and an indexed vector is the scalable
   (AC9) Postgres-native choice. *Rejected:* `icontains`/`ILIKE` (no rank, seq scan); ad-hoc
-  per-query `SearchVector` (no index, seq scan). **Status: PROPOSED** (DN-18).
+  per-query `SearchVector` (no index, seq scan). **Status: RATIFIED** (DN-18, 2026-06-23).
 
 - **OSB-DESIGN-4 — Tag filter resolves correctly across merges via a new reverse-resolution
   taxonomy read `tag_ids_resolving_to(active_id) -> frozenset[UUID]`.** Facets are active
@@ -85,7 +85,7 @@ decisions go in [/DECISIONS.md](../../DECISIONS.md).*
   the selected tag must still match, consistent with the resolved label it already displays.
   Bounded by vocabulary size (small reference data), not catalogue size. *Rejected:* direct
   `AppTag.tag_id == selected` (misses merged predecessors → violates AC3). **Status:
-  PROPOSED** (DN-18).
+  RATIFIED** (DN-18, 2026-06-23).
 
 - **OSB-DESIGN-5 — No D-7 emit at MVP (resolves OQ-OSB-3).** The discovery app imports
   nothing from `signals`; AC6 (a self-driven view never confers curated eligibility) holds
@@ -94,12 +94,12 @@ decisions go in [/DECISIONS.md](../../DECISIONS.md).*
   **not built**. **Why:** §4.1 integrity + privacy for anonymous visitors; emitting nothing
   is the strongest, simplest guarantee of AC6 and removes an anonymous-PII surface.
   *Rejected:* adding `Surface.SEARCH` + an emission path at MVP (unneeded by any AC, adds a
-  write path and a privacy surface). **Status: PROPOSED** (DN-18).
+  write path and a privacy surface). **Status: RATIFIED** (DN-18, 2026-06-23).
 
 - **OSB-DESIGN-6 — Discovery is a model-less consumer app (`apps/discovery/`), activated
   and rolled back by a single `config/urls` include** (mirrors `apps/pages/`). Owns no
   table/migration; reads only the D-5/D-6 selectors; deletable by removing one line (design-
-  for-deletion). **Status: PROPOSED** (DN-18).
+  for-deletion). **Status: RATIFIED** (DN-18, 2026-06-23).
 
 > **OQ-OSB-4 resolved in design:** keyword search matches **name + description only** at
 > MVP (the `search_vector` fields); tag-label/fuzzy/semantic search stay out of scope
