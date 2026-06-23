@@ -21,16 +21,20 @@ dashboard can honestly report. Add ambiguities here as the feature enters the pi
 - **OQ-DD-3 — Per-review weight-eligibility shown to the owner?** **RESOLVED — DN-19.c.**
   Hidden at MVP (D-8 §AC7 keeps the flag internal; gaming-manual line, vision Open Q5).
 
-## Stage 2 (carried for the Architect)
+## Stage 2 (Architect) — OQ-DD-4 RESOLVED-in-design (2026-06-24, DESIGN.md §5.1 / DD-DESIGN-2)
 
 - **OQ-DD-4 (from brief C7/R4; widened by DN-19.a) — where does the surface-aware, time-bucketed
-  reach read live?** `app_funnel.impressions` counts all surfaces collapsed and is not
-  time-bucketed; both the **per-source breakdown** (AC3) and the **over-time trend** (AC10)
-  need a new read that (a) groups impressions by `Surface` and (b) buckets by time over the
-  selected window. It **must** live in `signals.selectors` (preserving D-7: nothing reads
-  `signals_*` directly) — never a dashboard-side raw-table read. Design the bucket granularity
-  per window and ensure the breakdown enumerates the `Surface` vocabulary (new surfaces appear
-  automatically). **Design call** — resolve in DESIGN.md. *(Verified gap:
-  [apps/signals/selectors.py](../../apps/signals/selectors.py) has no per-surface or
-  time-bucketed read; [apps/signals/kinds.py](../../apps/signals/kinds.py) `Surface` = DIGEST,
-  APP_PAGE today, documented extensible.)*
+  reach read live?** **RESOLVED-in-design** (pending DESIGN approval). Two **additive, neutral**
+  reads are added to `apps/signals/selectors.py` (the only D-7-permitted reader of `signals_*`):
+  `impression_breakdown[_for_apps]` (per-`Surface` counts, **every** `Surface` zero-filled —
+  AC3/AC4) and `impression_trend(…, granularity)` (per-`Surface` per-time-bucket — AC10), plus a
+  `TrendGranularity` enum. **No model/migration/index** (backed by the existing
+  `signals_imp_app_time_idx`). Bucket granularity is chosen **per window** in
+  `apps/dashboard/windows.py` (DAY ≤1m / WEEK 3–6m / MONTH ≥1y + all-time) — the M6/AC9 bound.
+  Signals stays neutral (it never judges "curated"); the dashboard composes the curated split
+  via `ratings.gate.CURATED_SURFACES`. The breakdown enumerates the `Surface` vocabulary so a new
+  surface appears with no dashboard rewrite. See [DESIGN.md](DESIGN.md) §4.2/§4.3/§5.1 and
+  [DECISIONS.md](DECISIONS.md) DD-DESIGN-2/3. *(Original verified gap stands:
+  [apps/signals/selectors.py](../../apps/signals/selectors.py) had no per-surface/time-bucketed
+  read; [apps/signals/kinds.py](../../apps/signals/kinds.py) `Surface` = DIGEST, APP_PAGE,
+  documented extensible.)*

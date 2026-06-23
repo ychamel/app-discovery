@@ -50,3 +50,61 @@ brief's recommendation by the user's answer; DD-3 was taken as recommended.
 
 > **No new global ADR proposed.** The feature reuses **D-3/D-5/D-6/D-7/D-8 as-is** (the
 > dashboard is a read-only consumer of existing selector surfaces).
+
+## Stage 2 (Software Architect) — PROPOSED (pending DESIGN approval, 2026-06-24)
+
+The DESIGN decisions, mapping to [DESIGN.md](DESIGN.md). All **PROPOSED**; ratified on the
+DESIGN-approval decision (DN-DD-DESIGN in [CONTROL.md](../../CONTROL.md)). **Resolves OQ-DD-4.**
+**No new global ADR** — reuses D-3/D-5/D-6/D-7/D-8.
+
+### DD-DESIGN-1: New model-less consumer app `apps/dashboard/` — PROPOSED
+- **Decision:** The dashboard is a stateless consumer app (mirrors `apps/pages/` +
+  `apps/discovery/`) owning **no model, migration, table, or index**. Activation *and* rollback
+  = a single `config/urls` include (+ `INSTALLED_APPS` line).
+- **Why:** Everything it presents is already a read surface; design-for-deletion by
+  construction (remove the include → every dependency untouched). House norm (verified A8).
+- **Rejected:** a public HTTP/DRF analytics API (out of scope — server-rendered owner-scoped
+  view suffices to prove H2).
+
+### DD-DESIGN-2: Two additive neutral reads on `signals.selectors` — PROPOSED (**resolves OQ-DD-4**)
+- **Decision:** Add `impression_breakdown(app, *, start, end)` + `impression_breakdown_for_apps`
+  (per-`Surface` counts, **every** `Surface` zero-filled — AC3/AC4) and
+  `impression_trend(app, *, start, end, granularity)` (per-`Surface` per-time-bucket — AC10) +
+  a `TrendGranularity` enum, to `apps/signals/selectors.py`. **No** model/migration/index
+  change (backed by the existing `signals_imp_app_time_idx`).
+- **Why:** D-7 forbids reading `signals_*` outside `signals.selectors` (R4), so the
+  surface-aware/time-bucketed read *must* be an additive extension there — same precedent as
+  ratings' `has_impression`. Signals stays **neutral** (counts per surface; never judges
+  "curated"). The breakdown enumerates the `Surface` vocabulary so a new surface appears with
+  no dashboard rewrite (§5.2 design-for-change). Invariant `breakdown.total ==
+  app_funnel.impressions` keeps reach and funnel consistent.
+- **Rejected:** (a) the dashboard reading `signals_*` directly (breaks D-7/R4); (b) deriving
+  the breakdown by summing trend buckets (couples totals to chart granularity, can disagree
+  with the funnel).
+
+### DD-DESIGN-3: 8 reporting windows + per-window bucket granularity as a code-fixed table — PROPOSED
+- **Decision:** `apps/dashboard/windows.py` holds the fixed 8 `ReportingWindow`s (1w/2w/1m/3m/
+  6m/1y/3y/all) each with a bucket `granularity` (DAY ≤1m, WEEK 3–6m, MONTH ≥1y + all-time);
+  all-time is lower-bounded by an epoch sentinel so the existing range-based selectors are
+  reused unchanged (AC7). Unknown/blank `window` → the default key (fail-safe).
+- **Why:** A closed vocabulary (like `Surface`/`CHECKLIST`) belongs in code in the feature
+  app, not env config; granularity-per-window is the M6/AC9 bound on the trend's bucket count.
+- **Rejected:** arbitrary custom date ranges (DN-19.b — unbounded query surface).
+
+### DD-DESIGN-4: Failure split + read-only gating — PROPOSED
+- **Decision:** Core reception (signals) read **fails loud** (500 + `DASHBOARD_RECEPTION_DEGRADED`
+  — the one alert; a fake-empty dashboard would lie about H2, R1); the reviews slot **fails
+  soft** (`available=False`); owner-scope mismatch ⇒ **404 indistinguishable** (AC8/R3);
+  `login_required` + `require_role(DEVELOPER)`, **GET-only**, **no `signals.capture` import**
+  (AST-enforced) so viewing a dashboard emits no D-7 impression (AC8 structural).
+- **Why:** Mirrors discovery's loud-listing / soft-facet split and ratings' soft display; the
+  no-capture rule prevents a developer inflating their own reach by viewing it.
+
+### DD-DESIGN-5: Reach split reuses `CURATED_SURFACES`; trend = inline-SVG line — PROPOSED
+- **Decision:** The curated/open split and the trend's curated line are composed from
+  `ratings.gate.CURATED_SURFACES` (the single D-8 source); the trend renders as a pure-Python
+  inline-SVG polyline (total + curated) with a `<table>` fallback.
+- **Why:** One source of truth for "curated"; no JS build dependency (D-4 server-rendered
+  default); the table fallback is accessible and makes exact per-bucket numbers testable.
+- **Rejected:** client-side JS charting (adds a dependency for one MVP line);
+  hardcoding `DIGEST` in the dashboard (two sources of truth).
