@@ -1,8 +1,9 @@
 # FEATURE_BRIEF — open-search-browse
 
-*Stage 1 artifact (Product Analyst). Status: **awaiting approval** — see
-[CONTROL.md](../../CONTROL.md) → Decisions Needed From You (**DN-17**). No Stage advance
-until approved.*
+*Stage 1 artifact (Product Analyst). Status: **APPROVED** (DN-17, 2026-06-23). The two
+bundled scoping calls are resolved: **OQ-OSB-1** — tag/cluster filtering **is in the MVP
+slice** (S3/AC3); **OQ-OSB-2** — default neutral order is **browse = newest-accepted-first,
+search = keyword relevance** (both non-purchasable, AC5). Advanced to Stage 2 (Design).*
 
 ## Coordinator scope seed (source: breakdown §4.2)
 
@@ -77,7 +78,7 @@ result order that is neutral and impossible to buy.*
   that I can find a specific app or apps matching a term without waiting for a digest.
 - **S3 — Browse by interest.** As **anyone**, I want to filter/browse the catalogue by an
   interest tag (or cluster), so that I can explore apps in a category I care about.
-  *(Working assumption — in MVP scope; see DN-17.)*
+  *(In MVP scope — resolved DN-17 / OQ-OSB-1.)*
 - **S4 — Reach the app-page.** As **anyone**, I want each result to link to that app's
   app-page at its stable URL, so that I can see full details and try the app.
 - **S5 — Earned, not bought, visibility.** As a **developer**, I want my accepted app to
@@ -139,7 +140,7 @@ result order that is neutral and impossible to buy.*
 
 - A **public browse listing** of all accepted apps (D-6), paginated, accessible signed-out.
 - **Keyword search** over accepted apps' name and description.
-- **Filter/browse by interest tag (or cluster)** via D-5 *(working assumption — DN-17)*.
+- **Filter/browse by interest tag (or cluster)** via D-5 *(in scope — DN-17 / OQ-OSB-1)*.
 - Each result **links to the app-page** at its stable `App.id` URL.
 - **Neutral, published, non-purchasable result ordering** (AC5).
 - **Empty / zero-result states** (AC7).
