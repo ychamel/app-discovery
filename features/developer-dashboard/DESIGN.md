@@ -1,7 +1,7 @@
 # DESIGN — developer-dashboard
 
-*Stage 2 artifact (Software Architect). Status: **DRAFT — awaiting approval** (DN-DD-DESIGN,
-raised in CONTROL.md). Reads the **APPROVED** [FEATURE_BRIEF.md](FEATURE_BRIEF.md) + the
+*Stage 2 artifact (Software Architect). Status: **APPROVED** (DN-DD-DESIGN answered 2026-06-24;
+DD-DESIGN-1…5 ratified). Reads the **APPROVED** [FEATURE_BRIEF.md](FEATURE_BRIEF.md) + the
 codebase; produces the architecture, data design, contracts, UX, failure modes, and rollout.
 Resolves **OQ-DD-4**. Reuses **D-3/D-5/D-6/D-7/D-8 as-is — no new global ADR.*
 

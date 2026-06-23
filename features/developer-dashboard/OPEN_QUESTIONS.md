@@ -21,10 +21,10 @@ dashboard can honestly report. Add ambiguities here as the feature enters the pi
 - **OQ-DD-3 — Per-review weight-eligibility shown to the owner?** **RESOLVED — DN-19.c.**
   Hidden at MVP (D-8 §AC7 keeps the flag internal; gaming-manual line, vision Open Q5).
 
-## Stage 2 (Architect) — OQ-DD-4 RESOLVED-in-design (2026-06-24, DESIGN.md §5.1 / DD-DESIGN-2)
+## Stage 2 (Architect) — OQ-DD-4 RESOLVED (2026-06-24, DN-DD-DESIGN; DESIGN.md §5.1 / DD-DESIGN-2)
 
 - **OQ-DD-4 (from brief C7/R4; widened by DN-19.a) — where does the surface-aware, time-bucketed
-  reach read live?** **RESOLVED-in-design** (pending DESIGN approval). Two **additive, neutral**
+  reach read live?** **RESOLVED** (DESIGN approved, DN-DD-DESIGN 2026-06-24). Two **additive, neutral**
   reads are added to `apps/signals/selectors.py` (the only D-7-permitted reader of `signals_*`):
   `impression_breakdown[_for_apps]` (per-`Surface` counts, **every** `Surface` zero-filled —
   AC3/AC4) and `impression_trend(…, granularity)` (per-`Surface` per-time-bucket — AC10), plus a
