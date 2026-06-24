@@ -39,7 +39,64 @@ will trust. The rate limit caps follower-spam and trivial-bump abuse (vision §5
 **Rejected:** Emitting a "notice published" engagement event (would let posting move the
 corpus — gameable); unlimited posting (spam + signal-manufacture vector).
 
+## Stage 2 — Software Architect (PROPOSED, DN-DU-DESIGN pending 2026-06-24)
+
+Logged with the [DESIGN.md](DESIGN.md) draft. **PROPOSED** until the user approves
+DN-DU-DESIGN; on approval these become **RATIFIED** and bind Stage 3. Full rationale +
+rejected alternatives live in DESIGN.md §10/§14.
+
+### DU-DESIGN-1 — Pull delivery; notices keyed by `app_id` (resolves OQ-DU-1 delivery half; AC5/M5)
+**Choice:** The followed-apps feed *pulls* notices for the apps it already resolved
+(`notices_for_apps(followed_ids)`); the producer never enumerates followers. A notice is keyed
+by `app_id`, so a non-follower is **structurally** unreachable (M5 = 0) and there is no post-time
+fan-out (R3 dissolved).
+**Rejected:** push/fan-out (a feed-item row per follower) — O(followers) per post + a new
+per-user table + a scoping risk of over-reach.
+
+### DU-DESIGN-2 — The AS-3 repoint is the single adapter (keeps the dependency graph a DAG)
+**Choice:** `subscriptions.notices.notices_for_apps` delegates to
+`updates.selectors.published_notices_for_apps` and maps `PublishedNotice → Notice`. `updates`
+returns its own read DTO and imports nothing from `subscriptions` on the notice path; the render
+`Notice` stays owned by `subscriptions`. Dependency points consumer → producer only.
+**Rejected:** `updates` importing `subscriptions.notices.Notice` directly (forms a module cycle);
+a pluggable provider registry (AS-3 explicitly rejected speculative registry machinery).
+
+### DU-DESIGN-3 — `apps/updates/` owns the `updates_notice` table (resolves C6)
+**Choice:** A new feature-owned app owning one mutable table `updates_notice` (soft D-6 `app_id`
+ref, `author` FK CASCADE, `kind`/`title`/`summary`/`published_at`). **No** score/`updated_at`/
+`withdrawn_at` column; **withdraw = hard delete** (the store is exactly the currently-published
+set — one source of truth, mirrors unfollow). Not model-less (notices are durable authored
+content with no existing home).
+**Rejected:** a model-less consumer (mirrors `apps/pages`/`dashboard` — but there is nothing to
+read); soft-delete withdraw (no retention requirement).
+
+### DU-DESIGN-4 — Durable, table-derived rate limit (AC8)
+**Choice:** `post_notice` counts the author's own recent notices for the app
+(`published_at >= now − updates_post_window_hours()`) against `updates_max_posts_per_window()`;
+over the limit ⇒ `RateLimitedError`, nothing created. Exact and multi-worker-correct without
+cache infra. The count→create TOCTOU is an accepted bounded trade-off (a spam guardrail, not a
+correctness invariant — no locking).
+**Rejected:** the cache-window approach (`core.ratelimit`) — that suits the auth path which leaves
+no durable row; here durable rows exist, so counting them is strictly more correct.
+
+### DU-DESIGN-5 — Transparency line verified (resolves OQ-DU-2 / R1, vision Open Q #5)
+**Choice:** The post → feed → return path writes no developer-triggerable score-bearing signal.
+`apps/updates` imports **no `signals.capture`** (enforced by an AST import-absence test, the
+`apps/discovery`/`apps/dashboard` precedent); posting writes only content; the only corpus entries
+are followers' **own** returns via the existing `apps/pages` `APP_PAGE`/`page_reengagement` kinds.
+The developer controls content (to opt-in followers only), never signal.
+**Rejected:** emitting any "notice published" event (would let posting move the corpus — gameable).
+
+### DU-DESIGN-6 — Additive reverse-audience read + backing index (resolves OQ-DU-1 reporting half)
+**Choice:** Add `subscriptions.selectors.subscriber_count(app_id) -> int` (one indexed COUNT) +
+the additive `subscriptions_app_idx` index on `subscriptions_subscription(app_id)`. Backs the
+post-form audience hint and the M2 reach metric; bounded and follower-count-independent in query
+terms. Additive, reversible, contract-preserving (the open-search-browse precedent of additively
+extending a closed app's read surface).
+**Rejected:** computing reach by materializing the follower set (unbounded); leaving the count
+unindexed (an `app_id`-only filter is unindexed today — L5).
+
 > **Global ADRs:** none proposed. This feature **reuses D-3** (role gate), **D-6** (owner
 > scoping / accepted catalogue), **D-7** (the signal corpus — consumed, not extended), and
-> the **AS-3** producer contract from `app-subscriptions`. Whether developer-updates owns a
-> table is a **Stage-2** decision, not recorded here.
+> the **AS-3** producer contract from `app-subscriptions`. The Stage-2 model-vs-model-less call
+> (C6) is resolved by **DU-DESIGN-3** (owns a table). Stack unchanged (D-4: Django + PostgreSQL).
