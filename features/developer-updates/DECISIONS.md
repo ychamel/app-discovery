@@ -110,3 +110,31 @@ unindexed (an `app_id`-only filter is unindexed today — L5).
 > scoping / accepted catalogue), **D-7** (the signal corpus — consumed, not extended), and
 > the **AS-3** producer contract from `app-subscriptions`. The Stage-2 model-vs-model-less call
 > (C6) is resolved by **DU-DESIGN-3** (owns a table). Stack unchanged (D-4: Django + PostgreSQL).
+
+## Stage 5 — Release Engineer (RELEASED local/dev 2026-06-24)
+
+### DU-REL-1 — The honest rollback is broader than DESIGN §12's "three parts" → `git revert` of the build commit
+**Context:** `developer-updates` is the first feature to repoint a **closed** app's seam
+(`subscriptions.notices`). DESIGN §12 framed rollback as a three-part revert (seam → `return []`
+\+ remove the `updates/` include + the `INSTALLED_APPS` line). The Stage-5 up→down→up rehearsal
+found that framing captures the *activation surface* but not the full revert, on two counts:
+1. **Seam imports (finding #1):** reverting only the `notices_for_apps` *body* to `return []`
+   leaves the module-level `from apps.updates import selectors` / `from apps.core import config`
+   imports and the `_to_notice` helper in place. Once `"apps.updates"` leaves `INSTALLED_APPS`,
+   importing `subscriptions.notices` then raises `RuntimeError: model … isn't in INSTALLED_APPS`.
+   The seam revert must also drop those imports + the helper.
+2. **Closed-app tests (finding #2):** the build **rewrote** three `apps/subscriptions/tests/`
+   files (`test_notices.py`, `test_views.py`, `test_selectors.py`) from asserting the
+   empty-until-producer seam to asserting producer-coupled behaviour. Left as-is against the
+   reverted seam, the `subscriptions` suite goes red; they must be restored to their pre-feature
+   versions.
+**Choice:** The clean, atomic operational rollback is **`git revert` of the build commit
+`eb5b05d`**, which performs both findings + all three activation parts in one reversible step;
+the optional DB down-migration (`migrate updates zero`, `migrate subscriptions 0001`) is
+independent and coordination-free (the table holds only notice content). [RELEASE_NOTES.md §5]
+documents the manual five-part equivalent for completeness.
+**Why recorded:** this is the first closed-seam repoint; the same broader-than-it-looks rollback
+shape will recur for any future feature that becomes the producer for an already-shipped seam.
+**Verified (rehearsal up→down→up):** up = 828 green, routes resolve, both migrations' backward
+SQL clean; down = five-part revert, `check` clean, `subscriptions`+`catalog`+`signals` **306
+green**, seam returns `[]`; up = restored from HEAD, `git status` clean, **828 green**.
