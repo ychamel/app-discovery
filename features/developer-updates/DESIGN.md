@@ -1,8 +1,8 @@
 # DESIGN — developer-updates
 
-*Stage 2 artifact (Software Architect). Status: **PENDING APPROVAL** (DN-DU-DESIGN — see
-CONTROL.md). Reads the **APPROVED** [FEATURE_BRIEF.md](FEATURE_BRIEF.md) + the codebase
-contracts it composes. No Stage advance until the user approves.*
+*Stage 2 artifact (Software Architect). Status: **APPROVED** (DN-DU-DESIGN, 2026-06-24 —
+see CONTROL.md). Reads the **APPROVED** [FEATURE_BRIEF.md](FEATURE_BRIEF.md) + the codebase
+contracts it composes. Binding for Stage 3 (Planner / Tech Lead).*
 
 This design was produced via the 14-step protocol in
 [phase-2-architect.md](../../process/personas/phase-2-architect.md). It resolves the two

@@ -39,11 +39,11 @@ will trust. The rate limit caps follower-spam and trivial-bump abuse (vision §5
 **Rejected:** Emitting a "notice published" engagement event (would let posting move the
 corpus — gameable); unlimited posting (spam + signal-manufacture vector).
 
-## Stage 2 — Software Architect (PROPOSED, DN-DU-DESIGN pending 2026-06-24)
+## Stage 2 — Software Architect (RATIFIED, DN-DU-DESIGN approved 2026-06-24)
 
-Logged with the [DESIGN.md](DESIGN.md) draft. **PROPOSED** until the user approves
-DN-DU-DESIGN; on approval these become **RATIFIED** and bind Stage 3. Full rationale +
-rejected alternatives live in DESIGN.md §10/§14.
+Logged with the [DESIGN.md](DESIGN.md) draft, **RATIFIED** when the user approved
+DN-DU-DESIGN (2026-06-24) — these now **bind Stage 3**. Full rationale + rejected
+alternatives live in DESIGN.md §10/§14.
 
 ### DU-DESIGN-1 — Pull delivery; notices keyed by `app_id` (resolves OQ-DU-1 delivery half; AC5/M5)
 **Choice:** The followed-apps feed *pulls* notices for the apps it already resolved

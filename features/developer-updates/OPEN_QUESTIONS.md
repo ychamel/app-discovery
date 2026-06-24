@@ -18,7 +18,7 @@
 
 ## Stage 1 — Product Analyst (2026-06-24)
 
-- **OQ-DU-1 (for Stage 2) — reverse-audience read. → RESOLVED-in-design (DESIGN §13/§14, DN-DU-DESIGN pending).**
+- **OQ-DU-1 (for Stage 2) — reverse-audience read. → RESOLVED (DESIGN §13/§14, DN-DU-DESIGN approved 2026-06-24).**
   developer-updates needs "who currently follows app X" (to scope reach and feed delivery), but
   `apps/subscriptions/selectors.py` only exposes user-scoped reads (`is_following`,
   `followed_apps`). **Resolution:** the AS-3 seam is **pull** — the feed already passes the
@@ -26,7 +26,7 @@
   all (this makes M5=0 structural and kills the R3 fan-out). The reverse read is needed only for
   the **audience hint + M2 reach**, met by an additive bounded `subscriptions.selectors.subscriber_count(app_id)`
   (one indexed COUNT) + the additive `subscriptions_app_idx` index (**DU-DESIGN-1/DU-DESIGN-6**).
-- **OQ-DU-2 (for Stage 2) — the transparency line (vision Open Q #5). → RESOLVED-in-design (DESIGN §8/§14, DN-DU-DESIGN pending).**
+- **OQ-DU-2 (for Stage 2) — the transparency line (vision Open Q #5). → RESOLVED (DESIGN §8/§14, DN-DU-DESIGN approved 2026-06-24).**
   DU-3 fixes the principle (no score-bearing emit on post; rate-limited). **Resolution
   (verified end-to-end):** posting writes only an `updates_notice` row; `apps/updates` imports
   **no `signals.capture`** (AST-enforced, the discovery/dashboard precedent); the only corpus
