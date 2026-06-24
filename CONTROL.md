@@ -16,11 +16,11 @@ Rules:
 
 | Field              | Value                                                            |
 |--------------------|------------------------------------------------------------------|
-| **Active feature** | _none_ — `developer-updates` **released local/dev + closed out** (2026-06-24, 828 tests). The agent is the **Coordinator** (CLAUDE.md §4): help the user pick + scope the next feature. |
-| **Stage**          | `0-coordinator` — no feature in flight. Pick the next from the vision doc's open questions (§7), seed `features/<slug>/`, set `Stage: 1-define`. |
-| **Persona**        | **Coordinator** — no active persona until the next feature is chosen. |
-| **Folder**         | _n/a_ (last: [features/developer-updates/](features/developer-updates/))   |
-| **Last updated**   | 2026-06-24 (Release Engineer close-out: wrote [RELEASE_NOTES.md](features/developer-updates/RELEASE_NOTES.md), rehearsed the rollback **up→down→up** [828 → 306 critical-suites → 828], logged **DU-REL-1** [the honest revert is broader than DESIGN §12's "3 parts" — also the seam imports + the rewritten `subscriptions` tests; clean rollback = `git revert` of the build commit], marked [INDEX.md](features/INDEX.md) closed-out. Stage 6 retrospective skipped per the standing pattern — outcome review deferred/reopenable until a prod target/traffic exists. See latest session status below) |
+| **Active feature** | **`editorial-curation-tools`** — D2 pick 2026-06-24 (user chose it over `weekly-digest`; the co-dependent pair is broken **producer-first**). The human stand-in for the matching engine: assign which apps go to which users this week; `weekly-digest` will be its delivery consumer. |
+| **Stage**          | `1-define` — **Product Analyst** owns it. Reads the request + vision doc, produces [FEATURE_BRIEF.md](features/editorial-curation-tools/FEATURE_BRIEF.md). |
+| **Persona**        | **Product Analyst** — [process/personas/phase-1-product-analyst.md](process/personas/phase-1-product-analyst.md). |
+| **Folder**         | [features/editorial-curation-tools/](features/editorial-curation-tools/) (scaffolded; stubs awaiting Stage 1) |
+| **Last updated**   | 2026-06-24 (Coordinator: activated `editorial-curation-tools` per user's D2 pick. Earlier same day — Release Engineer close-out of `developer-updates`: wrote [RELEASE_NOTES.md](features/developer-updates/RELEASE_NOTES.md), rehearsed the rollback **up→down→up** [828 → 306 critical-suites → 828], logged **DU-REL-1** [the honest revert is broader than DESIGN §12's "3 parts" — also the seam imports + the rewritten `subscriptions` tests; clean rollback = `git revert` of the build commit], marked [INDEX.md](features/INDEX.md) closed-out. Stage 6 retrospective skipped per the standing pattern — outcome review deferred/reopenable until a prod target/traffic exists. See latest session status below) |
 
 > **Closed out (Stage 6 skipped, reopenable):** `identity-accounts` (2026-06-17, 108
 > tests), `interest-taxonomy` (2026-06-17, 184 tests), `submission-intake`
@@ -51,6 +51,22 @@ Rules:
 ### Latest session status (CLAUDE.md §6.7 — overwritten each session)
 
 ```
+Stage: 0-coordinator -> 1-define | Feature: editorial-curation-tools | Persona: Coordinator -> Product Analyst
+Done: Closed out developer-updates last session (Stage 6 skipped per user). This session as Coordinator: surfaced that the backlog has exactly TWO features left
+      (weekly-digest + editorial-curation-tools), both H1, mutually dependent. Asked the user the D2 pick; user chose editorial-curation-tools FIRST (break the
+      cycle producer-first: editorial produces the curation/assignment decisions, weekly-digest will be the delivery consumer that reads an established contract).
+      Activated it: INDEX.md row flipped backlog -> 1-define (depends-on trimmed to interest-taxonomy + submission-intake; weekly-digest is downstream consumer,
+      not a prereq); CONTROL Current State now Active=editorial-curation-tools, Stage 1-define, Persona Product Analyst. Folder already scaffolded (7 stubs).
+Verified by: n/a (Coordinator setup only; no code). Stub artifacts confirmed present in features/editorial-curation-tools/.
+Blocked/Deferred: none. Stage 6 retrospectives for all closed features remain deferred/reopenable until a prod target/traffic exists.
+Decisions needed: none (D2 answered).
+Next: Product Analyst (Stage 1) -- read the request + vision doc (esp. §5.4 steps 2-3, §6 Internal) + the breakdown §4.4, resolve scope/open questions, produce
+      features/editorial-curation-tools/FEATURE_BRIEF.md. Note the co-dependency with weekly-digest: define the curation->delivery contract boundary explicitly.
+```
+
+<details><summary>Prior session (developer-updates close-out, 2026-06-24)</summary>
+
+```
 Stage: 5-release -> closed-out (Stage 6 skipped) | Feature: developer-updates | Persona: Release Engineer
 Done: Wrote features/developer-updates/RELEASE_NOTES.md (what changed / who is affected / how to use / operator rollout + promotion table / rehearsed rollback / metrics->signals->alert /
       known limitations). REHEARSED the rollback up->down->up and recorded two honest findings that DESIGN §12's "3-part" framing understated -- logged as DU-REL-1 in the feature
@@ -69,6 +85,8 @@ Blocked/Deferred: Stage 6 retrospective skipped per the standing pattern -- live
 Decisions needed: none.
 Next: Coordinator -- with the user, pick + scope the next feature from the vision doc's open questions (§7), seed features/<slug>/, add its INDEX.md row, set Stage: 1-define.
 ```
+
+</details>
 
 ---
 
