@@ -1,6 +1,6 @@
 # FEATURE_BRIEF — developer-updates
 
-*Stage 1 artifact (Product Analyst). Status: **DRAFT — awaiting approval (DN-20)**.*
+*Stage 1 artifact (Product Analyst). Status: **APPROVED (DN-20, 2026-06-24 — brief + DN-20.a/b/c all approved as recommended)**.*
 
 ## Coordinator scope seed (source: signal-capture SC-7/SC-8, OQ-4 — net-new, not in the breakdown)
 

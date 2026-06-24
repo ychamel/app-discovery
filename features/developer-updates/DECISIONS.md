@@ -3,10 +3,10 @@
 *Feature-local decisions (choice + rationale + rejected alternatives). Repo-wide
 decisions go in [/DECISIONS.md](../../DECISIONS.md).*
 
-## Stage 1 — Product Analyst (PROPOSED, pending DN-20)
+## Stage 1 — Product Analyst (RESOLVED, DN-20 approved 2026-06-24)
 
-These are the scoping calls bundled into the brief-approval decision **DN-20** (CONTROL.md).
-Each becomes **RESOLVED** when the user approves; until then the brief is `DRAFT`.
+These were the scoping calls bundled into the brief-approval decision **DN-20** (CONTROL.md).
+The user approved the brief + all three as recommended (2026-06-24) — **DU-1/DU-2/DU-3 → RESOLVED**.
 
 ### DU-1 (DN-20.a) — Early-access is a notice *kind*, not an entitlement mechanism
 **Choice:** At MVP, "early-access" is one **kind** of notice (an announcement), matching the
