@@ -27,6 +27,18 @@ def is_following(user, app_id: UUID) -> bool:
     return Subscription.objects.filter(user=user, app_id=app_id).exists()
 
 
+def subscriber_count(app_id: UUID) -> int:
+    """How many users currently follow ``app_id`` — one indexed COUNT (developer-updates §6.3).
+
+    The reverse of the user-scoped ``is_following``/``followed_apps``: instead of "what does
+    this user follow", "how many follow this app". Backed by ``subscriptions_app_idx`` so it is
+    one query, bounded and follower-count-independent in query terms. Backs the developer's
+    post-form audience hint and the M2 reach metric (developer-updates DESIGN §5.2/§6.3,
+    DU-DESIGN-6). Not used for delivery — the AS-3 feed seam is pull (DESIGN §13).
+    """
+    return Subscription.objects.filter(app_id=app_id).count()
+
+
 def followed_apps(user, *, limit: int) -> list[CatalogApp]:
     """``user``'s current follows, most-recent first, as their D-6 shape (AC4).
 

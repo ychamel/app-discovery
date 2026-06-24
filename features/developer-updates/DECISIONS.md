@@ -42,8 +42,18 @@ corpus — gameable); unlimited posting (spam + signal-manufacture vector).
 ## Stage 2 — Software Architect (RATIFIED, DN-DU-DESIGN approved 2026-06-24)
 
 Logged with the [DESIGN.md](DESIGN.md) draft, **RATIFIED** when the user approved
-DN-DU-DESIGN (2026-06-24) — these now **bind Stage 3**. Full rationale + rejected
-alternatives live in DESIGN.md §10/§14.
+DN-DU-DESIGN (2026-06-24) — these bound Stage 3 and are now all **BUILT** at Stage 4 (Senior
+Engineer, 2026-06-24) across tasks T-01…T-06, full suite green (828 tests). Full rationale +
+rejected alternatives live in DESIGN.md §10/§14; the per-AC verification is in
+[TEST_PLAN.md](TEST_PLAN.md).
+
+**Built status:** DU-DESIGN-1 **BUILT** (pull delivery, `app_id`-keyed — T-02/T-05, M5=0
+asserted) · DU-DESIGN-2 **BUILT** (the single `PublishedNotice → Notice` adapter, DAG proven —
+T-02 `test_seam.py`) · DU-DESIGN-3 **BUILT** (`updates_notice` table, hard-delete withdraw, no
+score/`updated_at`/`withdrawn_at` — T-01) · DU-DESIGN-4 **BUILT** (durable table-derived rate
+limit — T-03) · DU-DESIGN-5 **BUILT** (no-`signals` import, AST-enforced — T-05
+`test_imports.py`) · DU-DESIGN-6 **BUILT** (additive `subscriber_count` + `subscriptions_app_idx`
+— T-04).
 
 ### DU-DESIGN-1 — Pull delivery; notices keyed by `app_id` (resolves OQ-DU-1 delivery half; AC5/M5)
 **Choice:** The followed-apps feed *pulls* notices for the apps it already resolved

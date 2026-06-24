@@ -37,6 +37,11 @@ urlpatterns = [
     # "apps.dashboard" INSTALLED_APPS line) is the entire activation — and removing them is the
     # entire rollback, zero data migration (the app owns no schema). Own prefix; no collision.
     path("dashboard/", include("apps.dashboard.urls")),
+    # The developer-updates activation switch (DESIGN.md §12) — the FINAL of the three
+    # activation parts (the "apps.updates" INSTALLED_APPS line + the subscriptions.notices seam
+    # repoint are the other two). Rollback is the honest three-part revert: this include +
+    # the seam revert to `return []` + the INSTALLED_APPS line. Own prefix; no collision.
+    path("updates/", include("apps.updates.urls")),
     path("", include("apps.accounts.urls")),
 ]
 

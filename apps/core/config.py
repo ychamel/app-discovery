@@ -62,6 +62,16 @@ DEFAULT_INTEREST_DECLARATION_MAX = 500
 DEFAULT_DISCOVERY_PAGE_SIZE = 24
 DEFAULT_DISCOVERY_PAGE_SIZE_MAX = 100
 DEFAULT_DISCOVERY_QUERY_MAX_LENGTH = 200
+# developer-updates tunables (developer-updates DESIGN.md §11). The feed notice limit caps the
+# AS-3 producer read so the followed-apps feed stays O(limit) at 100× notices (R3). The four
+# write-boundary tunables cap posting: how many notices an author may post per app within a
+# rolling window (the durable rate limit, AC8) and the product-level title/summary length caps
+# validated at the write boundary. No magic numbers in the selector/service.
+DEFAULT_UPDATES_FEED_NOTICE_LIMIT = 50
+DEFAULT_UPDATES_MAX_POSTS_PER_WINDOW = 5
+DEFAULT_UPDATES_POST_WINDOW_HOURS = 24
+DEFAULT_UPDATES_TITLE_MAX_LENGTH = 120
+DEFAULT_UPDATES_SUMMARY_MAX_LENGTH = 4000
 
 
 def _resolve_raw(setting_name: str, env_name: str, default: int) -> object:
@@ -241,6 +251,51 @@ def discovery_query_max_length() -> int:
     )
 
 
+def updates_feed_notice_limit() -> int:
+    """Max notices the AS-3 producer read returns to the feed (developer-updates DESIGN.md §11)."""
+    return _positive_int(
+        "UPDATES_FEED_NOTICE_LIMIT",
+        "UPDATES_FEED_NOTICE_LIMIT",
+        DEFAULT_UPDATES_FEED_NOTICE_LIMIT,
+    )
+
+
+def updates_max_posts_per_window() -> int:
+    """Max notices one author may post for one app within the window (DESIGN.md §11, AC8)."""
+    return _positive_int(
+        "UPDATES_MAX_POSTS_PER_WINDOW",
+        "UPDATES_MAX_POSTS_PER_WINDOW",
+        DEFAULT_UPDATES_MAX_POSTS_PER_WINDOW,
+    )
+
+
+def updates_post_window_hours() -> int:
+    """The rolling rate-limit window, in hours (developer-updates DESIGN.md §11, AC8)."""
+    return _positive_int(
+        "UPDATES_POST_WINDOW_HOURS",
+        "UPDATES_POST_WINDOW_HOURS",
+        DEFAULT_UPDATES_POST_WINDOW_HOURS,
+    )
+
+
+def updates_title_max_length() -> int:
+    """Max characters accepted in a notice title (developer-updates DESIGN.md §11)."""
+    return _positive_int(
+        "UPDATES_TITLE_MAX_LENGTH",
+        "UPDATES_TITLE_MAX_LENGTH",
+        DEFAULT_UPDATES_TITLE_MAX_LENGTH,
+    )
+
+
+def updates_summary_max_length() -> int:
+    """Max characters accepted in a notice summary (developer-updates DESIGN.md §11)."""
+    return _positive_int(
+        "UPDATES_SUMMARY_MAX_LENGTH",
+        "UPDATES_SUMMARY_MAX_LENGTH",
+        DEFAULT_UPDATES_SUMMARY_MAX_LENGTH,
+    )
+
+
 def validate_all() -> None:
     """Evaluate every tunable so misconfiguration surfaces at startup, not at use."""
     login_token_ttl()
@@ -260,3 +315,8 @@ def validate_all() -> None:
     discovery_page_size()
     discovery_page_size_max()
     discovery_query_max_length()
+    updates_feed_notice_limit()
+    updates_max_posts_per_window()
+    updates_post_window_hours()
+    updates_title_max_length()
+    updates_summary_max_length()

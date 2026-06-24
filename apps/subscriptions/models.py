@@ -60,6 +60,11 @@ class Subscription(models.Model):
             models.Index(
                 fields=["user", "created_at"], name="subscriptions_user_created_idx"
             ),
+            # Backs the reverse-audience read (selectors.subscriber_count) added by
+            # developer-updates (DESIGN §5.2/§6.3, DU-DESIGN-6). The unique (user, app_id)
+            # index leads with `user`, so an app_id-only COUNT was unindexed — this additive,
+            # app_id-only index covers it. No new column, no behaviour change to existing reads.
+            models.Index(fields=["app_id"], name="subscriptions_app_idx"),
         ]
 
     def __str__(self) -> str:

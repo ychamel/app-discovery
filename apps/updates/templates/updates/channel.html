@@ -1,0 +1,68 @@
+{% extends "updates/base.html" %}
+{% comment %}
+One channel (developer-updates DESIGN §6.5/§7/§8). Three parts, each fail-soft independently:
+  * Audience hint — "Reaches N current followers" (hidden if the read degraded; subscriber_count
+    is None when degraded, 0 is a real "no followers yet").
+  * Post form — kind / title / summary, POST + CSRF. Always shown so a degraded read never
+    blocks posting.
+  * Notices list — the owner's notices, newest-first, each with a Withdraw POST. None signals a
+    degraded read ("couldn't load your notices"); an empty list is the first-post state.
+
+title/summary are untrusted developer input shown to followers → rendered through Django
+auto-escaping (no |safe), bounded by the config length caps at the write boundary (§8).
+{% endcomment %}
+{% block title %}{{ app.name }} · Developer updates{% endblock %}
+{% block content %}
+<h1>{{ app.name }}</h1>
+<p><a href="{% url 'updates:my-channels' %}">← All channels</a></p>
+
+{% if subscriber_count is not None %}
+  <p>Reaches {{ subscriber_count }} current follower{{ subscriber_count|pluralize }}.</p>
+{% endif %}
+
+<section aria-label="Post an update">
+  <h2>Post an update</h2>
+  <form method="post" action="{% url 'updates:post' app_id=app.id %}">
+    {% csrf_token %}
+    <p>
+      <label for="kind">Kind</label>
+      <select name="kind" id="kind">
+        <option value="update">Update</option>
+        <option value="early_access">Early access</option>
+      </select>
+    </p>
+    <p>
+      <label for="title">Title</label>
+      <input type="text" name="title" id="title" required>
+    </p>
+    <p>
+      <label for="summary">Summary</label>
+      <textarea name="summary" id="summary" required></textarea>
+    </p>
+    <button type="submit">Post</button>
+  </form>
+</section>
+
+<section aria-label="Your notices">
+  <h2>Your notices</h2>
+  {% if notices is None %}
+    <p role="alert">Couldn't load your notices right now — please try again. You can still post above.</p>
+  {% elif notices %}
+    <ul aria-label="Notice list">
+      {% for notice in notices %}
+        <li>
+          <p>{{ notice.title }}</p>
+          <p>{{ notice.summary }}</p>
+          <form method="post"
+                action="{% url 'updates:withdraw' app_id=app.id notice_id=notice.id %}">
+            {% csrf_token %}
+            <button type="submit">Withdraw</button>
+          </form>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No notices yet — post your first update.</p>
+  {% endif %}
+</section>
+{% endblock %}

@@ -101,6 +101,10 @@ INSTALLED_APPS = [
     # the config/urls dashboard/ include. The app owns no model — removing both is the
     # entire rollback, zero data migration.
     "apps.dashboard",
+    # The developer-updates app owns one table (updates_notice); this line is needed for its
+    # migration (developer-updates DESIGN §12). The table is unrouted/inert until the
+    # config/urls updates/ include ships (T-05) — registration alone activates nothing.
+    "apps.updates",
 ]
 
 MIDDLEWARE = [

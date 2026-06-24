@@ -116,6 +116,42 @@ class InterestTunableTests(SimpleTestCase):
             config.interest_declaration_max()
 
 
+class UpdatesTunableTests(SimpleTestCase):
+    def test_defaults(self):
+        for name in (
+            "UPDATES_FEED_NOTICE_LIMIT",
+            "UPDATES_MAX_POSTS_PER_WINDOW",
+            "UPDATES_POST_WINDOW_HOURS",
+            "UPDATES_TITLE_MAX_LENGTH",
+            "UPDATES_SUMMARY_MAX_LENGTH",
+        ):
+            os.environ.pop(name, None)
+        self.assertEqual(config.updates_feed_notice_limit(), 50)
+        self.assertEqual(config.updates_max_posts_per_window(), 5)
+        self.assertEqual(config.updates_post_window_hours(), 24)
+        self.assertEqual(config.updates_title_max_length(), 120)
+        self.assertEqual(config.updates_summary_max_length(), 4000)
+
+    @override_settings(
+        UPDATES_FEED_NOTICE_LIMIT=10,
+        UPDATES_MAX_POSTS_PER_WINDOW=3,
+        UPDATES_POST_WINDOW_HOURS=6,
+        UPDATES_TITLE_MAX_LENGTH=80,
+        UPDATES_SUMMARY_MAX_LENGTH=500,
+    )
+    def test_overrides(self):
+        self.assertEqual(config.updates_feed_notice_limit(), 10)
+        self.assertEqual(config.updates_max_posts_per_window(), 3)
+        self.assertEqual(config.updates_post_window_hours(), 6)
+        self.assertEqual(config.updates_title_max_length(), 80)
+        self.assertEqual(config.updates_summary_max_length(), 500)
+
+    @override_settings(UPDATES_MAX_POSTS_PER_WINDOW=0)
+    def test_non_positive_fails_loudly(self):
+        with self.assertRaises(ImproperlyConfigured):
+            config.updates_max_posts_per_window()
+
+
 class ValidateAllTests(SimpleTestCase):
     def test_passes_with_defaults(self):
         config.validate_all()  # should not raise

@@ -202,6 +202,46 @@ class FeedViewTests(TestCase):
         self.assertIn("No news yet", response.content.decode())
         increment.assert_any_call(observability.SUBSCRIPTION_NOTICE_DEGRADED)
 
+    # --- AS-3 producer repoint (developer-updates T-02) -------------------
+    def test_feed_renders_notices_posted_by_the_producer(self):
+        from apps.updates.models import Notice, NoticeKind
+
+        app = self._app("Newsworthy App")
+        self.client.force_login(self.user)
+        self.client.post(reverse("subscriptions:follow", args=[app.id]))
+        Notice.objects.create(
+            author=self.owner,
+            app_id=app.id,
+            kind=NoticeKind.UPDATE,
+            title="We shipped dark mode",
+            summary="Toggle it in settings.",
+        )
+
+        html = self.client.get(self.feed_url).content.decode()
+
+        self.assertIn("We shipped dark mode", html)
+        self.assertIn("Toggle it in settings.", html)
+
+    def test_feed_fail_soft_preserved_when_producer_read_raises(self):
+        # The seam body now delegates to the producer; the *existing* wrapper must still catch a
+        # producer raise (the wrapper is unchanged — only the body changed). DESIGN §7/AC4.
+        from apps.core import observability
+
+        self.client.force_login(self.user)
+        with (
+            mock.patch(
+                "apps.subscriptions.notices.updates.published_notices_for_apps",
+                side_effect=RuntimeError("producer down"),
+            ),
+            mock.patch(
+                "apps.subscriptions.views.observability.increment"
+            ) as increment,
+        ):
+            response = self.client.get(self.feed_url)
+        self.assertEqual(response.status_code, 200)  # the feed never errors
+        self.assertIn("No news yet", response.content.decode())
+        increment.assert_any_call(observability.SUBSCRIPTION_NOTICE_DEGRADED)
+
 
 def _png():
     import io

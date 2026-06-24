@@ -122,6 +122,20 @@ DASHBOARD_RECEPTION_DEGRADED = "dashboard_reception_degraded"  # alert: the core
 DASHBOARD_REVIEWS_DEGRADED = "dashboard_reviews_degraded"  # the reviews slot fell back (fail-soft)
 DASHBOARD_NONEMPTY_RECEPTION = "dashboard_nonempty_reception"  # M3 — a viewed app, non-zero funnel
 
+# developer-updates metrics (DESIGN.md §11). POSTED{kind} is M1 adoption; WITHDRAWN and
+# POST_REJECTED{reason} are posting trends (REJECTED{reason=rate_limited} is M6, expected — not
+# an alert). The one actionable alert is POST_FAILED — an unexpected post write error the user
+# saw as fail-soft. CHANNEL/AUDIENCE_DEGRADED are the channel-view fail-soft health
+# (informational). The feed-producer health signal is the existing SUBSCRIPTION_NOTICE_DEGRADED
+# (reused, not re-added). M5 (reach beyond followers = 0) is structural — asserted in tests, no
+# counter.
+UPDATES_NOTICE_POSTED = "updates_notice_posted"  # M1 — a notice created (tags: kind)
+UPDATES_NOTICE_WITHDRAWN = "updates_notice_withdrawn"  # a notice hard-deleted by its author
+UPDATES_POST_REJECTED = "updates_post_rejected"  # boundary/rate reject (tags: reason); M6 trend
+UPDATES_POST_FAILED = "updates_post_failed"  # alert: an unexpected post write error (fail-soft)
+UPDATES_CHANNEL_DEGRADED = "updates_channel_degraded"  # the channel notices slot fell back
+UPDATES_AUDIENCE_DEGRADED = "updates_audience_degraded"  # the audience hint read fell back
+
 metrics_logger = logging.getLogger("apps.metrics")
 
 

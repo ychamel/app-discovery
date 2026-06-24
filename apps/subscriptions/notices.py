@@ -1,29 +1,35 @@
-"""The empty-until-producer notice seam (DESIGN.md §5d/§6.3 — AS-3 = option A).
+"""The followed-apps notice seam (DESIGN.md §5d/§6.3 — AS-3 = option A).
 
 The followed-apps feed has a "reason to come back" region: update / early-access notices
-about the apps a user follows. Authoring those notices is a *future* feature
-(``developer-updates``, Phase 3), so today there is no producer — but the **shape** and the
-**single call site** ship now, so the feed renders the region (with its empty state) and
-``developer-updates`` has a pinned contract to build against (AC8).
+about the apps a user follows. As of ``developer-updates`` (Phase 3) the producer exists:
+``apps/updates`` owns the notices, and this seam is the **single adapter** that delegates to
+it and maps the producer's ``PublishedNotice`` → the ``subscriptions``-owned render ``Notice``
+(developer-updates DESIGN §6.4, DU-DESIGN-2).
 
-This is deliberately the minimum honest surface: a frozen DTO + one repointable function.
-No producer, registry, or pluggable-provider machinery is built — that would be speculative
-(CLAUDE.md §5.5); the producer is one named future feature, so a single function is the
-right seam. When it ships, ``notices_for_apps`` is **the one place** to repoint; the feed
-template renders ``Notice``s unchanged.
+The dependency stays one-directional — ``subscriptions.notices`` imports ``updates.selectors``,
+never the reverse — so the two packages form a DAG with no import cycle (developer-updates
+DESIGN §4/§13; ``apps/updates`` imports nothing from ``subscriptions``). Keeping the render
+``Notice`` owned here (rather than importing the producer's DTO) is what keeps that direction
+clean. ``notices_for_apps`` remains the one repoint point promised at AS-3, and its single call
+site (``subscriptions.views._notices_fail_soft``) and the ``Notice`` shape are unchanged — the
+feed template renders ``Notice``s exactly as before.
 """
 
 from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
 
+from apps.core import config
+from apps.updates import selectors as updates
+
 
 @dataclass(frozen=True)
 class Notice:
     """One update/early-access notice about a followed app — the render contract.
 
-    This is the shape ``developer-updates`` (Phase 3) must honor — pinned now, no "TBD",
-    so the producer and the feed never have to negotiate it later.
+    Owned by ``subscriptions`` (the feed's package): the producer returns its own
+    ``PublishedNotice`` and this seam maps to ``Notice``, so neither package imports the
+    other's DTO and the dependency graph stays a DAG (DU-DESIGN-2).
     """
 
     app_id: UUID  # which followed app the news is about
@@ -34,10 +40,25 @@ class Notice:
 
 
 def notices_for_apps(app_ids: list[UUID]) -> list[Notice]:
-    """Notices for the given followed apps, newest first — ``[]`` until a producer exists.
+    """Notices for the given followed apps, newest first — the AS-3 producer read.
 
-    No producer ships at MVP (``developer-updates``, Phase 3) → returns ``[]`` for any input.
-    This is the one place to repoint when that producer lands; the feed template renders
-    ``Notice``s unchanged.
+    Delegates to ``updates.selectors.published_notices_for_apps`` (bounded by
+    ``config.updates_feed_notice_limit()``) and maps each ``PublishedNotice`` → the render
+    ``Notice``, dropping the notice ``id`` the feed has no use for. ``[]`` when there are none;
+    the feed template renders ``Notice``s unchanged.
     """
-    return []
+    published = updates.published_notices_for_apps(
+        app_ids, limit=config.updates_feed_notice_limit()
+    )
+    return [_to_notice(notice) for notice in published]
+
+
+def _to_notice(published: updates.PublishedNotice) -> Notice:
+    """Map a producer ``PublishedNotice`` → the feed's render ``Notice`` (drops ``id``)."""
+    return Notice(
+        app_id=published.app_id,
+        kind=published.kind,
+        title=published.title,
+        summary=published.summary,
+        published_at=published.published_at,
+    )

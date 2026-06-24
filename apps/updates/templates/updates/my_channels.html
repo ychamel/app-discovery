@@ -1,0 +1,25 @@
+{% extends "updates/base.html" %}
+{% comment %}
+My channels (developer-updates DESIGN §6.5). The developer's *accepted* apps — the only apps
+that can have followers, and so the only postable channels. Each links to its channel. The
+own-nothing state is a 200 (AC1). Server-rendered, no JS; all values auto-escaped.
+{% endcomment %}
+{% block title %}My channels · Developer updates{% endblock %}
+{% block content %}
+<h1>My channels</h1>
+
+{% if apps %}
+  <ul aria-label="Channel list">
+    {% for app in apps %}
+      <li>
+        <a href="{% url 'updates:channel' app_id=app.id %}">{{ app.name }}</a>
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <section>
+    <p>You have no accepted apps yet.</p>
+    <p>Once an app you submit is accepted, you can post updates for its followers here.</p>
+  </section>
+{% endif %}
+{% endblock %}

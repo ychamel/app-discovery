@@ -42,6 +42,53 @@ class IsFollowingTests(TestCase):
         self.assertFalse(selectors.is_following(None, self.app.id))
 
 
+class SubscriberCountTests(TestCase):
+    """The additive reverse-audience read added by developer-updates (DESIGN §6.3, DU-DESIGN-6)."""
+
+    def setUp(self):
+        self.owner = make_user("owner@example.com")
+        self.tag = make_tag("notes")
+        self.app = make_accepted_app(self.owner, tag_ids=[self.tag.id], name="Counted App")
+
+    def test_zero_for_an_app_with_no_followers(self):
+        self.assertEqual(selectors.subscriber_count(self.app.id), 0)
+
+    def test_counts_current_followers(self):
+        _follow(make_user("a@example.com"), self.app)
+        _follow(make_user("b@example.com"), self.app)
+        self.assertEqual(selectors.subscriber_count(self.app.id), 2)
+
+    def test_counts_only_the_given_app(self):
+        other = make_accepted_app(self.owner, tag_ids=[self.tag.id], name="Other App")
+        _follow(make_user("a@example.com"), self.app)
+        _follow(make_user("b@example.com"), other)
+        self.assertEqual(selectors.subscriber_count(self.app.id), 1)
+
+    def test_reflects_unfollow(self):
+        user = make_user("a@example.com")
+        _follow(user, self.app)
+        self.assertEqual(selectors.subscriber_count(self.app.id), 1)
+        Subscription.objects.filter(user=user, app_id=self.app.id).delete()
+        self.assertEqual(selectors.subscriber_count(self.app.id), 0)
+
+    def test_one_query_independent_of_follower_count(self):
+        for i in range(50):
+            _follow(make_user(f"u{i}@example.com"), self.app)
+        with CaptureQueriesContext(connection) as ctx:
+            count = selectors.subscriber_count(self.app.id)
+        self.assertEqual(count, 50)
+        self.assertEqual(len(ctx), 1)
+
+    def test_app_idx_index_is_present(self):
+        index_names = {index.name for index in Subscription._meta.indexes}
+        self.assertIn("subscriptions_app_idx", index_names)
+        with connection.cursor() as cursor:
+            indexes = connection.introspection.get_constraints(
+                cursor, "subscriptions_subscription"
+            )
+        self.assertIn("subscriptions_app_idx", indexes)
+
+
 class FollowedAppsTests(TestCase):
     def setUp(self):
         self.user = make_user()
