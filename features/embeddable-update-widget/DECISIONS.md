@@ -114,3 +114,20 @@ pseudocode omitted. None changes a contract, schema, or decision above.
   rolls back only the savepoint and the outer transaction stays usable. Same algorithm, same
   atomic-`F()`-increment + unique-constraint-as-retry-hinge design (EUW-9); only the savepoint
   boundary is added. Proven by `test_create_race_falls_back_to_an_atomic_increment`.
+
+## Stage 5 — Release Engineer (2026-06-26) — RELEASED to local/dev
+
+- **EUW-7…11 + EUW-IMPL-1 → BUILT & RELEASED (local/dev).** The release checklist is worked and
+  [RELEASE_NOTES.md](RELEASE_NOTES.md) is written. Independently re-verified this session: **893
+  tests** green, `ruff` clean, `manage.py check` clean, `makemigrations --check` no drift.
+- **Rollback rehearsed (up→migration-down→up + git-revert):** on a throwaway local PostgreSQL
+  cluster — `widget/0001_initial` applies; `migrate widget zero` drops the table; `migrate widget`
+  re-applies it; **`git revert --no-commit b7db60f` removed `apps/widget` + the `widget/` include
+  + the dashboard edit together and `manage.py check` then passed with no dangling `dashboard →
+  widget` import** (the load-bearing **DU-REL-1** property, proven not assumed); restored to
+  `b7db60f` clean, suite **893** green again. The single `git revert` of the build commit is the
+  one-action operational rollback.
+- **Promotion stops at local/dev** — no prod target/traffic exists (the standing pattern of the
+  prior eleven features). The live-metrics window (M1–M6) opens when a prod target exists; **M3
+  per-account conversion stays deferred** (OQ-EUW-5). No new global ADR (reuses
+  D-4/D-6/D-7/D-8/D-9/D-10).
