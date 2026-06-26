@@ -41,3 +41,56 @@ go in the top-level [DECISIONS.md](../../DECISIONS.md). This feature is activate
 > non-curated widget-source signal is emitted / whether a new `Surface` (e.g. `WIDGET`) is added
 > and how `developer-dashboard` reads it for AC9/M2-M4 attribution (OQ-EUW-2); and the rate/abuse
 > limits on the public read (OQ-EUW-3). See [OPEN_QUESTIONS.md](OPEN_QUESTIONS.md).
+
+## Stage 2 — Software Architect (2026-06-26) — PROPOSED (ratified on DN-EUW-DESIGN)
+
+These resolve OQ-EUW-1/2/3 and back [DESIGN.md](DESIGN.md). Binding inputs AC6 (firewall) and
+AC9 (attribution) are honored, not re-decided. Reuses D-4/D-6/D-7/D-8/D-9/D-10 — **no new global
+ADR**.
+
+- **EUW-7 (PROPOSED) — Embedding = a server-rendered `<iframe>` (resolves OQ-EUW-1).** The
+  developer pastes one `<iframe src=".../widget/<app_id>/">`; the platform serves a complete,
+  self-contained HTML page (inline CSS, **no JS, no build** — AC7). The "view on platform" control
+  is a `target="_top"` link routed through `/widget/<app_id>/view`. *Rejected:* a `<script>` DOM
+  injector (needs client JS + a build, XSS/style-collision surface in the host page, fragile
+  cross-origin) and a JSON-render-yourself endpoint (violates AC7, moves firewall-relevant render
+  into untrusted host code). The iframe is zero-build, cross-origin-safe by construction, and
+  keeps the rendered content entirely platform-controlled. *Cost:* fixed-box sizing + minimal
+  theming (accepted for MVP, brief §7).
+- **EUW-8 (PROPOSED) — Widget attribution lives in a dedicated `apps/widget`-owned store, NOT the
+  D-7 `signals` corpus (resolves OQ-EUW-2).** Widget impressions/click-throughs are counted in
+  `widget_reach_count`; `apps/widget` **imports nothing from `signals`** (AST-enforced). The
+  firewall (AC6/M5=0) is therefore **structural by total absence from the corpus** — a widget
+  interaction cannot be `has_impression(surfaces=CURATED_SURFACES)` evidence because it creates no
+  corpus row. The developer-dashboard reads widget reach as a distinct, clearly-labeled
+  off-platform slot. *Rejected:* the brief's illustrative `Surface.WIDGET` — would force anonymous,
+  high-volume, scrape-prone third-party traffic into the authenticated, PII-free integrity corpus,
+  break `signals.capture`'s authenticated-actor invariant, overload `user IS NULL`, and make the
+  firewall runtime rather than structural. AC9 is fully met (source tracked, reach on the
+  dashboard); only the *mechanism* (which the brief delegated to design) differs from the §8 sketch.
+- **EUW-9 (PROPOSED) — Attribution storage = a daily rollup counter, atomic `F()`-increment, not
+  append-per-event.** `widget_reach_count(app_id, kind, count_date, count)` bounds growth to
+  `apps × 2 × days` on a surface designed to sit in high-traffic third-party apps, and stores
+  exactly the daily shape the dashboard reads (M4). No cache/queue infra (the `developer-updates`
+  durable-table precedent). *Rejected:* append-per-event (unbounded growth on an anonymous open
+  surface for per-event granularity no AC needs). **Bounded trade-off:** a popular app's daily row
+  is write-hot; throttled by the per-IP rate limit + `Cache-Control` TTL, named growth path =
+  per-day counter sharding / async write-behind (not built — no speculative abstraction).
+- **EUW-10 (PROPOSED) — MVP attribution = reach (impressions + click-throughs); per-account
+  conversion (M3) is deferred.** AC9's binding requirement (reach visible to the developer) is
+  delivered. Linking a *new account/follow* to a specific widget click requires carrying a
+  widget-source token through an anonymous click → app page → sign-up across sessions/domains
+  (cookie consent + cross-domain identity + the no-PII posture) — a materially harder problem the
+  brief flags as aspirational. Deferred and re-opened as **OQ-EUW-5**, not silently dropped.
+- **EUW-11 (PROPOSED) — The view is the app-validation boundary; `attribution` trusts a validated
+  `app_id`.** The render/redirect views validate ACCEPTED (D-6) via `catalog.get_catalogued_app`
+  before counting; the single-caller `attribution` writer does not re-read the catalog on every
+  increment. *Rejected:* re-validating inside `attribution` — doubles the hot-path catalog read for
+  no gain since the view is the only caller. *Cost:* if a future second caller is added it must
+  validate first (documented at the write surface).
+
+> **AC6 / AC9 are binding brief inputs honored above, not decisions made here.** **No new global
+> ADR** — the stack (D-4) and shared-code root (`apps/`) already exist. Touches two closed apps
+> additively (`apps/dashboard` gains a fail-soft widget-reach slot; `apps/core` gains a reusable
+> GET rate limiter + config + metrics). Rollback = `git revert` of the build commit (DU-REL-1
+> precedent), since the dashboard imports `widget.selectors`.
