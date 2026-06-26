@@ -1,0 +1,23 @@
+{% comment %}
+The neutral framable "not available" page (embeddable-update-widget DESIGN §7/§8). A COMPLETE,
+self-contained HTML document (inline CSS, no JS, no external assets) like widget.html, so it
+renders safely inside the host's <iframe>. It deliberately never distinguishes "this id does not
+exist" from "this app is not accepted" — both are simply "not available" (D-6).
+{% endcomment %}<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Not available</title>
+  <style>
+    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           color: #6b7280; background: #ffffff; font-size: 14px; line-height: 1.45; }
+    .unavailable { padding: 16px; }
+  </style>
+</head>
+<body>
+  <div class="unavailable">
+    <p>This app isn't available.</p>
+  </div>
+</body>
+</html>

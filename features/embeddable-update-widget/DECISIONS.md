@@ -44,6 +44,11 @@ go in the top-level [DECISIONS.md](../../DECISIONS.md). This feature is activate
 
 ## Stage 2 — Software Architect (2026-06-26) — RATIFIED (DN-EUW-DESIGN approved 2026-06-26 — binding for Stage 3)
 
+> **Stage 4 status (Senior Engineer, 2026-06-26): EUW-7 … EUW-11 are BUILT** exactly as ratified
+> (T-01…T-07, full suite green; per-AC coverage in [TEST_PLAN.md](TEST_PLAN.md)). The only
+> implementation addition is **EUW-IMPL-1** (the nested-savepoint on the EUW-9 create-race retry,
+> recorded under Stage 4 below) — same algorithm, no contract change.
+
 These resolve OQ-EUW-1/2/3 and back [DESIGN.md](DESIGN.md). Binding inputs AC6 (firewall) and
 AC9 (attribution) are honored, not re-decided. Reuses D-4/D-6/D-7/D-8/D-9/D-10 — **no new global
 ADR**.
@@ -94,3 +99,18 @@ ADR**.
 > additively (`apps/dashboard` gains a fail-soft widget-reach slot; `apps/core` gains a reusable
 > GET rate limiter + config + metrics). Rollback = `git revert` of the build commit (DU-REL-1
 > precedent), since the dashboard imports `widget.selectors`.
+
+## Stage 4 — Senior Engineer (2026-06-26) — implementation notes (no scope/interface/schema change)
+
+These record where the build adds a faithful implementation detail the design's illustrative
+pseudocode omitted. None changes a contract, schema, or decision above.
+
+- **EUW-IMPL-1 (T-02) — the atomic-increment create-race retry uses a nested `transaction.atomic()`
+  savepoint.** DESIGN §6's pseudocode wraps the `create()` in a bare `try/except IntegrityError`
+  inside the outer `atomic()`. On PostgreSQL (D-4) that does not work: an `IntegrityError` marks the
+  whole transaction for rollback, so the `except` branch's follow-up `update()` raises
+  `TransactionManagementError` ("current transaction is aborted"). The fix is the canonical Django
+  pattern — wrap the `create()` in its own `transaction.atomic()` **savepoint** so a failed create
+  rolls back only the savepoint and the outer transaction stays usable. Same algorithm, same
+  atomic-`F()`-increment + unique-constraint-as-retry-hinge design (EUW-9); only the savepoint
+  boundary is added. Proven by `test_create_race_falls_back_to_an_atomic_increment`.

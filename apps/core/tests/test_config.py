@@ -152,11 +152,45 @@ class UpdatesTunableTests(SimpleTestCase):
             config.updates_max_posts_per_window()
 
 
+class WidgetTunableTests(SimpleTestCase):
+    def test_defaults(self):
+        for name in (
+            "WIDGET_NOTICE_LIMIT",
+            "WIDGET_RENDER_RATE_LIMIT_PER_IP_PER_MINUTE",
+            "WIDGET_CACHE_MAX_AGE_SECONDS",
+        ):
+            os.environ.pop(name, None)
+        self.assertEqual(config.widget_notice_limit(), 5)
+        self.assertEqual(config.widget_render_rate_limit_per_ip_per_minute(), 60)
+        self.assertEqual(config.widget_cache_max_age_seconds(), 60)
+
+    @override_settings(
+        WIDGET_NOTICE_LIMIT=3,
+        WIDGET_RENDER_RATE_LIMIT_PER_IP_PER_MINUTE=10,
+        WIDGET_CACHE_MAX_AGE_SECONDS=30,
+    )
+    def test_overrides(self):
+        self.assertEqual(config.widget_notice_limit(), 3)
+        self.assertEqual(config.widget_render_rate_limit_per_ip_per_minute(), 10)
+        self.assertEqual(config.widget_cache_max_age_seconds(), 30)
+
+    @override_settings(WIDGET_NOTICE_LIMIT=0)
+    def test_non_positive_fails_loudly(self):
+        with self.assertRaises(ImproperlyConfigured):
+            config.widget_notice_limit()
+
+
 class ValidateAllTests(SimpleTestCase):
     def test_passes_with_defaults(self):
         config.validate_all()  # should not raise
 
     @override_settings(RATE_LIMIT_PER_IP_PER_HOUR="bad")
     def test_surfaces_first_bad_value(self):
+        with self.assertRaises(ImproperlyConfigured):
+            config.validate_all()
+
+    @override_settings(WIDGET_RENDER_RATE_LIMIT_PER_IP_PER_MINUTE="bad")
+    def test_evaluates_widget_tunables(self):
+        # validate_all must cover the widget tunables, so a bad value surfaces at startup.
         with self.assertRaises(ImproperlyConfigured):
             config.validate_all()

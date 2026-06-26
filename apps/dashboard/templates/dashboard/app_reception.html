@@ -89,7 +89,28 @@ no JS; all values auto-escaped (no |safe).
   {% endwith %}
 </section>
 
-{# 5. Reviews — count + raw distribution + recent list, no average (AC6); degraded affordance #}
+{# 5. Widget reach — OFF-PLATFORM reach from the embeddable widget (AC9), kept DISTINCT from the
+   on-platform per-Surface Reach above (different facts); fail-soft (§8). The click-through rate
+   is derived here at display, not stored. #}
+<section aria-labelledby="widget-reach-heading">
+  <h2 id="widget-reach-heading">Widget reach (off-platform)</h2>
+  {% if not reception.widget_reach.available %}
+    <p>Widget reach is temporarily unavailable.</p>
+  {% else %}
+    {% with wr=reception.widget_reach %}
+      <p>Reach from your embedded "what's new" widget, separate from on-platform impressions.</p>
+      <ul>
+        <li>Widget impressions: {{ wr.impressions }}</li>
+        <li>Click-throughs to platform: {{ wr.click_throughs }}</li>
+        {% if wr.impressions %}
+          <li>Click-through rate: {% widthratio wr.click_throughs wr.impressions 100 %}%</li>
+        {% endif %}
+      </ul>
+    {% endwith %}
+  {% endif %}
+</section>
+
+{# 6. Reviews — count + raw distribution + recent list, no average (AC6); degraded affordance #}
 <section aria-labelledby="reviews-heading">
   <h2 id="reviews-heading">Reviews</h2>
   {% if not reception.reviews.available %}

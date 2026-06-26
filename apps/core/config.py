@@ -72,6 +72,14 @@ DEFAULT_UPDATES_MAX_POSTS_PER_WINDOW = 5
 DEFAULT_UPDATES_POST_WINDOW_HOURS = 24
 DEFAULT_UPDATES_TITLE_MAX_LENGTH = 120
 DEFAULT_UPDATES_SUMMARY_MAX_LENGTH = 4000
+# embeddable-update-widget tunables (embeddable-update-widget DESIGN.md §9). The notice limit
+# caps how many notices the widget renders (F1); the per-IP-per-minute limit is the AC8 abuse
+# bound on the anonymous public render; the cache max-age is the Cache-Control TTL that lets
+# browsers/CDN absorb repeat loads (within-TTL reloads are not re-counted — reach is approximate
+# by design). No magic numbers in the widget content/view layer.
+DEFAULT_WIDGET_NOTICE_LIMIT = 5
+DEFAULT_WIDGET_RENDER_RATE_LIMIT_PER_IP_PER_MINUTE = 60
+DEFAULT_WIDGET_CACHE_MAX_AGE_SECONDS = 60
 
 
 def _resolve_raw(setting_name: str, env_name: str, default: int) -> object:
@@ -296,6 +304,33 @@ def updates_summary_max_length() -> int:
     )
 
 
+def widget_notice_limit() -> int:
+    """Max notices rendered in the embeddable widget (embeddable-update-widget DESIGN.md §9, F1)."""
+    return _positive_int(
+        "WIDGET_NOTICE_LIMIT",
+        "WIDGET_NOTICE_LIMIT",
+        DEFAULT_WIDGET_NOTICE_LIMIT,
+    )
+
+
+def widget_render_rate_limit_per_ip_per_minute() -> int:
+    """Max widget renders accepted per client IP per minute (DESIGN.md §9, AC8)."""
+    return _positive_int(
+        "WIDGET_RENDER_RATE_LIMIT_PER_IP_PER_MINUTE",
+        "WIDGET_RENDER_RATE_LIMIT_PER_IP_PER_MINUTE",
+        DEFAULT_WIDGET_RENDER_RATE_LIMIT_PER_IP_PER_MINUTE,
+    )
+
+
+def widget_cache_max_age_seconds() -> int:
+    """The widget render ``Cache-Control: max-age`` TTL in seconds (DESIGN.md §9)."""
+    return _positive_int(
+        "WIDGET_CACHE_MAX_AGE_SECONDS",
+        "WIDGET_CACHE_MAX_AGE_SECONDS",
+        DEFAULT_WIDGET_CACHE_MAX_AGE_SECONDS,
+    )
+
+
 def validate_all() -> None:
     """Evaluate every tunable so misconfiguration surfaces at startup, not at use."""
     login_token_ttl()
@@ -320,3 +355,6 @@ def validate_all() -> None:
     updates_post_window_hours()
     updates_title_max_length()
     updates_summary_max_length()
+    widget_notice_limit()
+    widget_render_rate_limit_per_ip_per_minute()
+    widget_cache_max_age_seconds()

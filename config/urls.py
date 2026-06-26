@@ -42,6 +42,13 @@ urlpatterns = [
     # repoint are the other two). Rollback is the honest three-part revert: this include +
     # the seam revert to `return []` + the INSTALLED_APPS line. Own prefix; no collision.
     path("updates/", include("apps.updates.urls")),
+    # The embeddable-update-widget activation switch (DESIGN.md §13) — the FINAL of the three
+    # activation parts (the "apps.widget" INSTALLED_APPS line + the dashboard widget-reach slot
+    # are the other two). This single include makes the public widget surface reachable; the
+    # documented rollback is `git revert` of the build commit (the dashboard imports
+    # widget.selectors, so pulling only this include would not be a clean revert). Own prefix;
+    # /widget/ is free — no collision with the pages /apps/ surface.
+    path("widget/", include("apps.widget.urls")),
     path("", include("apps.accounts.urls")),
 ]
 

@@ -1,0 +1,59 @@
+{% comment %}
+The embeddable widget card (embeddable-update-widget DESIGN §5.1/§7). A COMPLETE, self-contained
+HTML document — inline CSS, NO JavaScript, NO external assets — so it renders safely inside any
+host page's <iframe> cross-origin (AC7) and the host's styles cannot collide with it.
+
+notice.title / notice.summary are untrusted developer input shown cross-origin → rendered through
+Django auto-escaping (no |safe / mark_safe anywhere here; §9 XSS). The "View on platform" link is
+target="_top" so it breaks out of the frame and navigates the host's top window (§5.1).
+{% endcomment %}<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>What's new · {{ view.app_name }}</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           color: #1f2328; background: #ffffff; font-size: 14px; line-height: 1.45; }
+    .widget { padding: 14px 16px; }
+    .widget__title { margin: 0 0 10px; font-size: 15px; font-weight: 600; }
+    .notice { padding: 10px 0; border-top: 1px solid #eaecef; }
+    .notice:first-of-type { border-top: 0; }
+    .notice__chip { display: inline-block; font-size: 11px; font-weight: 600; text-transform: uppercase;
+                    letter-spacing: .03em; color: #4b5563; background: #f1f3f5; border-radius: 4px;
+                    padding: 1px 6px; }
+    .notice__title { margin: 6px 0 2px; font-size: 14px; font-weight: 600; }
+    .notice__summary { margin: 0; color: #3b424a; }
+    .notice__date { margin: 4px 0 0; font-size: 12px; color: #6b7280; }
+    .widget__empty, .widget__degraded { color: #6b7280; padding: 10px 0; }
+    .widget__footer { margin-top: 12px; padding-top: 10px; border-top: 1px solid #eaecef; }
+    .widget__link { font-weight: 600; color: #0969da; text-decoration: none; }
+    .widget__link:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="widget">
+    <h1 class="widget__title">What's new in {{ view.app_name }}</h1>
+
+    {% if view.notices_degraded %}
+      <p class="widget__degraded">Updates are temporarily unavailable.</p>
+    {% elif view.notices %}
+      {% for notice in view.notices %}
+        <article class="notice">
+          <span class="notice__chip">{% if notice.kind == "early_access" %}Early access{% else %}Update{% endif %}</span>
+          <h2 class="notice__title">{{ notice.title }}</h2>
+          <p class="notice__summary">{{ notice.summary }}</p>
+          <p class="notice__date">{{ notice.published_at|timesince }} ago</p>
+        </article>
+      {% endfor %}
+    {% else %}
+      <p class="widget__empty">No updates yet.</p>
+    {% endif %}
+
+    <div class="widget__footer">
+      <a class="widget__link" href="{% url 'widget:view' app_id %}" target="_top">View on App Discovery →</a>
+    </div>
+  </div>
+</body>
+</html>

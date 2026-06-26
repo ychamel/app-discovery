@@ -30,6 +30,7 @@ from apps.ratings.gate import CURATED_SURFACES
 from apps.signals import selectors as signals
 from apps.signals.kinds import Surface
 from apps.signals.selectors import TrendGranularity
+from apps.widget import selectors as widget
 
 logger = logging.getLogger(__name__)
 
@@ -100,6 +101,21 @@ class ReviewsView:
 
 
 @dataclass(frozen=True)
+class WidgetReachView:
+    """The off-platform widget-reach slot (embeddable-update-widget AC9, DESIGN §7).
+
+    A clearly-distinct fact from the on-platform per-``Surface`` breakdown: anonymous reach
+    driven by the embeddable widget. The click-through **rate** is derived at display from these
+    two integers — never stored (one source of truth per fact). ``available=False`` ⇒ the slot
+    degraded (fail-soft, §8), and the rest of the reception still renders.
+    """
+
+    available: bool
+    impressions: int
+    click_throughs: int
+
+
+@dataclass(frozen=True)
 class ReceptionSummary:
     """One row of the my-apps list (S1) — a bounded reception summary per app (AC1/AC9)."""
 
@@ -108,6 +124,7 @@ class ReceptionSummary:
     total_impressions: int
     curated_impressions: int
     click_throughs: int
+    widget_impressions: int  # off-platform widget reach (embeddable-update-widget AC9)
 
 
 @dataclass(frozen=True)
@@ -121,6 +138,7 @@ class AppReception:
     reach: ReachView
     funnel: FunnelView
     reviews: ReviewsView
+    widget_reach: WidgetReachView  # off-platform widget reach (AC9; fail-soft, §8)
 
 
 # --- The two composition entry points ----------------------------------------
@@ -148,6 +166,7 @@ def build_my_apps_summaries(
     breakdowns = signals.impression_breakdown_for_apps(
         app_ids, start=window.start, end=window.end
     )
+    widget_impressions = _bulk_widget_impressions(app_ids, window)  # fail-soft column (§8)
     return [
         ReceptionSummary(
             app_id=app.id,
@@ -155,6 +174,7 @@ def build_my_apps_summaries(
             total_impressions=breakdowns[app.id].total,
             curated_impressions=_curated_total(breakdowns[app.id].by_surface),
             click_throughs=funnels[app.id].click_throughs,
+            widget_impressions=widget_impressions.get(app.id, 0),
         )
         for app in apps
     ]
@@ -181,6 +201,7 @@ def build_app_reception(
         reach=_build_reach(app_id, window),  # raises loud on a signals error (§7)
         funnel=_build_funnel(app_id, window),  # raises loud on a signals error (§7)
         reviews=_build_reviews(app_id),  # fails soft (§7)
+        widget_reach=_build_widget_reach(app_id, window),  # fails soft (§8)
     )
 
 
@@ -315,6 +336,55 @@ def _build_reviews(app_id: UUID) -> ReviewsView:
         distribution=reviews.distribution,
         reviews=reviews.reviews,
     )
+
+
+# --- Widget reach (off-platform, AC9; fail-soft like the reviews slot, §8) ----
+def _build_widget_reach(app_id: UUID, window: ResolvedWindow) -> WidgetReachView:
+    """The Screen-B widget-reach slot, degrading **soft** on a widget read error (§8).
+
+    Distinct from the on-platform per-``Surface`` reach — this is anonymous off-platform reach
+    driven by the embeddable widget. A read error degrades only this slot; the rest of Screen B
+    (the loud signals reads) is unaffected.
+    """
+    try:
+        reach = widget.widget_reach(app_id, start=window.start, end=window.end)
+    except Exception:
+        observability.increment(
+            observability.DASHBOARD_WIDGET_DEGRADED, app_id=str(app_id)
+        )
+        logger.warning(
+            "dashboard widget-reach read failed; degrading the slot app_id=%s",
+            app_id,
+            exc_info=True,
+        )
+        return WidgetReachView(available=False, impressions=0, click_throughs=0)
+    return WidgetReachView(
+        available=True,
+        impressions=reach.impressions,
+        click_throughs=reach.click_throughs,
+    )
+
+
+def _bulk_widget_impressions(
+    app_ids: list[UUID], window: ResolvedWindow
+) -> dict[UUID, int]:
+    """Widget impressions per app for the S1 column in ONE bulk read — no N+1 (AC9).
+
+    Fail-soft for the **whole column**: a read error returns ``{}`` (every app shows 0) after
+    counting ``DASHBOARD_WIDGET_DEGRADED`` — the rest of the my-apps list still renders.
+    """
+    try:
+        reaches = widget.widget_reach_for_apps(
+            app_ids, start=window.start, end=window.end
+        )
+    except Exception:
+        observability.increment(observability.DASHBOARD_WIDGET_DEGRADED)
+        logger.warning(
+            "dashboard my-apps widget-reach read failed; widget column degraded to 0",
+            exc_info=True,
+        )
+        return {}
+    return {app_id: reach.impressions for app_id, reach in reaches.items()}
 
 
 # --- Helpers -----------------------------------------------------------------

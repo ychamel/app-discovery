@@ -136,6 +136,26 @@ UPDATES_POST_FAILED = "updates_post_failed"  # alert: an unexpected post write e
 UPDATES_CHANNEL_DEGRADED = "updates_channel_degraded"  # the channel notices slot fell back
 UPDATES_AUDIENCE_DEGRADED = "updates_audience_degraded"  # the audience hint read fell back
 
+# embeddable-update-widget metrics (embeddable-update-widget DESIGN.md §9). RENDERED is M4 (a
+# widget load), CLICK_THROUGH is M2 (a view-on-platform click); EMPTY is a render with no
+# notices. NOT_AVAILABLE is an unknown/non-accepted id (→404); RATE_LIMITED is the AC8 abuse
+# bound (expected under scraping — a trend, not an alert). The *_DEGRADED counters are fail-soft
+# health: NOTICES (notice read fell back to link-only), RENDER (catalog read raised → neutral
+# unavailable), LIMITER (cache outage → fail-open). The one actionable ALERT is COUNT_DEGRADED
+# sustained — attribution is silently lossy, so AC9/M2/M4 under-count. M5 (reach beyond the
+# firewall = 0) is structural — asserted in tests, no counter. DASHBOARD_WIDGET_DEGRADED is the
+# developer-dashboard widget-reach slot falling back (slot-only soft; the core read stays loud).
+WIDGET_RENDERED = "widget_rendered"  # M4 — a widget load served (tags: app_id)
+WIDGET_EMPTY = "widget_empty"  # a render with no notices (the truthful empty state)
+WIDGET_CLICK_THROUGH = "widget_click_through"  # M2 — a view-on-platform click
+WIDGET_NOT_AVAILABLE = "widget_not_available"  # unknown/non-accepted id requested (→404)
+WIDGET_RATE_LIMITED = "widget_rate_limited"  # AC8 — over the per-IP render limit (→429)
+WIDGET_NOTICES_DEGRADED = "widget_notices_degraded"  # the notice read fell back (link-only)
+WIDGET_RENDER_DEGRADED = "widget_render_degraded"  # the catalog read raised → neutral unavailable
+WIDGET_COUNT_DEGRADED = "widget_count_degraded"  # alert: attribution write failed (silently lossy)
+WIDGET_LIMITER_DEGRADED = "widget_limiter_degraded"  # the rate-limiter cache failed → fail-open
+DASHBOARD_WIDGET_DEGRADED = "dashboard_widget_degraded"  # the dashboard widget-reach slot fell back
+
 metrics_logger = logging.getLogger("apps.metrics")
 
 

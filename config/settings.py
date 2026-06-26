@@ -105,6 +105,10 @@ INSTALLED_APPS = [
     # migration (developer-updates DESIGN §12). The table is unrouted/inert until the
     # config/urls updates/ include ships (T-05) — registration alone activates nothing.
     "apps.updates",
+    # The embeddable-update-widget app owns one table (widget_reach_count); this line is needed
+    # for its migration (embeddable-update-widget DESIGN §13). The table is unrouted/inert until
+    # the config/urls widget/ include ships (T-05) — registration alone activates nothing.
+    "apps.widget",
 ]
 
 MIDDLEWARE = [

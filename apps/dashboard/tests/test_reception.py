@@ -21,6 +21,8 @@ from apps.ratings import services as rating_services
 from apps.signals import capture
 from apps.signals.kinds import Surface
 from apps.signals.tests.helpers import make_accepted_app, make_tag, make_user
+from apps.widget.kinds import WidgetEventKind
+from apps.widget.models import WidgetReachCount
 
 _NOW = datetime(2026, 6, 28, 0, tzinfo=UTC)
 
@@ -317,6 +319,70 @@ class BoundedReadTests(TestCase):
             reception.build_app_reception(self.owner, app.id, window=_window())
 
         self.assertEqual(len(light.captured_queries), len(heavy.captured_queries))
+
+
+class WidgetReachSlotTests(TestCase):
+    """T-06 — the additive, fail-soft off-platform widget-reach slot (AC9, DESIGN §7/§8)."""
+
+    def setUp(self):
+        self.owner = make_user("owner@example.com")
+        self.tag = make_tag("notes")
+        self.app = make_accepted_app(self.owner, tag_ids=[self.tag.id], name="App A")
+
+    def _seed_reach(self, app_id, kind, count, *, day=20):
+        WidgetReachCount.objects.create(
+            app_id=app_id,
+            kind=kind,
+            count_date=datetime(2026, 6, day, tzinfo=UTC).date(),
+            count=count,
+        )
+
+    def test_screen_b_shows_widget_reach_over_the_window(self):
+        self._seed_reach(self.app.id, WidgetEventKind.IMPRESSION, 40)
+        self._seed_reach(self.app.id, WidgetEventKind.CLICK_THROUGH, 10)
+        result = reception.build_app_reception(self.owner, self.app.id, window=_window())
+        self.assertTrue(result.widget_reach.available)
+        self.assertEqual(result.widget_reach.impressions, 40)
+        self.assertEqual(result.widget_reach.click_throughs, 10)
+
+    def test_screen_a_includes_widget_impressions_via_one_bulk_read(self):
+        other = make_accepted_app(self.owner, tag_ids=[self.tag.id], name="App B")
+        self._seed_reach(self.app.id, WidgetEventKind.IMPRESSION, 7)
+        with patch.object(
+            reception.widget,
+            "widget_reach_for_apps",
+            wraps=reception.widget.widget_reach_for_apps,
+        ) as spy:
+            summaries = reception.build_my_apps_summaries(self.owner, window=_window())
+        by_id = {s.app_id: s for s in summaries}
+        self.assertEqual(by_id[self.app.id].widget_impressions, 7)
+        self.assertEqual(by_id[other.id].widget_impressions, 0)  # zero-filled, no N+1
+        spy.assert_called_once()
+
+    def test_screen_b_widget_read_failure_degrades_only_that_slot(self):
+        with patch.object(
+            reception.widget, "widget_reach", side_effect=RuntimeError("widget down")
+        ):
+            result = reception.build_app_reception(
+                self.owner, self.app.id, window=_window()
+            )
+        self.assertIsNotNone(result)
+        self.assertFalse(result.widget_reach.available)  # slot degraded
+        self.assertEqual(result.widget_reach.impressions, 0)
+        # The rest of Screen B (the loud signals reads + reviews) is unaffected (§8).
+        self.assertIsNotNone(result.reach)
+        self.assertIsNotNone(result.funnel)
+        self.assertTrue(result.reviews.available)
+
+    def test_screen_a_widget_read_failure_degrades_column_to_zero(self):
+        self._seed_reach(self.app.id, WidgetEventKind.IMPRESSION, 7)
+        with patch.object(
+            reception.widget,
+            "widget_reach_for_apps",
+            side_effect=RuntimeError("widget down"),
+        ):
+            summaries = reception.build_my_apps_summaries(self.owner, window=_window())
+        self.assertEqual(summaries[0].widget_impressions, 0)  # whole column → 0, still 200
 
 
 def _png():
