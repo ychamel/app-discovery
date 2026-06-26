@@ -1,6 +1,6 @@
 # FEATURE_BRIEF — embeddable-update-widget
 
-_Status: **DRAFT — awaiting approval** (DN-EUW-BRIEF in [CONTROL.md](../../CONTROL.md)). Stage 1, Product Analyst._
+_Status: **APPROVED** (DN-EUW-BRIEF, 2026-06-26 — all 5 scoping calls approved as recommended, with a source-attribution refinement on EUW-5: see AC9 / §8). Stage 1, Product Analyst → handed to Stage 2 (Software Architect)._
 
 > Activated by the **developer-wedge pivot** ([global D-10](../../DECISIONS.md)). Traces to
 > vision **§5.4 (revised)** (developer wedge / bring-your-own-audience cold start) and
@@ -96,6 +96,13 @@ users onto the platform — with **zero ability for that widget to buy or confer
 - **AC8 (S3 — abuse bound).** *Given* the widget is an unauthenticated public read surface,
   *When* it is requested, *Then* it serves only already-public notice content + the link and the
   surface is rate-limited (no private data, no unbounded read; exact limits set in design).
+- **AC9 (S2 — source attribution).** *Given* a widget impression or click-through by **any** end
+  user — including an anonymous (not-logged-in) one — *When* the interaction occurs, *Then* its
+  **source is tracked as the widget**, such that the developer can see on their dashboard **how
+  many people reached the platform from the widget** (widget-attributed reach / capture). This
+  attribution is required at MVP; it is **independent of** and does **not** weaken AC6 — the
+  widget remains a non-curated surface that confers no D-8 eligibility. *(The emission mechanism /
+  `Surface` value and the dashboard read are Stage-2 design — OQ-EUW-2.)*
 
 ## 6. Success metrics
 
@@ -150,15 +157,21 @@ belongs to a later stage).
 - **[verified]** [D-6](../../DECISIONS.md): only ACCEPTED apps are catalogued / have a public page
   — the widget serves accepted apps only.
 - **[verified]** Stack = Python / Django + PostgreSQL ([D-4](../../DECISIONS.md)).
-- **[unverified — scoping call, see DN-EUW-BRIEF]** Published notices are intended to be
-  **publicly readable by anonymous end users**. Today they surface only in the follower feed; the
-  widget makes a developer's **own** notices a public read. The developer authors them, so consent
-  is implicit, but exposing them publicly is a deliberate product expansion to confirm.
+- **[resolved — DN-EUW-BRIEF / EUW-5]** Published notices are **publicly readable by anonymous
+  end users** through the widget. Today they surface only in the follower feed; the widget makes a
+  developer's **own** notices a public read. The developer authors them (implicit consent) and a
+  changelog is public by nature — confirmed as a deliberate product expansion.
+- **[resolved — DN-EUW-BRIEF / EUW-5 refinement → AC9]** Widget interactions are **tracked by
+  source** for **all** end users (anonymous or signed-in), so the developer dashboard can show
+  **widget-attributed reach** (M2/M3/M4). Attribution is a firm MVP requirement; it stays outside
+  `CURATED_SURFACES` (AC6). *What* is tracked (the widget as source) and *that* the dashboard
+  shows it are fixed here; the *mechanism* is OQ-EUW-2.
 - **[unverified — Stage 2 design, OQ-EUW-1]** The embedding **mechanism** (script tag / iframe /
   rendered endpoint), cross-origin handling, and caching.
-- **[unverified — Stage 2 design, OQ-EUW-2]** Whether a widget click-through **emits** a
-  (non-curated) D-7 signal and whether a new `Surface` (e.g. `WIDGET`) is added — and how M2/M3
-  attribution is captured. Must stay outside `CURATED_SURFACES` regardless.
+- **[unverified — Stage 2 design, OQ-EUW-2]** *How* widget impressions / click-throughs emit the
+  (non-curated) D-7 source signal AC9 now **requires** — the exact `Surface` value (e.g. `WIDGET`),
+  the emit shape, and the dashboard read that surfaces widget-attributed reach. Must stay outside
+  `CURATED_SURFACES` regardless.
 - **[unverified — Stage 2 design, OQ-EUW-3]** The exact rate / abuse limits on the unauthenticated
   read surface.
 
