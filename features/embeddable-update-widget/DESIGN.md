@@ -1,6 +1,7 @@
 # DESIGN — embeddable-update-widget
 
-_Status: **DRAFT — awaiting DN-EUW-DESIGN** (Stage 2, Software Architect). Implements the
+_Status: **APPROVED** (DN-EUW-DESIGN, 2026-06-26 — ratified by the Software Architect; EUW-7…11
+RATIFIED, binding for Stage 3). Implements the
 APPROVED [FEATURE_BRIEF.md](FEATURE_BRIEF.md) (6 stories / **AC1–AC9** / M1–M6). Resolves
 OQ-EUW-1 (embedding mechanism), OQ-EUW-2 (how widget-source attribution is emitted + read),
 OQ-EUW-3 (the public-read abuse limits). **AC6 (the firewall) and AC9 (source attribution)
