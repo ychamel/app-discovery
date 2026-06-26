@@ -1,8 +1,10 @@
 # FEATURE_BRIEF — widget-conversion-attribution
 
 *Stage 1 (Product Analyst). Single source of truth for what & why.*
-***Status: PENDING APPROVAL** — raises **DN-WCA-BRIEF** (approve brief + scoping calls
-WCA-1/2/3) in [CONTROL.md](../../CONTROL.md). No Stage advance until approved.*
+***Status: APPROVED** (DN-WCA-BRIEF, 2026-06-26) — brief + scoping calls WCA-1/2/3
+approved as recommended. WCA-1/2/3 → RESOLVED; advanced to Stage 2-design (Software
+Architect). The token-carry mechanism (OQ-WCA-2…4) is the Architect's to resolve under
+the AC4 no-PII + AC5 firewall envelope.*
 
 ## Origin
 
