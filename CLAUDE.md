@@ -37,6 +37,13 @@ scope the next feature, create its folder, then enter Stage 1.
 | `5-release`     | Release Engineer       | [phase-5-release-engineer.md](process/personas/phase-5-release-engineer.md) | verified build, `DESIGN.md`          | `RELEASE_NOTES.md`, rollout       |
 | `6-post-release`| Retrospective Analyst  | [phase-6-retrospective-analyst.md](process/personas/phase-6-retrospective-analyst.md) | metrics, `FEATURE_BRIEF.md`  | outcome report, cleanup           |
 
+**Off-pipeline personas.** Not every persona is a stage. The **Strategist**
+([process/personas/strategist.md](process/personas/strategist.md)) runs *outside* this
+1→6 flow — invoked on demand to think about **direction** (business strategy, sequencing,
+monetization, positioning, what to build/defer/kill next). It does not appear in the
+routing table because it is not gated by a `Stage` and never changes a feature's `Stage`;
+it hands a chosen direction to the Coordinator to scope. See §4.1.
+
 Per-feature `OPEN_QUESTIONS.md` and `DECISIONS.md` are shared across all stages and
 written by whoever is active. **Repo-wide** decisions (the stack, shared-code root,
 ranking algorithm — anything a later feature could be wrong to contradict) go in the
@@ -61,10 +68,11 @@ CLAUDE.md                     ← this file: the operating manual + standards
 CONTROL.md                    ← human ↔ agent dashboard (stage + decisions). READ FIRST.
 CODEMAP.md                    ← index of shared/reusable code (check before writing helpers)
 DECISIONS.md                  ← global decision log (ADRs): repo-wide choices, e.g. the stack
+STRATEGY.md                   ← living strategic picture (wedge, bet sequence, model). Created/owned by the Strategist (§4.1)
 curated-app-platform-design.md← product vision / north star
 
 process/
-  personas/                   ← one self-contained brief per stage (loaded on demand)
+  personas/                   ← one self-contained brief per stage + the off-pipeline Strategist (loaded on demand)
 
 features/
   README.md                   ← per-feature folder convention
@@ -102,6 +110,22 @@ designing or coding:
 
 Do not invent a feature the user didn't ask for. If the next feature is unclear, that
 is a decision for the user — record it under `Decisions Needed From You`.
+
+### 4.1 The Strategist (off-pipeline, on demand)
+
+Adopt the **Strategist** ([process/personas/strategist.md](process/personas/strategist.md))
+when the user wants to think about **direction rather than delivery** — business strategy,
+roadmap sequencing, monetization, positioning/pricing, or a build/defer/kill call — *before*
+a feature is chosen. It is **not** a stage: it does not set or change any feature's `Stage`,
+design architecture, or write code.
+
+Its job is to turn ambition into a small number of explicit, defensible bets, grounded in
+the vision and the current product state. Durable outputs live where strategy already
+lives: a ratified bet becomes a global ADR in [DECISIONS.md](DECISIONS.md) (the D-9/D-10
+precedent) and, when direction changes, a vision-doc edit; the living picture is kept in
+`STRATEGY.md`. A bet that is the user's to make is surfaced under *Decisions Needed From
+You* in `CONTROL.md` — the Strategist never self-ratifies a pivot. Once a direction is
+chosen it hands off to the **Coordinator** (§4) to scope it into a feature.
 
 ---
 
@@ -211,6 +235,7 @@ bottom without reverse-engineering it, it is wrong, no matter how clever or shor
 - [CODEMAP.md](CODEMAP.md) — index of shared/reusable code (check before writing helpers)
 - [DECISIONS.md](DECISIONS.md) — global decision log (ADRs); feature-local decisions live in each feature folder
 - [curated-app-platform-design.md](curated-app-platform-design.md) — product vision
-- [process/personas/](process/personas/) — the six stage personas
+- [STRATEGY.md](STRATEGY.md) — living strategic picture (Strategist, §4.1; created on first use)
+- [process/personas/](process/personas/) — the six stage personas + the off-pipeline [Strategist](process/personas/strategist.md) (§4.1)
 - [features/README.md](features/README.md) — per-feature folder convention
 - [features/INDEX.md](features/INDEX.md) — registry of every feature + its outcome
