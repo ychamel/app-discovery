@@ -75,19 +75,20 @@ birth** — which dissolves the cross-domain-identity problem (OQ-WCA-3) and mak
 cookieless-cross-domain posture *achievable* rather than the hard problem the brief flagged
 (§8 [unverified] → now verified in design).
 
-The following are logged **PROPOSED** (ratify on DN-WCA-DESIGN approval; binding for Stage 3):
+The following are **RATIFIED** (DN-WCA-DESIGN approved as designed, 2026-06-27 — they now
+bind Stage 3):
 
-- **WCA-DESIGN-1 (PROPOSED) — token-carry mechanism (resolves OQ-WCA-2).** A **first-party,
+- **WCA-DESIGN-1 (RATIFIED) — token-carry mechanism (resolves OQ-WCA-2).** A **first-party,
   signed, source-only HTTP cookie** `widget_src` set on the click-through 302. Payload =
   `{v, src=<source app_id>, credited=[]}` signed via `django.core.signing` (tamper-evident; the
   signer timestamp + `loads(max_age=window)` *is* the window). `SameSite=Lax` (every post-click
   step is same-site first-party), `Secure`, `HttpOnly`, `Path=/`. *Rejected:* a query param
   (can't survive the 30-day gap; forgeable/leaky — A6).
-- **WCA-DESIGN-2 (PROPOSED) — cross-domain identity dissolved (resolves OQ-WCA-3).** The marker
+- **WCA-DESIGN-2 (RATIFIED) — cross-domain identity dissolved (resolves OQ-WCA-3).** The marker
   is created and read **entirely first-party** on the platform origin; the third-party iframe
   never participates in attribution. *Rejected:* third-party cookie / device fingerprint /
   cross-site id (unnecessary **and** the covert per-person tracking R1/AC4 forbid — A1).
-- **WCA-DESIGN-3 (PROPOSED) — no PII processed → aggregate-only feasible (resolves OQ-WCA-4).**
+- **WCA-DESIGN-3 (RATIFIED) — no PII processed → aggregate-only feasible (resolves OQ-WCA-4).**
   The marker's entire content is a public app-id + bookkeeping flags; it is never joined to a
   person and builds **no** per-person profile (AC4 / M5=0 by construction). Aggregate-only is
   **feasible** — it does **not** return to the user as a forced relaxation. **Honest residual:**
@@ -95,32 +96,32 @@ The following are logged **PROPOSED** (ratify on DN-WCA-DESIGN approval; binding
   ePrivacy "non-essential cookie needs consent regardless of PII" reading is a **legal/policy
   judgment**, surfaced to the approver (DN-WCA-DESIGN), with a **one-call consent gate** designed
   in as the contingency. **Not silently relaxed.**
-- **WCA-DESIGN-4 (PROPOSED) — storage.** A **separate** `widget_conversion_count` daily-rollup
+- **WCA-DESIGN-4 (RATIFIED) — storage.** A **separate** `widget_conversion_count` daily-rollup
   table keyed `(app_id, kind∈{follow,account}, count_date)` — same no-`user`/no-IP/no-score
   structural shape as `widget_reach_count` — plus a **shared `_increment_daily(model, app_id,
   kind)`** helper extracted from the existing reach writer (reuse the concurrency-hard part, not
   the table). *Rejected:* extending `WidgetEventKind` on the reach table (conflates "distinct
   facts, distinct counts", breaks design-for-deletion — A3).
-- **WCA-DESIGN-5 (PROPOSED) — touch model + window + dedup (refines WCA-2).** **Last-touch** by
+- **WCA-DESIGN-5 (RATIFIED) — touch model + window + dedup (refines WCA-2).** **Last-touch** by
   cookie overwrite-on-click; **bounded window** enforced twice (cookie max-age + signing
   max_age); **dedup via the `credited` set** in the marker (per-browser, at-most-once per kind) —
   no per-person key exists, so cross-browser repeats are an accepted bounded over-count on a
   firewalled metric, reported via M3. *Rejected:* a server-side per-person row (the PII surface
   WCA-3 forbids — A2).
-- **WCA-DESIGN-6 (PROPOSED) — conversion hooks.** **Explicit, fail-soft view hooks** at
+- **WCA-DESIGN-6 (RATIFIED) — conversion hooks.** **Explicit, fail-soft view hooks** at
   `subscriptions.views.follow` (only when `follow_app` returns `created=True`) and
   `accounts.views.register` (only the 202 new-account path), each calling a single `apps/widget`
   entry point and wrapped so attribution **never** breaks a follow / a registration / the reach
   counts (AC6). The conversion's own corpus event (`record_subscribe`) is **untouched** (AC5).
   *Rejected:* middleware / Django `post_save` signal (magic + no `request`/`response` for the
   cookie — A4).
-- **WCA-DESIGN-7 (PROPOSED) — account credited at the register act.** Credit the `account`
+- **WCA-DESIGN-7 (RATIFIED) — account credited at the register act.** Credit the `account`
   conversion at the **register POST** the brief names (marker reliably co-located in the
   submitting browser), accepting that it counts the registration act (not necessarily a confirmed
   account) and loses cross-device cases. *Rejected for now:* crediting at `verify` (confirmed but
   email-link often opens in a different browser → worse coverage — A5). **Flagged to revisit on
   real data.**
-- **WCA-DESIGN-8 (PROPOSED) — dashboard surface (AC3).** Extend the existing Screen-B widget
+- **WCA-DESIGN-8 (RATIFIED) — dashboard surface (AC3).** Extend the existing Screen-B widget
   slot with a **conversions funnel stage** (follows / accounts) + the **M2 rate derived at
   display**; the reach integers are **untouched** (separate tables = one source of truth);
   fail-soft together via the existing `DASHBOARD_WIDGET_DEGRADED`. Screen-A my-apps list stays
@@ -132,3 +133,24 @@ to the new `source` module). Reuses D-3/D-4/D-6/D-7/D-8/D-9/D-10 — **no new gl
 rollback note (DU-REL-1): `subscriptions`/`accounts`/`dashboard` now import `widget`, so rollback
 = a single `git revert` of the build commit (+ optional table drop). **Raised DN-WCA-DESIGN;
 stopped at the gate** (one persona/session — no Stage advance until approved).
+
+### DN-WCA-DESIGN approved → Stage 2→3 hand-off (Software Architect, 2026-06-27)
+
+User answered **"accept and proceed"** = approve [DESIGN.md](DESIGN.md) **as designed**. Actions
+taken (hand-off only — one persona/session, no Stage-3 work started):
+
+- **Ratified** [DESIGN.md](DESIGN.md) (status → APPROVED) and promoted **WCA-DESIGN-1…8 →
+  RATIFIED** (binding for Stage 3).
+- **ePrivacy residual resolved as recommended:** **no consent banner** under the no-PII WCA-3
+  posture (WCA-DESIGN-3's confirmed "no personal data processed" premise). The strict-ePrivacy
+  one-call **consent gate** stays a **documented contingency** in the design, to revisit **with
+  counsel before any EU production launch** — not built now, not silently relaxed.
+- Marked **OQ-WCA-2 / OQ-WCA-3 / OQ-WCA-4 → RESOLVED** in [OPEN_QUESTIONS.md](OPEN_QUESTIONS.md).
+- Reuses **D-3/D-4/D-6/D-7/D-8/D-9/D-10 — no new global ADR.**
+
+Set `Stage: 3-plan` + Persona **Planner / Tech Lead** in [CONTROL.md](../../CONTROL.md); cleared
+DN-WCA-DESIGN; updated [INDEX.md](../INDEX.md) (→ `3-plan`). Handed to the **Planner / Tech Lead**
+to decompose [DESIGN.md](DESIGN.md) into [TASKS.md](TASKS.md) — **risk-front-load the firewall
+proof + the signed source-marker codec** (the EUW T-02 precedent: prove the AC6 structural
+firewall — `apps/widget` imports no `signals`, AST test extends to the new `source` module — and
+the `widget_src` sign/verify/`credited`-dedup codec before any HTTP wiring).

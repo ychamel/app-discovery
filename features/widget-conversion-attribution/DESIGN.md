@@ -1,7 +1,10 @@
 # DESIGN — widget-conversion-attribution
 
-*Stage 2 (Software Architect). How it works end to end. **Status: PENDING APPROVAL**
-(DN-WCA-DESIGN). Drafted against the **APPROVED** [FEATURE_BRIEF.md](FEATURE_BRIEF.md)
+*Stage 2 (Software Architect). How it works end to end. **Status: APPROVED**
+(DN-WCA-DESIGN, 2026-06-27 — approved as designed: WCA-DESIGN-1…8 RATIFIED; the ePrivacy
+residual resolved as recommended — **no consent banner** under the no-PII WCA-3 posture,
+revisit with counsel before any EU production launch; the one-call consent gate stays a
+documented contingency). Drafted against the **APPROVED** [FEATURE_BRIEF.md](FEATURE_BRIEF.md)
 (AC1–AC6, M1–M6; WCA-1/2/3 RESOLVED). Resolves the three Stage-2 OQs —
 [OQ-WCA-2](OPEN_QUESTIONS.md) (token-carry mechanism), OQ-WCA-3 (cross-domain identity),
 OQ-WCA-4 (consent envelope) — under the **AC4 no-PII** + **AC5 firewall (M5 = 0, no
