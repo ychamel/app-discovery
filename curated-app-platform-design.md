@@ -1,6 +1,6 @@
 # Curated App Discovery Platform — High-Level Design
 
-*Working title: TBD · Status: Concept / Pre-MVP · Last updated: June 2026*
+*Working title: TBD · Status: Concept / Pre-MVP · Last updated: 2026-06-26*
 
 ---
 
@@ -126,12 +126,13 @@ Coordinated *negative* campaigns are blunted by the same gate (outside brigades 
 
 ### 5.4 Cold start (chicken-and-egg)
 **Problem:** developers won't come without users; users won't come without apps.
-**Resolution — sequenced narrow launch:**
-1. **Pick one beachhead niche** where the "buried by budgets" pain is sharpest — e.g., indie productivity tools, or indie games on a specific platform. Depth beats breadth.
-2. **Hand-curate the founding catalog** (50–150 genuinely good apps, recruited personally). Editorial curation substitutes for the algorithm until there's data.
-3. **Launch user-side as a digest, not a destination:** a weekly "5 apps picked for you" email/notification. A digest feels premium, needs little catalog depth, and — critically — **scarcity makes each impression valuable**, which is the foundation of the whole impression economy.
-4. **Graduate to a browsable destination feed** (Steam-discovery-queue style) once catalog and user base support daily engagement.
-5. Founding developers get a permanent "early supporter" badge — status, not algorithmic advantage.
+**Resolution — a developer wedge first, then turn on the network (revised 2026-06-26, [global D-10](DECISIONS.md)):** don't launch two-sided. Make the product genuinely useful to the *developer* on a completely empty platform, and let each developer bring their own audience — solving the chicken-and-egg by not having one.
+1. **Pick one beachhead niche** where the "buried by budgets" pain is sharpest — chosen: **vibecoded webapps** ([D-1](DECISIONS.md)). Depth beats breadth.
+2. **Lead with single-player developer value.** The MVP is the easiest way to spin up a beautiful public **app page** + an **update/changelog feed** — plus an **embeddable "what's new" widget** the developer drops inside their own app. A developer uses this *alone*, with zero followers, because it replaces work they already do badly (a hand-maintained landing page, scattered release notes); and every adopter **drags their existing users onto the platform** as a side effect — the widget is the capture mechanism a shared link alone isn't. This is the engine that fills the platform without acquiring users directly.
+3. **Hand-curate the founding catalog** (50–150 genuinely good apps, recruited personally, white-glove onboarding). Editorial curation substitutes for the algorithm until there's data.
+4. **Hold the network back until density.** Discovery, trending, the personalized digest, and cross-app browse are worthless at ten apps and powerful at a few hundred in one niche. Turn them on only once a visitor to one developer's page can stumble onto other apps they'd actually want — that is the moment the value proposition to a new developer flips from "free changelog tool" to "free changelog tool *and* distribution."
+5. **Then launch the user-side digest** — a weekly "5 apps picked for you," now backed by real catalog depth. A digest feels premium and **scarcity makes each impression valuable**, the foundation of the impression economy; graduate from there to a browsable destination feed (Steam-discovery-queue style).
+6. Founding developers get a permanent "early supporter" badge — status, not algorithmic advantage.
 
 ### 5.5 Quality gate vs. gatekeeping
 **Problem:** "curated" can slide into elitism, and human taste-gatekeeping doesn't scale.
@@ -139,11 +140,12 @@ Coordinated *negative* campaigns are blunted by the same gate (outside brigades 
 
 ### 5.6 Sustainability without corruption
 **Problem:** most "fair" platforms eventually sell ranking because nothing else pays.
-**Resolution:** revenue streams that monetize *tools and convenience*, never *position*:
-- **Developer subscription (flat, uniform price):** analytics dashboards, structured user feedback, beta-testing channels, press-kit pages, milestone announcements to followers. Free tier always sufficient to launch and grow — paying is never required to compete.
-- **User supporter membership:** cosmetic perks, early digest access, badge. No effect on anyone's score.
+**Resolution (revised 2026-06-26, [global D-9](DECISIONS.md)):** revenue comes from selling *attention*, never *ranking*. Tools and curation are free; money buys a labeled, time-boxed promotional placement that is **firewalled from the Quality Score by construction**.
+- **Paid promotion placements (the primary model):** a developer pays to push a clearly-labeled, time-boxed announcement — a **new release**, a **major update**, or a **beta-tester recruitment** call — to gain reach for a bounded period. Because promo placements are a **non-curated surface**, interactions on them **cannot move the Quality Score** (they sit outside the curated-rating gate, §4.1). Ads buy the top of the funnel; **ranking still has to be earned.** The firewall is **per-impression, not per-user** — a promo impression never counts, but a user *acquired* via a promo who later gets the app organically curated and rates it does. This aligns with §4.2's equilibrium: the platform now *sells* the legitimate "just acquire real users" path.
+- **Tools and curation stay free.** The dashboard, the update/changelog channel, the app page, and the earned discovery surfaces cost nothing — paying is never required to compete.
+- **User supporter membership (possible later):** cosmetic perks, early digest access, a badge. No effect on anyone's score.
 - **Possible later:** opt-in transaction/distribution fee if the platform ever handles payments or hosting (Steam's model) — still position-neutral.
-- **Structural safeguard:** publish the ranking-inputs list publicly and commit in the ToS that paid status is excluded from it. Auditable fairness is a feature.
+- **Structural safeguards:** (a) publish the ranking-inputs list publicly and commit in the ToS that paid status is excluded from it; (b) promotion placements are visually distinct, always labeled, and **bounded as a published fraction of the feed** — a cap locked *before* the revenue exists, because eroding it is exactly how "fair" platforms die. Auditable fairness is a feature.
 
 ---
 
