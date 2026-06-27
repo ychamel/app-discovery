@@ -17,10 +17,10 @@ Rules:
 | Field              | Value                                                            |
 |--------------------|------------------------------------------------------------------|
 | **Active feature** | **`platform-staging`** — execute global [D-11](DECISIONS.md): stand up a reachable **staging** environment, deploy the code-complete developer wedge, and walk it end-to-end as **user / developer / admin on web + mobile**; polish + make the server-rendered Django templates ([D-4](DECISIONS.md)) responsive; exercise the deferred deploy work (hosting, domain, the stubbed D-4 email provider, monitoring). Live recruitment (vision §5.4 step 3) follows once staging validates; SPA split deferred + evidence-gated (D-11). `editorial-curation-tools` + `weekly-digest` + D-9 monetization stay **backlog** (density-gated, D-10). |
-| **Stage**          | `2-design` — **brief APPROVED, handed to the Architect.** [FEATURE_BRIEF.md](features/platform-staging/FEATURE_BRIEF.md) promoted to APPROVED; **DN-PS-BRIEF resolved** (PS-1 free-tier→$20–100/mo, **prod-bound**; PS-2 **no email provider yet** → Architect picks one in budget + deploy ships a setup `.md`; PS-3 **user** walks it, agent supplies a walkthrough `.md`). Next persona: **Software Architect** → authors [DESIGN.md](features/platform-staging/DESIGN.md). |
-| **Persona**        | **Software Architect** (Stage 2, [phase-2-architect.md](process/personas/phase-2-architect.md)) — **next session** (not yet started; one persona per session). |
-| **Folder**         | [features/platform-staging/](features/platform-staging/) (7 artifacts seeded; **brief APPROVED**, design pending). Prior feature [widget-conversion-attribution](features/widget-conversion-attribution/) released local/dev — **closed-out**. |
-| **Last updated**   | 2026-06-27 (Product Analyst — DN-PS-BRIEF answered; folded PS-1/2/3 into the brief, promoted it to APPROVED, resolved OPEN_QUESTIONS, advanced Stage→2-design; no code) |
+| **Stage**          | `2-design` — **DESIGN.md DRAFTED, blocked on gate DN-PS-DESIGN.** [DESIGN.md](features/platform-staging/DESIGN.md) authored (PS-DESIGN-1…8 PROPOSED): a deployment/serving stack (**Render** Blueprint + managed Postgres + disk + free Redis; **gunicorn**/**WhiteNoise**/`dj-database-url`; media on a persistent disk; email = **Resend** over Django SMTP = pure config; shared cache from `REDIS_URL`→ the auth limiter holds across workers; stdout logs + env-gated **Sentry** + a new **DB-only `/health/live`** split from the SMTP-touching `/health`; **one shared responsive base template + stylesheet** consolidating the 6 `base.html`, widget stays isolated). **No schema/migration.** Global ADR **D-12** pending. Next persona: **Planner / Tech Lead** *after* DN-PS-DESIGN. |
+| **Persona**        | **Software Architect** (Stage 2, [phase-2-architect.md](process/personas/phase-2-architect.md)) — **drafted DESIGN.md + raised DN-PS-DESIGN, stopped at the gate.** Planner runs next session (one persona/session). |
+| **Folder**         | [features/platform-staging/](features/platform-staging/) (7 artifacts seeded; **brief APPROVED**, **[DESIGN.md](features/platform-staging/DESIGN.md) DRAFTED — awaiting DN-PS-DESIGN**). Prior feature [widget-conversion-attribution](features/widget-conversion-attribution/) released local/dev — **closed-out**. |
+| **Last updated**   | 2026-06-27 (Software Architect — authored DESIGN.md from the APPROVED brief + codebase survey; raised gate DN-PS-DESIGN; no code) |
 
 > **Design in one line:** a **first-party, signed, source-only cookie** `widget_src`
 > set on the click-through 302 (the click is a `target="_top"` top-level nav onto the
@@ -49,17 +49,23 @@ Rules:
 ### Latest session status (CLAUDE.md §6.7 — overwritten each session)
 
 ```
-Stage: 2-design | Feature: platform-staging | Persona: Product Analyst (Stage 1) — brief APPROVED, handed off to the Software Architect
-Done: User answered DN-PS-BRIEF and said "proceed" → promoted features/platform-staging/FEATURE_BRIEF.md to APPROVED. Folded the three answers in: PS-1 = start free-tier, $20–100/mo budget when
-      deploying, staging is PROD-BOUND (promote→prod later, build for durability); PS-2 = NO email provider exists yet → Architect picks one within budget and the deploy ships an .md setup guide
-      (account + credential wiring), AC3.1/M5 still gate on a real inbox; PS-3 = the USER performs/signs off the human-judgment walkthrough, agent supplies a suggested walkthrough .md (Stage 4).
-      Added the two user-requested .md deliverables to In scope; updated assumptions A1–A3 → Resolved; resolved PS-1/2/3 in OPEN_QUESTIONS.md; advanced INDEX.md row → 2-design.
-Verified by: n/a (Stage-1 definition only — no code touched).
-Blocked/Deferred: Held-back bets unchanged: network/weekly-digest + editorial-curation-tools backlog (D-10, density-gated); D-9 monetization ratified-but-unbuilt; SPA split deferred +
-      evidence-gated (D-11, this feature only gathers the evidence at AC6.2). ePrivacy consent revisit pre-EU-prod.
-Decisions needed: none open (DN-PS-BRIEF resolved).
-Next: Software Architect (Stage 2) authors features/platform-staging/DESIGN.md from the APPROVED brief — incl. the hosting/Postgres/static-media architecture within the PS-1 budget and the PS-2
-      email-provider selection + setup-guide plan. One persona per session: the Architect runs next session.
+Stage: 2-design | Feature: platform-staging | Persona: Software Architect (Stage 2) — DESIGN.md DRAFTED, raised DN-PS-DESIGN, stopped at the gate
+Done: Surveyed the codebase against the APPROVED brief and authored features/platform-staging/DESIGN.md (PS-DESIGN-1…8 PROPOSED). This feature ships NO new product capability — its architecture is a
+      deployment/serving stack + the frontend shell + defect fixes. Key calls: host = Render Blueprint (managed Postgres + persistent disk + free Redis; free now, ~$14–25/mo durable, inside PS-1);
+      gunicorn + WhiteNoise (CompressedManifest, serves admin static too) + dj-database-url (DATABASE_URL with discrete-var fallback) close the C4 static gap; media on a persistent disk (object store
+      = documented growth path); email = Resend over Django's SMTP backend = PURE CONFIG (apps/core/email.py already swaps by EMAIL_BACKEND) + a docs/deploy/email-provider-setup.md (PS-2); shared cache
+      wired from REDIS_URL (Django built-in RedisCache, LocMem fallback) so the fail-open auth limiter holds across gunicorn workers; observability = existing structured stdout logs + env-gated Sentry +
+      a NEW DB-only /health/live liveness probe split from the SMTP-touching /health (a real footgun found in code — /health opens a live SMTP socket, unsafe for an orchestrator). Frontend: ONE shared
+      responsive base template + stylesheet in apps/core consolidating the 6 duplicated base.html (zero CSS exists today), widget stays isolated (preserves the AC3.3 firewall). NO schema/migration. Every
+      AC1.1–AC6.2 mapped (§13). New global ADR D-12 pending approval. Logged DN-PS-DESIGN in OPEN_QUESTIONS.md; updated the INDEX row.
+Verified by: n/a (Stage-2 design only — no code written). Codebase claims re-verified by reading: no STATIC_ROOT/collectstatic + 0 static files, 6 base.html, no CACHES, /health _email_ok opens SMTP,
+      EMAIL_BACKEND-swappable email, config/urls media served only under DEBUG.
+Blocked/Deferred: BLOCKED on DN-PS-DESIGN (host / email provider / consolidation appetite) — one persona/session, Architect stops at the gate. Held-back bets unchanged: network/weekly-digest +
+      editorial-curation-tools backlog (D-10, density-gated); D-9 monetization ratified-but-unbuilt; SPA split deferred + evidence-gated (D-11, only AC6.2 evidence). Object store / CDN / single-worker
+      named as growth paths, not built (§5.5). ePrivacy consent revisit pre-EU-prod.
+Decisions needed: DN-PS-DESIGN (3 items) under "Decisions Needed From You" above.
+Next: User answers DN-PS-DESIGN → Architect promotes PS-DESIGN-1…8 → RATIFIED, records global D-12, advances Stage→3-plan, hands to the Planner / Tech Lead to write TASKS.md (incl. the Stage-4
+      walkthrough-script .md + TEST_PLAN.md). One persona/session.
 ```
 
 ---
@@ -69,7 +75,19 @@ Next: Software Architect (Stage 2) authors features/platform-staging/DESIGN.md f
 The agent is blocked on these. Answer inline (edit the **Answer** cell), then the agent
 proceeds.
 
-_No decisions are currently open. The agent proceeds with Stage 2 (Software Architect)._
+**DN-PS-DESIGN — ratify the `platform-staging` Stage-2 architecture.** The design is fully
+specified in [DESIGN.md](features/platform-staging/DESIGN.md) (PS-DESIGN-1…8 PROPOSED); three
+calls are the user's because they commit external accounts / spend or set a scope shape. The
+standard items (PS-DESIGN-2/3/5/6/8 — gunicorn/WhiteNoise/`dj-database-url`, media on a disk,
+the shared cache, the liveness split + Sentry, the committed deploy artifacts) proceed on
+approval of these three. Answer inline, then the Architect promotes PS-DESIGN-1…8 → RATIFIED,
+records global **D-12**, and hands to the Planner.
+
+| # | Decision | Recommendation | Answer |
+|---|----------|----------------|--------|
+| 1 | **Hosting stack** (PS-DESIGN-1) — where staging lives. | **Render** Blueprint (web + managed Postgres + disk + free Redis): free tier now, **~$14–25/mo** on the durable/prod-bound tier (inside PS-1's $20–100). Repeatability is structural (declarative `render.yaml`). A `*.onrender.com` HTTPS URL satisfies AC1.1 — no domain purchase for staging. | Render is fine |
+| 2 | **Email provider** (PS-DESIGN-4 / PS-2) — no provider exists today. | **Resend** over Django's SMTP backend (free tier 100/day fits staging magic-links; pure config, no code). **Postmark** is the deliverability-premium alt ($15/mo, inside PS-1). The deploy ships an `.md` setup guide for the chosen one. | Resend is fine |
+| 3 | **Frontend consolidation appetite** (PS-DESIGN-7) — there are **6 duplicated `base.html` and zero CSS** today. | **Consolidate** to one shared responsive base template + one stylesheet in `apps/core` (the DRY, long-term answer; a one-time refactor touching ~30 templates). The widget stays isolated. Alternative: lighter in-place polish (faster, more debt). | Consolidate |
 
 *(Recently resolved: **DN-PS-BRIEF** approved 2026-06-27 (brief + PS-1/2/3); **DN-STRAT-1**
 2026-06-27 → [D-11](DECISIONS.md); **DN-WCA-DESIGN** approved 2026-06-27; **DN-WCA-BRIEF**
@@ -121,6 +139,7 @@ folders remain the full record either way.
 
 | Date       | Stage           | Summary                                                                 |
 |------------|-----------------|-------------------------------------------------------------------------|
+| 2026-06-27 | `2-design` (awaiting DN-PS-DESIGN) | **Software Architect** — surveyed the codebase + authored [features/platform-staging/DESIGN.md](features/platform-staging/DESIGN.md) (**PS-DESIGN-1…8 PROPOSED**). This feature ships **no new product capability** — its architecture is a **deployment/serving stack + the frontend shell + defect fixes**. Calls: host = **Render** Blueprint (managed Postgres + persistent disk + free Redis; free now, ~$14–25/mo durable, inside PS-1); **gunicorn** + **WhiteNoise** (serves admin static too) + **`dj-database-url`** close the **C4** static gap; media on a persistent disk (object store = growth path); email = **Resend** over Django SMTP = **pure config** ([apps/core/email.py](apps/core/email.py) already swaps by `EMAIL_BACKEND`) + a setup `.md` (PS-2); shared cache from `REDIS_URL` (LocMem fallback) so the fail-open auth limiter holds across workers; observability = existing stdout logs + env-gated **Sentry** + a **new DB-only `/health/live`** split from the SMTP-touching `/health` (a real footgun found in code). Frontend: **one shared responsive base template + stylesheet** in `apps/core` consolidating the **6 duplicated `base.html`** (zero CSS today), **widget stays isolated** (AC3.3 firewall preserved). **No schema/migration.** Every AC1.1–AC6.2 mapped; global ADR **D-12** pending. Logged **DN-PS-DESIGN** (host / email / consolidation appetite) in [OPEN_QUESTIONS.md](features/platform-staging/OPEN_QUESTIONS.md) + the INDEX row. **Raised DN-PS-DESIGN; stopped at the gate.** No code. |
 | 2026-06-27 | `1-define`→`2-design` | **Product Analyst** (DN-PS-BRIEF approved) — user said *proceed* + answered PS-1/2/3 inline → promoted [features/platform-staging/FEATURE_BRIEF.md](features/platform-staging/FEATURE_BRIEF.md) to **APPROVED**. Folded the answers in: **PS-1** free-tier→**$20–100/mo**, **prod-bound** (promote→prod later); **PS-2** **no email provider yet** → Architect picks one in budget + deploy ships an `.md` setup guide (AC3.1/M5 gate on a real inbox); **PS-3** **user** performs/signs off, agent supplies a walkthrough `.md` (Stage 4). Added both `.md` deliverables to In scope, assumptions A1–A3 → Resolved, PS-1/2/3 → Resolved in [OPEN_QUESTIONS.md](features/platform-staging/OPEN_QUESTIONS.md), [INDEX.md](features/INDEX.md) row → 2-design. No architecture/schema/UI (Stage-2 job). One persona/session — handed to the **Software Architect** to author [DESIGN.md](features/platform-staging/DESIGN.md). |
 | 2026-06-27 | `1-define` (awaiting DN-PS-BRIEF) | **Product Analyst** — authored [features/platform-staging/FEATURE_BRIEF.md](features/platform-staging/FEATURE_BRIEF.md) from [D-11](DECISIONS.md) + [STRATEGY.md](STRATEGY.md) + vision §5.4 step 3: the problem (wedge code-complete but **never reachable** → unvalidated thesis + unexercised deploy path), 6 user stories, acceptance criteria **AC1.1–AC6.2** (all Given/When/Then, each tagged *agent-verifiable* vs *human-judgment*), metrics **M1–M7**, explicit in/out scope, constraints **C1–C6** (grounded in code: 12-factor config, security gated on `not DEBUG`, email = console stub, **no `STATIC_ROOT`/deploy manifest exists**, PG-only) + assumptions A1–A3, top-5 risks, vision alignment. No architecture/schema/UI (Stage-2). Surfaced 3 user-business scoping calls as gate **DN-PS-BRIEF** (PS-1 budget/posture, PS-2 email provider, PS-3 UX sign-off owner); logged PS-1/2/3 in [OPEN_QUESTIONS.md](features/platform-staging/OPEN_QUESTIONS.md). **Raised DN-PS-BRIEF; stopped at the gate.** |
 | 2026-06-27 | `0-coordinator`→`1-define` | **Coordinator** (§4) — scaffolded the ratified [D-11](DECISIONS.md) staging-validation bet into a feature. Created [features/platform-staging/](features/platform-staging/) with all 7 standard artifacts seeded (brief carries the D-11/[STRATEGY.md](STRATEGY.md) upstream pointer + one-line intent; the rest stage-pending), added the [INDEX.md](features/INDEX.md) row (Phase 4 Validation, started 2026-06-27). Set Active feature = `platform-staging`, `Stage: 1-define`, Persona **Product Analyst**. Held bets (network / `weekly-digest` / `editorial-curation-tools` / D-9) stay backlog (density-gated). Did **not** scope stories/AC (Product Analyst's job). No code. Handed to the **Product Analyst**. |
