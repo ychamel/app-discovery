@@ -17,10 +17,10 @@ Rules:
 | Field              | Value                                                            |
 |--------------------|------------------------------------------------------------------|
 | **Active feature** | **`widget-conversion-attribution`** — attribute a downstream **conversion** (new **follow** + new **account**) to the specific widget **click-through** that caused it, completing impression → click → conversion for the developer wedge. Must preserve the **AC6 firewall** (no widget interaction confers D-8 eligibility; M5=0, structural) and the **no-PII posture**. (M3 / OQ-EUW-5, deferred from the closed [embeddable-update-widget](features/embeddable-update-widget/).) `editorial-curation-tools` + `weekly-digest` stay **backlog** (D-10: held until per-niche density). |
-| **Stage**          | `3-plan` — **brief APPROVED** + **DESIGN APPROVED** (WCA-DESIGN-1…8 ratified 2026-06-27). Awaiting `TASKS.md`. See [DESIGN.md](features/widget-conversion-attribution/DESIGN.md). |
-| **Persona**        | **Planner / Tech Lead** — [phase-3-planner.md](process/personas/phase-3-planner.md). |
-| **Folder**         | [features/widget-conversion-attribution/](features/widget-conversion-attribution/) (7 artifacts; brief + design approved) |
-| **Last updated**   | 2026-06-27 (Software Architect — Stage-2→3 hand-off; DESIGN approved & ratified) |
+| **Stage**          | `4-build` — **brief + DESIGN APPROVED** (WCA-DESIGN-1…8) + **PLAN done** ([TASKS.md](features/widget-conversion-attribution/TASKS.md): 8 tasks T-01…T-08, all S/M, full AC1–AC6 coverage). See [DESIGN.md](features/widget-conversion-attribution/DESIGN.md). |
+| **Persona**        | **Senior Engineer** — [phase-4-engineer.md](process/personas/phase-4-engineer.md). |
+| **Folder**         | [features/widget-conversion-attribution/](features/widget-conversion-attribution/) (7 artifacts; brief + design approved, tasks ready) |
+| **Last updated**   | 2026-06-27 (Planner / Tech Lead — Stage-3→4 hand-off; TASKS.md written) |
 
 > **Design in one line:** a **first-party, signed, source-only cookie** `widget_src`
 > set on the click-through 302 (the click is a `target="_top"` top-level nav onto the
@@ -49,15 +49,17 @@ Rules:
 ### Latest session status (CLAUDE.md §6.7 — overwritten each session)
 
 ```
-Stage: 2-design -> 3-plan | Feature: widget-conversion-attribution | Persona: Software Architect (DN-WCA-DESIGN approved; Stage-2->3 hand-off)
-Done: User approved DESIGN.md as designed. Ratified it (-> APPROVED) and promoted WCA-DESIGN-1…8 -> RATIFIED (binding Stage 3). Marked OQ-WCA-2/3/4 RESOLVED;
-      recorded ratification + hand-off in the feature DECISIONS.md; updated INDEX.md (-> 3-plan). One persona this session (hand-off only, no Stage-3 planning).
-Verified by: n/a (doc-only hand-off, no code this session).
+Stage: 3-plan -> 4-build | Feature: widget-conversion-attribution | Persona: Planner / Tech Lead (Stage-3->4 hand-off)
+Done: Decomposed the APPROVED DESIGN.md into TASKS.md — 8 ordered tasks T-01…T-08, all S/M (no L), with concrete per-task DoD + files-touched + an AC1–AC6 / design-element
+      coverage map. Risk front-loaded exactly as the prior hand-off named: the AC5 firewall proof (AST) + the concurrency-correct conversion writer at T-03, and the novel
+      `widget_src` sign/verify/`credited`-dedup codec at T-04 — both BEFORE any HTTP wiring (T-05+). Grounded every task in current code (verified follow_app returns `created`,
+      the register 202 path, the reach writer/selector/dashboard-slot patterns being mirrored). Updated INDEX.md (-> 4-build). One persona this session (no re-design).
+Verified by: n/a (doc-only hand-off, no code this session). Plan cross-checked against the live code it touches.
 Blocked/Deferred: embeddable-update-widget Stage-6 retrospective deferred/reopenable (no prod target). weekly-digest + editorial-curation-tools backlog (D-10). D-9
       monetization deferred (not dropped). WCA-DESIGN-7 (credit account at register, not verify) flagged to revisit on real data.
-Decisions needed: none (DN-WCA-DESIGN cleared — approved).
-Next: Planner / Tech Lead decomposes DESIGN.md into TASKS.md — risk-front-load the AC6 firewall proof (apps/widget imports no signals, AST test extends to the new
-      `source` module) + the `widget_src` sign/verify/`credited`-dedup codec, before any HTTP wiring (the EUW T-02 precedent).
+Decisions needed: none.
+Next: Senior Engineer builds T-01 first (kinds/config/metrics substrate), then T-02→T-08 in order, and writes TEST_PLAN.md covering every AC1–AC6. Hold the firewall
+      structural (apps/widget imports no signals — the AST test auto-covers the new `rollup`/`source` modules) and every conversion hook fail-soft (AC6).
 ```
 
 ---
@@ -67,7 +69,7 @@ Next: Planner / Tech Lead decomposes DESIGN.md into TASKS.md — risk-front-load
 The agent is blocked on these. Answer inline (edit the **Answer** cell), then the agent
 proceeds.
 
-**None open.** The agent proceeds with the Stage 3 plan. (Recently resolved:
+**None open.** The agent proceeds with the Stage 4 build. (Recently resolved:
 **DN-WCA-DESIGN** approved 2026-06-27, **DN-WCA-BRIEF** approved 2026-06-26 — both
 summarized under *Decisions Made* below; full rationale in the decision logs.)
 
@@ -113,6 +115,7 @@ folders remain the full record either way.
 
 | Date       | Stage           | Summary                                                                 |
 |------------|-----------------|-------------------------------------------------------------------------|
+| 2026-06-27 | `3-plan`→`4-build` | **Planner / Tech Lead** — decomposed the APPROVED [widget-conversion-attribution/DESIGN.md](features/widget-conversion-attribution/DESIGN.md) into [TASKS.md](features/widget-conversion-attribution/TASKS.md): **8 ordered tasks T-01…T-08, all S/M** (no L), each with a concrete DoD + files-touched, plus an AC1–AC6 / design-element coverage map. **Risk front-loaded** as named: the AC5 firewall proof (AST) + the concurrency-correct conversion writer at **T-03**, and the novel `widget_src` sign/verify/`credited`-dedup codec at **T-04** — both **before any HTTP wiring** (T-05+). Grounded every task in current code (verified `follow_app` returns `created`, the register 202 path, the reach writer/selector/dashboard-slot patterns being mirrored). Updated [INDEX.md](features/INDEX.md) (→ 4-build). Hand-off only (one persona/session, no re-design). Handed to the **Senior Engineer** to build T-01 first + write [TEST_PLAN.md](features/widget-conversion-attribution/TEST_PLAN.md). |
 | 2026-06-27 | `2-design`→`3-plan` | **Software Architect** (DN-WCA-DESIGN approved) — ratified [widget-conversion-attribution/DESIGN.md](features/widget-conversion-attribution/DESIGN.md) (→ APPROVED) and promoted **WCA-DESIGN-1…8 → RATIFIED**: the first-party signed `widget_src` source-only cookie + the separate PII-free `widget_conversion_count` rollup + fail-soft hooks at the follow/register views; AC6 firewall stays structural, no consent banner under the no-PII posture. Marked OQ-WCA-2/3/4 RESOLVED; recorded in the feature [DECISIONS.md](features/widget-conversion-attribution/DECISIONS.md); updated [INDEX.md](features/INDEX.md). Hand-off only (one persona/session). Handed to the **Planner / Tech Lead** to write [TASKS.md](features/widget-conversion-attribution/TASKS.md). |
 | 2026-06-27 | `2-design` (awaiting DN-WCA-DESIGN) | **Software Architect** — drafted [widget-conversion-attribution/DESIGN.md](features/widget-conversion-attribution/DESIGN.md) and **resolved all three Stage-2 OQs**. Pivotal finding: the click-through `GET /widget/<id>/view` is a `target="_top"` top-level nav onto the **platform** origin, so a marker on its 302 is **first-party from birth** → dissolves cross-domain identity (OQ-WCA-3) and makes the no-PII posture achievable. Logged **WCA-DESIGN-1…8 PROPOSED**; one surfaced residual = the ePrivacy consent judgment (raised in **DN-WCA-DESIGN** with a one-call consent gate designed in as contingency, not silently relaxed). **Stopped at the gate.** |
 | 2026-06-26 | `1-define`→`2-design` | **Product Analyst** (DN-WCA-BRIEF approved) — marked [widget-conversion-attribution/FEATURE_BRIEF.md](features/widget-conversion-attribution/FEATURE_BRIEF.md) **APPROVED**; promoted WCA-1/2/3 → RESOLVED (follow+account distinct; last-touch ~30-day window; aggregate-only no-PII). Left OQ-WCA-2/3/4 (token-carry mechanism) OPEN for Stage 2. Hand-off only. Handed to the **Software Architect**. |
