@@ -180,6 +180,30 @@ class WidgetTunableTests(SimpleTestCase):
             config.widget_notice_limit()
 
 
+class WidgetAttributionWindowTests(SimpleTestCase):
+    def test_default_is_thirty_days(self):
+        os.environ.pop("WIDGET_ATTRIBUTION_WINDOW_DAYS", None)
+        self.assertEqual(config.widget_attribution_window_days(), 30)
+
+    @override_settings(WIDGET_ATTRIBUTION_WINDOW_DAYS=7)
+    def test_setting_override_wins(self):
+        self.assertEqual(config.widget_attribution_window_days(), 7)
+
+    def test_env_override(self):
+        with mock.patch.dict(os.environ, {"WIDGET_ATTRIBUTION_WINDOW_DAYS": "14"}):
+            self.assertEqual(config.widget_attribution_window_days(), 14)
+
+    @override_settings(WIDGET_ATTRIBUTION_WINDOW_DAYS=0)
+    def test_non_positive_fails_loudly(self):
+        with self.assertRaises(ImproperlyConfigured):
+            config.widget_attribution_window_days()
+
+    @override_settings(WIDGET_ATTRIBUTION_WINDOW_DAYS="not-a-number")
+    def test_non_numeric_fails_loudly(self):
+        with self.assertRaises(ImproperlyConfigured):
+            config.widget_attribution_window_days()
+
+
 class ValidateAllTests(SimpleTestCase):
     def test_passes_with_defaults(self):
         config.validate_all()  # should not raise
@@ -192,5 +216,11 @@ class ValidateAllTests(SimpleTestCase):
     @override_settings(WIDGET_RENDER_RATE_LIMIT_PER_IP_PER_MINUTE="bad")
     def test_evaluates_widget_tunables(self):
         # validate_all must cover the widget tunables, so a bad value surfaces at startup.
+        with self.assertRaises(ImproperlyConfigured):
+            config.validate_all()
+
+    @override_settings(WIDGET_ATTRIBUTION_WINDOW_DAYS="bad")
+    def test_evaluates_widget_attribution_window(self):
+        # validate_all must cover the attribution window, so a bad value surfaces at startup.
         with self.assertRaises(ImproperlyConfigured):
             config.validate_all()

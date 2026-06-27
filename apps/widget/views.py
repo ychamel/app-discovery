@@ -23,7 +23,7 @@ from django.views.decorators.http import require_http_methods
 from apps.catalog import selectors as catalog
 from apps.core import config, observability
 from apps.core.ratelimit import ip_rate_limited_get
-from apps.widget import attribution, content
+from apps.widget import attribution, content, source
 
 logger = logging.getLogger(__name__)
 
@@ -76,8 +76,9 @@ def widget_view_redirect(request, app_id: UUID):
     """GET /widget/<id>/view — count a click-through (fail-soft) then 302 to the app page.
 
     The redirect target is **server-derived** (``reverse("pages:app-page", [app_id])``), never a
-    request param → no open redirect (F4/§9). A non-accepted/unknown id is a 404. The redirect
-    fires even if the count failed (AC9 best-effort).
+    request param → no open redirect (F4/§9); the source marker never influences it. A
+    non-accepted/unknown id is a 404 *before* any marker is set. The redirect fires even if the
+    count or the marker failed (AC9/AC6 best-effort).
     """
     if catalog.get_catalogued_app(app_id) is None:
         observability.increment(observability.WIDGET_NOT_AVAILABLE)
@@ -85,7 +86,11 @@ def widget_view_redirect(request, app_id: UUID):
 
     _count_fail_soft(attribution.record_widget_click_through, app_id)
     observability.increment(observability.WIDGET_CLICK_THROUGH, app_id=str(app_id))
-    return redirect(reverse("pages:app-page", args=[app_id]))
+    response = redirect(reverse("pages:app-page", args=[app_id]))
+    # Arm the first-party source marker for downstream conversion attribution (T-04/T-05). The
+    # click is a top-level nav onto the platform origin, so the cookie is first-party from birth.
+    _set_marker_fail_soft(response, app_id)
+    return response
 
 
 def _count_fail_soft(record, app_id: UUID) -> None:
@@ -99,3 +104,17 @@ def _count_fail_soft(record, app_id: UUID) -> None:
     except Exception:
         logger.exception("widget count degraded app_id=%s", app_id)
         observability.increment(observability.WIDGET_COUNT_DEGRADED)
+
+
+def _set_marker_fail_soft(response, app_id: UUID) -> None:
+    """Arm the source marker on the click 302, swallowing any error after counting + logging it.
+
+    Like the reach count, attribution is best-effort to the visitor — a marker failure must never
+    break the redirect — but **loud to ops** via ``WIDGET_CONVERSION_DEGRADED`` (DESIGN §9, AC6).
+    The reach count is independent: a marker failure does not affect the click-through tally.
+    """
+    try:
+        source.set_marker(response, app_id)
+    except Exception:
+        logger.exception("widget source marker degraded app_id=%s", app_id)
+        observability.increment(observability.WIDGET_CONVERSION_DEGRADED)

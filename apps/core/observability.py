@@ -156,6 +156,19 @@ WIDGET_COUNT_DEGRADED = "widget_count_degraded"  # alert: attribution write fail
 WIDGET_LIMITER_DEGRADED = "widget_limiter_degraded"  # the rate-limiter cache failed → fail-open
 DASHBOARD_WIDGET_DEGRADED = "dashboard_widget_degraded"  # the dashboard widget-reach slot fell back
 
+# widget-conversion-attribution metrics (widget-conversion-attribution DESIGN §10). ATTRIBUTED is
+# M1 (the headline payoff — a conversion credited to a widget source, tagged by kind∈{follow,
+# account}). NO_SOURCE (a conversion ran with no live marker) and EXPIRED (a marker existed but was
+# past the window — AC2 no-fabrication evidence) are the M3 coverage denominator. The one
+# actionable ALERT is DEGRADED — an attribution read/write failed, so the conversion was silently
+# lost (M6); sustained nonzero ⇒ attribution is lossy. M4 (firewall = 0) and M5 (PII fields = 0)
+# are structural — asserted in tests (AST no-`signals` import; no per-person column), no counter
+# (the widget-reach precedent). The dashboard funnel slot reuses DASHBOARD_WIDGET_DEGRADED above.
+WIDGET_CONVERSION_ATTRIBUTED = "widget_conversion_attributed"  # M1 — a credit (tags: kind)
+WIDGET_CONVERSION_NO_SOURCE = "widget_conversion_no_source"  # a conversion with no live marker (M3)
+WIDGET_CONVERSION_EXPIRED = "widget_conversion_expired"  # a marker past the window (M3 + AC2)
+WIDGET_CONVERSION_DEGRADED = "widget_conversion_degraded"  # alert: attribution read/write failed
+
 metrics_logger = logging.getLogger("apps.metrics")
 
 

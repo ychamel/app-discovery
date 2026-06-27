@@ -154,3 +154,38 @@ to decompose [DESIGN.md](DESIGN.md) into [TASKS.md](TASKS.md) — **risk-front-l
 proof + the signed source-marker codec** (the EUW T-02 precedent: prove the AC6 structural
 firewall — `apps/widget` imports no `signals`, AST test extends to the new `source` module — and
 the `widget_src` sign/verify/`credited`-dedup codec before any HTTP wiring).
+
+## Stage 4 — Senior Engineer (build, 2026-06-27)
+
+Built **T-01…T-08** from the APPROVED [DESIGN.md](DESIGN.md) + [TASKS.md](TASKS.md); risk
+front-loaded as planned (the firewall proof + the concurrency writer at T-03, the codec at T-04,
+before any HTTP wiring). Full suite green; [TEST_PLAN.md](TEST_PLAN.md) maps every AC1–AC6.
+Implementation notes (no scope/interface change — the ratified WCA-DESIGN-1…8 all stand):
+
+- **WCA-IMPL-1 — `Secure` follows the platform cookie policy, not a flat literal.** DESIGN §3.1
+  lists `Secure` for `widget_src`. Implemented as `secure=settings.SESSION_COOKIE_SECURE` (the
+  platform's existing `not DEBUG` policy that already governs the session/CSRF cookies), so the
+  marker is stored over plain HTTP in **local dev** (the only current release target) and
+  required-HTTPS in production. A flat `Secure=True` would make the cookie undeliverable in dev.
+  Matches existing conventions (CLAUDE.md §5.5); one source of truth for "are cookies secure here".
+
+- **WCA-IMPL-2 — signature age read via the signer's own timestamp for the remaining-window
+  re-issue.** DESIGN §3.4 anchors the re-issued cookie to the original click via
+  `Max-Age = window − signature_age`. `django.core.signing.loads` validates `max_age` but discards
+  the timestamp, so `source._signature_age_seconds` strips the HMAC and parses the signer's base62
+  timestamp (called only on the credit/re-issue path, on an already-integrity-checked value). The
+  literal signer-timestamp mechanism is **correct** for exactly two one-time-creditable kinds: the
+  first credit's re-issue anchors the cookie to `click+window`, and the second credit lands inside
+  that browser-enforced window; the marker is fully credited by then, so a later over-extension is
+  unobservable. (Analyzed and confirmed during the build — no stored click-time needed; AC4 payload
+  stays `{v, src, credited}`.)
+
+- **WCA-IMPL-3 — counter mapping for the "no credit" branches.** A live marker for a *different*
+  app (a follow of X with a marker for Y) counts `WIDGET_CONVERSION_NO_SOURCE` (from that
+  conversion's standpoint there was no applicable widget source — the M3 denominator). An
+  *already-credited* kind (per-marker dedup, R4) is a **silent** no-op (no counter) — it is not a
+  coverage miss, so counting it would distort M3.
+
+No new global ADR (reuses D-3/D-4/D-6/D-7/D-8/D-9/D-10 + the carried-in AC6 firewall). New shared
+code recorded in [CODEMAP.md](../../CODEMAP.md); the `apps/widget` README names both tables + the
+new `rollup`/`source` modules.

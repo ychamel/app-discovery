@@ -4,8 +4,9 @@ The bring-your-own-audience capture widget (developer-wedge pivot, [D-10](../../
 developer pastes **one line** of HTML inside their **own** app; it renders that app's published
 [`apps/updates/`](../updates/) notices and a labeled "view on platform" link, so their existing
 (often not-yet-platform-member) users see the changelog and click through onto the platform. The
-app **owns one table** (`widget_reach_count`) — a daily rollup that counts the reach the widget
-drives, surfaced to the developer on their dashboard (AC9).
+app **owns two daily-rollup tables**: `widget_reach_count` (impressions + click-throughs the
+widget drives) and `widget_conversion_count` (the downstream follows + new accounts a click-through
+led to — widget-conversion-attribution), both surfaced to the developer on their dashboard (AC9/AC3).
 
 ## The embed (AC7 — drop-in, no build toolchain)
 
@@ -65,42 +66,56 @@ assets) at `GET /widget/<app_id>/`. Inside it the "View on platform" control is 
 
 | File | Responsibility |
 |---|---|
-| [`kinds.py`](kinds.py) | `WidgetEventKind` (`impression` \| `click_through`) — the closed vocabulary. |
-| [`models.py`](models.py) | `WidgetReachCount` / `widget_reach_count` — the daily-rollup shape only (no logic); unique constraint + `widget_reach_app_kind_date_idx`. |
-| [`attribution.py`](attribution.py) | The **single writer**: `record_widget_impression` / `record_widget_click_through` — the atomic per-day increment. Imports no `signals`. |
-| [`selectors.py`](selectors.py) | The **single reader** → frozen `WidgetReach` DTO: `widget_reach(app_id, *, start, end)` + `widget_reach_for_apps(app_ids, …)` (one grouped query, zero-filled, no N+1). |
+| [`kinds.py`](kinds.py) | `WidgetEventKind` (`impression` \| `click_through`) + `WidgetConversionKind` (`follow` \| `account`) — the two **disjoint** closed vocabularies. |
+| [`models.py`](models.py) | `WidgetReachCount` / `widget_reach_count` **and** `WidgetConversionCount` / `widget_conversion_count` — the daily-rollup shapes only (no logic); each with its unique constraint + `(app_id, kind, count_date)` index. |
+| [`rollup.py`](rollup.py) | `_increment_daily(model, app_id, kind)` — the **one** concurrency-correct atomic per-day increment (create-race retry), shared by both writers. Imports no `signals`. |
+| [`attribution.py`](attribution.py) | The **single writers**: `record_widget_impression` / `record_widget_click_through` (reach) + `record_widget_conversion(app_id, kind)` (conversion). Delegate to `rollup`. Imports no `signals`. |
+| [`source.py`](source.py) | The **only** module that knows the `widget_src` cookie format: `set_marker` (arm on the click 302) + `attribute_follow` / `attribute_account` (decode, window + dedup, credit). Signed `{v, src, credited}`, no PII. Imports no `signals`. |
+| [`selectors.py`](selectors.py) | The **single readers** → frozen `WidgetReach` / `WidgetConversion` DTOs: `widget_reach[_for_apps]` + `widget_conversions[_for_apps]` (one grouped query each, zero-filled, no N+1). |
 | [`content.py`](content.py) | `build_widget_view(app_id) -> WidgetView \| None` — the pure render assembler (notices + server-derived link + `notices_degraded`). |
-| [`views.py`](views.py) / [`urls.py`](urls.py) | Thin HTTP: rate-limit, call `content`/`attribution`, render/redirect. No ORM, no business logic. |
+| [`views.py`](views.py) / [`urls.py`](urls.py) | Thin HTTP: rate-limit, call `content`/`attribution`, render/redirect; `/view` also arms the source marker fail-soft. No ORM, no business logic. |
 | `templates/widget/` | `widget.html` (framable card) + `unavailable.html` (neutral) — self-contained, no JS, inline CSS, auto-escaped. |
+
+The two **conversion hooks** live in the converting apps (the DAG points `subscriptions → widget`
+and `accounts → widget`; `apps/widget` imports neither): `subscriptions.views.follow` credits a
+follow on a genuinely new follow, `accounts.views.register` credits an account on the 202 path —
+each a one-line `widget.source` call wrapped fail-soft.
 
 ## Configuration ([`apps/core/config.py`](../core/config.py))
 
 `widget_notice_limit` (5), `widget_render_rate_limit_per_ip_per_minute` (60),
-`widget_cache_max_age_seconds` (60) — all validated at startup by `validate_all`.
+`widget_cache_max_age_seconds` (60), `widget_attribution_window_days` (30 — the last-touch
+conversion window) — all validated at startup by `validate_all`.
 
 ## Observability ([`apps/core/observability.py`](../core/observability.py))
 
-`WIDGET_RENDERED` (M4), `WIDGET_EMPTY`, `WIDGET_CLICK_THROUGH` (M2), `WIDGET_NOT_AVAILABLE`,
+Reach: `WIDGET_RENDERED` (M4), `WIDGET_EMPTY`, `WIDGET_CLICK_THROUGH` (M2), `WIDGET_NOT_AVAILABLE`,
 `WIDGET_RATE_LIMITED` (AC8), `WIDGET_NOTICES_DEGRADED`, `WIDGET_RENDER_DEGRADED`,
-`WIDGET_COUNT_DEGRADED` (**the one alert**), `WIDGET_LIMITER_DEGRADED`, and
-`DASHBOARD_WIDGET_DEGRADED` (the dashboard slot). M5 (reach beyond the firewall = 0) is
-structural — no counter.
+`WIDGET_COUNT_DEGRADED` (**the one reach alert**), `WIDGET_LIMITER_DEGRADED`, and
+`DASHBOARD_WIDGET_DEGRADED` (the dashboard slot). Conversion: `WIDGET_CONVERSION_ATTRIBUTED` (M1,
+tagged `kind`), `WIDGET_CONVERSION_NO_SOURCE` / `_EXPIRED` (M3 coverage), `WIDGET_CONVERSION_DEGRADED`
+(**the one conversion alert**, M6). M4/M5 (firewall = 0, PII fields = 0) are structural — no counter.
 
-## Deferred — per-account conversion attribution (M3, OQ-EUW-5)
+## Conversion attribution (M3 — delivered, widget-conversion-attribution)
 
-AC9's binding requirement is **reach** (impressions + click-throughs, visible on the dashboard) —
-fully delivered. **M3** ("which signup came from which widget click") additionally requires
-carrying a widget-source token through an anonymous click → app page → sign-up across
-sessions/domains (cookie consent + cross-domain identity + the no-PII posture) — a materially
-harder problem. Deferred to a follow-up (DESIGN §11 / OQ-EUW-5), traceable, not dropped. The
-click-through count is the honest MVP "reached the platform from the widget" measure.
+The deferred OQ-EUW-5 — *which signup/follow came from which widget click* — is now delivered,
+**aggregate-only and no-PII**. The click-through 302 is a top-level navigation onto the **platform
+origin**, so a marker set there is **first-party from birth** (no third-party cookie, no
+cross-domain identity). [`source.py`](source.py) signs a source-only `widget_src` cookie carrying
+just `{version, source app-id, credited-kinds}`; at a later **follow** of the clicked app or a new
+**account** (within a 30-day last-touch window), the matching view hook decodes it and bumps the
+separate `widget_conversion_count` rollup keyed by the *source* app — never a person. Dedup is the
+per-marker `credited` set (no person key). The firewall holds: `apps/widget` still imports no
+`signals`, and conversions have no score column, so a credited conversion confers **no** D-8
+eligibility (M5 = 0, structural). See the feature
+[DESIGN.md](../../features/widget-conversion-attribution/DESIGN.md).
 
 ## Rollback (DESIGN §13 — honest)
 
-Rollback is **`git revert` of the build commit**, not a single include-removal. The closed
-[`apps/dashboard/`](../dashboard/) now imports `widget.selectors` for its widget-reach slot, so
-pulling only the `"apps.widget"` `INSTALLED_APPS` line would break the dashboard import. The
-revert drops the dashboard slot **and** the `path("widget/", include("apps.widget.urls"))` line
-**and** the `INSTALLED_APPS` line together (the DU-REL-1 precedent). The `widget_reach_count`
-table down-migration (`migrate widget zero`) is independent and optional — the data is inert once
-the routes/imports are gone.
+Rollback is **`git revert` of the build commit**, not a single include-removal. `apps/dashboard`,
+`apps/subscriptions`, and `apps/accounts` now import `widget` (the dashboard slot + the two
+conversion hooks), so pulling only the `"apps.widget"` `INSTALLED_APPS` line would break those
+imports. The revert drops the dashboard slot, the conversion hooks, the `widget/` URL include, and
+the `INSTALLED_APPS` line together (the DU-REL-1 precedent). The `widget_reach_count` /
+`widget_conversion_count` table down-migrations (`migrate widget zero`) are independent and
+optional — the PII-free aggregate data is inert once the routes/imports are gone.

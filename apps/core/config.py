@@ -80,6 +80,13 @@ DEFAULT_UPDATES_SUMMARY_MAX_LENGTH = 4000
 DEFAULT_WIDGET_NOTICE_LIMIT = 5
 DEFAULT_WIDGET_RENDER_RATE_LIMIT_PER_IP_PER_MINUTE = 60
 DEFAULT_WIDGET_CACHE_MAX_AGE_SECONDS = 60
+# widget-conversion-attribution tunable (DESIGN §3.4/§5.6, WCA-2). The last-touch attribution
+# window: how long after a widget click-through a downstream conversion (follow/account) is still
+# credited to that click. The single source of truth for three derived values — the `widget_src`
+# cookie Max-Age, the `signing.loads` max_age that rejects a stale signature, and the
+# remaining-window re-issue after a credit — so the window lives in exactly one place, never a
+# magic number in the codec.
+DEFAULT_WIDGET_ATTRIBUTION_WINDOW_DAYS = 30
 
 
 def _resolve_raw(setting_name: str, env_name: str, default: int) -> object:
@@ -331,6 +338,15 @@ def widget_cache_max_age_seconds() -> int:
     )
 
 
+def widget_attribution_window_days() -> int:
+    """Days a widget click-through stays creditable for a conversion (DESIGN §3.4/§5.6)."""
+    return _positive_int(
+        "WIDGET_ATTRIBUTION_WINDOW_DAYS",
+        "WIDGET_ATTRIBUTION_WINDOW_DAYS",
+        DEFAULT_WIDGET_ATTRIBUTION_WINDOW_DAYS,
+    )
+
+
 def validate_all() -> None:
     """Evaluate every tunable so misconfiguration surfaces at startup, not at use."""
     login_token_ttl()
@@ -358,3 +374,4 @@ def validate_all() -> None:
     widget_notice_limit()
     widget_render_rate_limit_per_ip_per_minute()
     widget_cache_max_age_seconds()
+    widget_attribution_window_days()

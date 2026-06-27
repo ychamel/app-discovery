@@ -14,8 +14,13 @@ from django.test import Client, TestCase
 from django.urls import reverse
 
 from apps.catalog import services as catalog_services
+from apps.ratings.gate import CURATED_SURFACES
+from apps.signals.models import EngagementEvent
+from apps.signals.selectors import has_impression
 from apps.subscriptions.models import Subscription
 from apps.subscriptions.tests.helpers import make_accepted_app, make_tag, make_user
+from apps.widget.kinds import WidgetConversionKind
+from apps.widget.models import WidgetConversionCount
 
 
 class FollowViewTests(TestCase):
@@ -241,6 +246,73 @@ class FeedViewTests(TestCase):
         self.assertEqual(response.status_code, 200)  # the feed never errors
         self.assertIn("No news yet", response.content.decode())
         increment.assert_any_call(observability.SUBSCRIPTION_NOTICE_DEGRADED)
+
+
+class FollowAttributionTests(TestCase):
+    """T-06 — the fail-soft widget-conversion hook on a new follow (DESIGN §5.2; AC1/AC5/AC6).
+
+    The marker is armed by visiting the widget click-through route (last-touch), exactly as a real
+    visitor would arrive; the test client persists the ``widget_src`` cookie across the later POST.
+    """
+
+    def setUp(self):
+        self.user = make_user()
+        self.owner = make_user("owner@example.com")
+        self.app = make_accepted_app(self.owner, tag_ids=[make_tag("notes").id])
+        self.url = reverse("subscriptions:follow", args=[self.app.id])
+        self.page_url = reverse("pages:app-page", args=[self.app.id])
+        self.click_url = reverse("widget:view", args=[self.app.id])
+
+    def _follow_count(self):
+        row = WidgetConversionCount.objects.filter(
+            app_id=self.app.id, kind=WidgetConversionKind.FOLLOW
+        ).first()
+        return row.count if row else 0
+
+    # --- AC1 (credit) -----------------------------------------------------
+    def test_new_follow_after_a_widget_click_credits_one_follow(self):
+        self.client.get(self.click_url)  # arm the marker for this app (first-party 302)
+        self.client.force_login(self.user)
+        self.client.post(self.url)
+        self.assertEqual(self._follow_count(), 1)
+
+    def test_follow_without_a_marker_credits_nothing(self):
+        self.client.force_login(self.user)
+        self.client.post(self.url)
+        self.assertEqual(WidgetConversionCount.objects.count(), 0)
+
+    def test_re_follow_credits_nothing_at_the_view(self):
+        # A re-follow of a current follow returns created=False, so the hook never runs.
+        self.client.force_login(self.user)
+        self.client.post(self.url)  # genuine new follow, no marker
+        self.client.get(self.click_url)  # now arm a marker
+        self.client.post(self.url)  # already following → created=False → no credit
+        self.assertEqual(WidgetConversionCount.objects.count(), 0)
+
+    # --- AC5 (firewall: corpus untouched) ---------------------------------
+    def test_credited_follow_leaves_the_corpus_identical_and_uncurated(self):
+        self.client.get(self.click_url)
+        self.client.force_login(self.user)
+        self.client.post(self.url)
+        # Exactly the one subscribe corpus event a normal follow writes — attribution adds none.
+        self.assertEqual(EngagementEvent.objects.count(), 1)
+        self.assertFalse(
+            has_impression(self.user.id, self.app.id, surfaces=CURATED_SURFACES)
+        )
+
+    # --- AC6 (fail-soft) --------------------------------------------------
+    def test_attribution_failure_is_fail_soft_follow_still_succeeds(self):
+        self.client.get(self.click_url)
+        self.client.force_login(self.user)
+        with mock.patch(
+            "apps.subscriptions.views.widget_source.attribute_follow",
+            side_effect=RuntimeError("attribution boom"),
+        ):
+            response = self.client.post(self.url)
+        self.assertRedirects(response, self.page_url, fetch_redirect_response=False)
+        self.assertEqual(
+            Subscription.objects.filter(user=self.user, app_id=self.app.id).count(), 1
+        )
 
 
 def _png():

@@ -20,8 +20,8 @@ from uuid import UUID
 
 from django.db.models import Sum
 
-from apps.widget.kinds import WidgetEventKind
-from apps.widget.models import WidgetReachCount
+from apps.widget.kinds import WidgetConversionKind, WidgetEventKind
+from apps.widget.models import WidgetConversionCount, WidgetReachCount
 
 
 @dataclass(frozen=True)
@@ -30,6 +30,18 @@ class WidgetReach:
 
     impressions: int
     click_throughs: int
+
+
+@dataclass(frozen=True)
+class WidgetConversion:
+    """One app's attributed widget conversions within a window (DESIGN §5.5).
+
+    The conversion-side sibling of ``WidgetReach``. The M2 conversion **rate** is derived at
+    display from ``(follows + accounts)`` and the reach ``click_throughs``, never stored here.
+    """
+
+    follows: int
+    accounts: int
 
 
 _ZERO = WidgetReach(impressions=0, click_throughs=0)
@@ -83,4 +95,58 @@ def _reach_from_counts(counts: dict[str, int]) -> WidgetReach:
     return WidgetReach(
         impressions=counts.get(WidgetEventKind.IMPRESSION, 0),
         click_throughs=counts.get(WidgetEventKind.CLICK_THROUGH, 0),
+    )
+
+
+def widget_conversions(
+    app_id: UUID, *, start: datetime, end: datetime
+) -> WidgetConversion:
+    """The summed follow + account conversions credited to ``app_id`` over ``[start, end]``.
+
+    One grouped query (``SUM(count) GROUP BY kind``) over the window's UTC-day range, zero-filled
+    (a kind with no rows ⇒ ``0``) — the conversion-side mirror of ``widget_reach``.
+    """
+    rows = (
+        WidgetConversionCount.objects.filter(
+            app_id=app_id, count_date__range=(start.date(), end.date())
+        )
+        .values("kind")
+        .annotate(total=Sum("count"))
+    )
+    counts = {row["kind"]: row["total"] for row in rows}
+    return _conversion_from_counts(counts)
+
+
+def widget_conversions_for_apps(
+    app_ids: list[UUID], *, start: datetime, end: datetime
+) -> dict[UUID, WidgetConversion]:
+    """Bulk windowed conversions for several apps in ONE grouped query — no N+1 (DESIGN §5.5).
+
+    Every requested app is present (an app with no rows gets zero conversions); keyed by
+    ``app_id``. ``[]`` ⇒ ``{}``. Constant query count regardless of app count — the bulk
+    counterpart to ``widget_conversions``.
+    """
+    if not app_ids:
+        return {}
+    counts_by_app: dict[UUID, dict[str, int]] = {app_id: {} for app_id in app_ids}
+    rows = (
+        WidgetConversionCount.objects.filter(
+            app_id__in=app_ids, count_date__range=(start.date(), end.date())
+        )
+        .values("app_id", "kind")
+        .annotate(total=Sum("count"))
+    )
+    for row in rows:
+        counts_by_app[row["app_id"]][row["kind"]] = row["total"]
+    return {
+        app_id: _conversion_from_counts(counts)
+        for app_id, counts in counts_by_app.items()
+    }
+
+
+def _conversion_from_counts(counts: dict[str, int]) -> WidgetConversion:
+    """Project a ``{kind: total}`` map (possibly partial) to a zero-filled ``WidgetConversion``."""
+    return WidgetConversion(
+        follows=counts.get(WidgetConversionKind.FOLLOW, 0),
+        accounts=counts.get(WidgetConversionKind.ACCOUNT, 0),
     )

@@ -20,9 +20,9 @@ from django.utils import timezone
 from apps.ratings.gate import CURATED_SURFACES
 from apps.signals.models import EngagementEvent, Impression
 from apps.signals.selectors import has_impression
-from apps.widget import attribution
-from apps.widget.kinds import WidgetEventKind
-from apps.widget.models import WidgetReachCount
+from apps.widget import attribution, rollup
+from apps.widget.kinds import WidgetConversionKind, WidgetEventKind
+from apps.widget.models import WidgetConversionCount, WidgetReachCount
 
 
 class RecordImpressionTests(TestCase):
@@ -83,7 +83,7 @@ class RecordImpressionTests(TestCase):
             count_date=self.today,
             count=5,
         )
-        real_increment = attribution._increment_existing_row
+        real_increment = rollup._increment_existing_row
         calls = {"n": 0}
 
         def miss_then_real(*args, **kwargs):
@@ -93,7 +93,7 @@ class RecordImpressionTests(TestCase):
             return real_increment(*args, **kwargs)
 
         with mock.patch.object(
-            attribution, "_increment_existing_row", side_effect=miss_then_real
+            rollup, "_increment_existing_row", side_effect=miss_then_real
         ):
             attribution.record_widget_impression(self.app_id)
 
@@ -106,8 +106,57 @@ class RecordImpressionTests(TestCase):
         self.assertEqual(self._row().count, 6)  # 5 seeded + 1 from the retried increment
 
 
+class RecordConversionTests(TestCase):
+    """T-03 — the single conversion writer ``record_widget_conversion`` (DESIGN §5.4)."""
+
+    def setUp(self):
+        self.app_id = uuid.uuid4()
+        self.today = timezone.now().date()
+
+    def _row(self, kind=WidgetConversionKind.FOLLOW) -> WidgetConversionCount:
+        return WidgetConversionCount.objects.get(
+            app_id=self.app_id, kind=kind, count_date=self.today
+        )
+
+    def test_first_conversion_creates_todays_row_with_count_one(self):
+        attribution.record_widget_conversion(self.app_id, WidgetConversionKind.FOLLOW)
+        row = self._row()
+        self.assertEqual(row.count, 1)
+        self.assertEqual(row.count_date, self.today)
+
+    def test_subsequent_conversions_increment_the_same_row(self):
+        for _ in range(3):
+            attribution.record_widget_conversion(
+                self.app_id, WidgetConversionKind.ACCOUNT
+            )
+        self.assertEqual(
+            WidgetConversionCount.objects.filter(
+                app_id=self.app_id, kind=WidgetConversionKind.ACCOUNT
+            ).count(),
+            1,
+        )
+        self.assertEqual(self._row(WidgetConversionKind.ACCOUNT).count, 3)
+
+    def test_follow_and_account_are_separate_rows(self):
+        attribution.record_widget_conversion(self.app_id, WidgetConversionKind.FOLLOW)
+        attribution.record_widget_conversion(self.app_id, WidgetConversionKind.ACCOUNT)
+        self.assertEqual(self._row(WidgetConversionKind.FOLLOW).count, 1)
+        self.assertEqual(self._row(WidgetConversionKind.ACCOUNT).count, 1)
+
+    def test_db_error_propagates_not_swallowed(self):
+        """A DB write failure must raise to the caller (the fail-soft hook wraps it, not here)."""
+        # Patch where the name is bound: attribution imports `_increment_daily` by name.
+        with mock.patch.object(
+            attribution, "_increment_daily", side_effect=RuntimeError("db down")
+        ):
+            with self.assertRaises(RuntimeError):
+                attribution.record_widget_conversion(
+                    self.app_id, WidgetConversionKind.FOLLOW
+                )
+
+
 class FirewallTests(TestCase):
-    """AC6 / M5 = 0 — a widget interaction never enters the D-7 corpus (DESIGN §3/§9)."""
+    """AC6 / M5 = 0 — a widget interaction/conversion never enters the D-7 corpus (DESIGN §3/§9)."""
 
     def setUp(self):
         self.app_id = uuid.uuid4()
@@ -116,6 +165,12 @@ class FirewallTests(TestCase):
     def test_recording_widget_reach_writes_no_signals_rows(self):
         attribution.record_widget_impression(self.app_id)
         attribution.record_widget_click_through(self.app_id)
+        self.assertEqual(Impression.objects.count(), 0)
+        self.assertEqual(EngagementEvent.objects.count(), 0)
+
+    def test_recording_a_conversion_writes_no_signals_rows(self):
+        attribution.record_widget_conversion(self.app_id, WidgetConversionKind.FOLLOW)
+        attribution.record_widget_conversion(self.app_id, WidgetConversionKind.ACCOUNT)
         self.assertEqual(Impression.objects.count(), 0)
         self.assertEqual(EngagementEvent.objects.count(), 0)
 

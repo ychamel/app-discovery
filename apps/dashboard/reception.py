@@ -102,17 +102,26 @@ class ReviewsView:
 
 @dataclass(frozen=True)
 class WidgetReachView:
-    """The off-platform widget-reach slot (embeddable-update-widget AC9, DESIGN §7).
+    """The off-platform widget slot: reach + the conversion funnel stage (AC9; WCA-DESIGN-8).
 
-    A clearly-distinct fact from the on-platform per-``Surface`` breakdown: anonymous reach
-    driven by the embeddable widget. The click-through **rate** is derived at display from these
-    two integers — never stored (one source of truth per fact). ``available=False`` ⇒ the slot
-    degraded (fail-soft, §8), and the rest of the reception still renders.
+    A clearly-distinct fact from the on-platform per-``Surface`` breakdown: anonymous reach driven
+    by the embeddable widget (impressions + click-throughs), plus the **downstream conversions**
+    that reach produced — ``follows`` of the app and new ``accounts`` credited to the widget
+    (widget-conversion-attribution AC3). Both halves come from separate tables (one source of truth
+    per fact) and are read **together**, so the whole slot degrades as one on any read error
+    (``available=False``, fail-soft §8) while the rest of the reception still renders.
+
+    The two **rates** — the click-through rate and the M2 conversion rate — are derived at display
+    from these integers, never stored. ``conversions_total`` (``follows + accounts``) is the M2
+    numerator, computed here at request time (not persisted) so the template can derive the rate.
     """
 
     available: bool
     impressions: int
     click_throughs: int
+    follows: int
+    accounts: int
+    conversions_total: int
 
 
 @dataclass(frozen=True)
@@ -340,28 +349,42 @@ def _build_reviews(app_id: UUID) -> ReviewsView:
 
 # --- Widget reach (off-platform, AC9; fail-soft like the reviews slot, §8) ----
 def _build_widget_reach(app_id: UUID, window: ResolvedWindow) -> WidgetReachView:
-    """The Screen-B widget-reach slot, degrading **soft** on a widget read error (§8).
+    """The Screen-B widget slot (reach + conversions), degrading **soft** as one on error (§8).
 
     Distinct from the on-platform per-``Surface`` reach — this is anonymous off-platform reach
-    driven by the embeddable widget. A read error degrades only this slot; the rest of Screen B
-    (the loud signals reads) is unaffected.
+    driven by the embeddable widget, plus the conversions it produced (AC3). Reach and conversions
+    are read **together** so a failure of either degrades the **whole** slot (one consistent
+    affordance); the rest of Screen B (the loud signals reads) is unaffected.
     """
     try:
         reach = widget.widget_reach(app_id, start=window.start, end=window.end)
+        conversions = widget.widget_conversions(
+            app_id, start=window.start, end=window.end
+        )
     except Exception:
         observability.increment(
             observability.DASHBOARD_WIDGET_DEGRADED, app_id=str(app_id)
         )
         logger.warning(
-            "dashboard widget-reach read failed; degrading the slot app_id=%s",
+            "dashboard widget slot read failed; degrading the slot app_id=%s",
             app_id,
             exc_info=True,
         )
-        return WidgetReachView(available=False, impressions=0, click_throughs=0)
+        return WidgetReachView(
+            available=False,
+            impressions=0,
+            click_throughs=0,
+            follows=0,
+            accounts=0,
+            conversions_total=0,
+        )
     return WidgetReachView(
         available=True,
         impressions=reach.impressions,
         click_throughs=reach.click_throughs,
+        follows=conversions.follows,
+        accounts=conversions.accounts,
+        conversions_total=conversions.follows + conversions.accounts,
     )
 
 

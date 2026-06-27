@@ -11,17 +11,19 @@ import uuid
 from datetime import UTC, datetime, timedelta
 from unittest import mock
 
+from django.core import signing
 from django.core.cache import cache
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
+from apps.core import observability
 from apps.ratings.gate import CURATED_SURFACES
 from apps.signals.models import EngagementEvent, Impression
 from apps.signals.selectors import has_impression
 from apps.updates.models import Notice, NoticeKind
 from apps.updates.tests.helpers import make_accepted_app, make_developer, make_tag
-from apps.widget import selectors
+from apps.widget import selectors, source, views
 
 
 def _render_url(app_id):
@@ -125,6 +127,46 @@ class ClickThroughTests(WidgetViewTestCase):
 
     def test_view_post_is_405(self):
         self.assertEqual(self.client.post(_view_url(self.app.id)).status_code, 405)
+
+    def test_view_arms_a_signed_source_marker_for_the_app(self):
+        # T-05: the 302 carries the first-party widget_src cookie, decoding to this app (DESIGN §3).
+        response = self.client.get(_view_url(self.app.id))
+        self.assertEqual(response.status_code, 302)
+        raw = response.cookies[source.COOKIE_NAME].value
+        payload = signing.loads(raw, salt=source._SALT, max_age=source._window_seconds())
+        self.assertEqual(payload["src"], str(self.app.id))
+
+    def test_a_later_click_for_another_app_overwrites_the_marker(self):
+        # Last-touch (WCA-2): the most recent click-through wins.
+        other = make_accepted_app(
+            self.developer, tag_ids=[make_tag("tools").id], name="Other"
+        )
+        client = self.client
+        client.get(_view_url(self.app.id))
+        response = client.get(_view_url(other.id))
+        raw = response.cookies[source.COOKIE_NAME].value
+        payload = signing.loads(raw, salt=source._SALT, max_age=source._window_seconds())
+        self.assertEqual(payload["src"], str(other.id))
+
+    def test_unknown_id_404s_before_any_marker_is_set(self):
+        response = self.client.get(_view_url(uuid.uuid4()))
+        self.assertEqual(response.status_code, 404)
+        self.assertNotIn(source.COOKIE_NAME, response.cookies)
+
+    def test_marker_failure_is_fail_soft_redirect_and_count_unaffected(self):
+        # AC6: a marker error must not break the 302 or the click-through reach count.
+        with mock.patch.object(
+            source, "set_marker", side_effect=RuntimeError("cookie boom")
+        ):
+            with mock.patch.object(views.observability, "increment") as inc:
+                response = self.client.get(_view_url(self.app.id))
+        self.assertEqual(response.status_code, 302)  # redirect still fires
+        self.assertNotIn(source.COOKIE_NAME, response.cookies)  # no marker armed
+        inc.assert_any_call(observability.WIDGET_CONVERSION_DEGRADED)
+        # The click-through reach count landed regardless (separate, independent side effect).
+        self.assertEqual(
+            selectors.widget_reach(self.app.id, **_window()).click_throughs, 1
+        )
 
 
 class AttributionTests(WidgetViewTestCase):

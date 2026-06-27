@@ -41,6 +41,7 @@ from apps.accounts.services import (
 from apps.core import observability
 from apps.core.email import EmailSendError
 from apps.core.ratelimit import rate_limited
+from apps.widget import source as widget_source
 
 logger = logging.getLogger("apps.accounts.views")
 
@@ -96,7 +97,25 @@ def register(request):
             request, "accounts/check_email.html", {"email": email, "send_failed": True}, status=503
         )
 
-    return render(request, "accounts/check_email.html", {"email": email}, status=202)
+    response = render(request, "accounts/check_email.html", {"email": email}, status=202)
+    # A brand-new account is a widget conversion (DESIGN §5.3) — credit it to the source widget
+    # (if any) fail-soft, on the 202 success path only (never 400/409/503). The account is already
+    # created and committed above; attribution adds nothing to it (AC5).
+    _attribute_account(request, response)
+    return response
+
+
+def _attribute_account(request, response) -> None:
+    """Credit the new-account conversion to its source widget, fail-soft (DESIGN §5.3, AC6).
+
+    Any error is swallowed after logging + ``WIDGET_CONVERSION_DEGRADED`` so attribution can never
+    break a registration whose account is already created.
+    """
+    try:
+        widget_source.attribute_account(request, response)
+    except Exception:
+        logger.warning("account attribution degraded", exc_info=True)
+        observability.increment(observability.WIDGET_CONVERSION_DEGRADED)
 
 
 # ---------------------------------------------------------------------------

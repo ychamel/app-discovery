@@ -11,12 +11,18 @@ from datetime import UTC, date, datetime
 from django.test import TestCase
 
 from apps.widget import selectors
-from apps.widget.kinds import WidgetEventKind
-from apps.widget.models import WidgetReachCount
+from apps.widget.kinds import WidgetConversionKind, WidgetEventKind
+from apps.widget.models import WidgetConversionCount, WidgetReachCount
 
 
 def _seed(app_id, kind, count_date: date, count: int) -> None:
     WidgetReachCount.objects.create(
+        app_id=app_id, kind=kind, count_date=count_date, count=count
+    )
+
+
+def _seed_conversion(app_id, kind, count_date: date, count: int) -> None:
+    WidgetConversionCount.objects.create(
         app_id=app_id, kind=kind, count_date=count_date, count=count
     )
 
@@ -95,3 +101,78 @@ class WidgetReachForAppsTests(TestCase):
             _seed(app_id, WidgetEventKind.IMPRESSION, self.day, 1)
         with self.assertNumQueries(1):
             selectors.widget_reach_for_apps(app_ids, start=self.start, end=self.end)
+
+
+class WidgetConversionsTests(TestCase):
+    def setUp(self):
+        self.app_id = uuid.uuid4()
+        self.day1 = date(2026, 6, 10)
+        self.day2 = date(2026, 6, 11)
+        self.start = datetime(2026, 6, 1, tzinfo=UTC)
+        self.end = datetime(2026, 6, 30, tzinfo=UTC)
+
+    def test_sums_across_days_per_kind(self):
+        _seed_conversion(self.app_id, WidgetConversionKind.FOLLOW, self.day1, 3)
+        _seed_conversion(self.app_id, WidgetConversionKind.FOLLOW, self.day2, 4)
+        _seed_conversion(self.app_id, WidgetConversionKind.ACCOUNT, self.day1, 2)
+        conv = selectors.widget_conversions(self.app_id, start=self.start, end=self.end)
+        self.assertEqual(conv.follows, 7)
+        self.assertEqual(conv.accounts, 2)
+
+    def test_zero_filled_when_no_rows(self):
+        conv = selectors.widget_conversions(self.app_id, start=self.start, end=self.end)
+        self.assertEqual(conv.follows, 0)
+        self.assertEqual(conv.accounts, 0)
+
+    def test_zero_filled_when_a_kind_is_absent(self):
+        _seed_conversion(self.app_id, WidgetConversionKind.FOLLOW, self.day1, 5)
+        conv = selectors.widget_conversions(self.app_id, start=self.start, end=self.end)
+        self.assertEqual(conv.follows, 5)
+        self.assertEqual(conv.accounts, 0)
+
+    def test_rows_outside_the_window_are_excluded(self):
+        _seed_conversion(self.app_id, WidgetConversionKind.FOLLOW, date(2026, 5, 31), 9)
+        _seed_conversion(self.app_id, WidgetConversionKind.FOLLOW, date(2026, 7, 1), 9)
+        _seed_conversion(self.app_id, WidgetConversionKind.FOLLOW, self.day1, 2)
+        conv = selectors.widget_conversions(self.app_id, start=self.start, end=self.end)
+        self.assertEqual(conv.follows, 2)
+
+    def test_is_one_query(self):
+        _seed_conversion(self.app_id, WidgetConversionKind.FOLLOW, self.day1, 1)
+        with self.assertNumQueries(1):
+            selectors.widget_conversions(self.app_id, start=self.start, end=self.end)
+
+
+class WidgetConversionsForAppsTests(TestCase):
+    def setUp(self):
+        self.start = datetime(2026, 6, 1, tzinfo=UTC)
+        self.end = datetime(2026, 6, 30, tzinfo=UTC)
+        self.day = date(2026, 6, 10)
+
+    def test_empty_input_returns_empty_dict(self):
+        self.assertEqual(
+            selectors.widget_conversions_for_apps([], start=self.start, end=self.end),
+            {},
+        )
+
+    def test_one_entry_per_requested_app_zero_filled(self):
+        a, b = uuid.uuid4(), uuid.uuid4()
+        _seed_conversion(a, WidgetConversionKind.FOLLOW, self.day, 3)
+        _seed_conversion(a, WidgetConversionKind.ACCOUNT, self.day, 1)
+        result = selectors.widget_conversions_for_apps(
+            [a, b], start=self.start, end=self.end
+        )
+        self.assertEqual(set(result), {a, b})
+        self.assertEqual(result[a].follows, 3)
+        self.assertEqual(result[a].accounts, 1)
+        self.assertEqual(result[b].follows, 0)  # requested but no rows ⇒ zero-filled
+        self.assertEqual(result[b].accounts, 0)
+
+    def test_is_one_query_regardless_of_app_count(self):
+        app_ids = [uuid.uuid4() for _ in range(50)]
+        for app_id in app_ids:
+            _seed_conversion(app_id, WidgetConversionKind.FOLLOW, self.day, 1)
+        with self.assertNumQueries(1):
+            selectors.widget_conversions_for_apps(
+                app_ids, start=self.start, end=self.end
+            )

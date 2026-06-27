@@ -21,8 +21,8 @@ from apps.ratings import services as rating_services
 from apps.signals import capture
 from apps.signals.kinds import Surface
 from apps.signals.tests.helpers import make_accepted_app, make_tag, make_user
-from apps.widget.kinds import WidgetEventKind
-from apps.widget.models import WidgetReachCount
+from apps.widget.kinds import WidgetConversionKind, WidgetEventKind
+from apps.widget.models import WidgetConversionCount, WidgetReachCount
 
 _NOW = datetime(2026, 6, 28, 0, tzinfo=UTC)
 
@@ -337,6 +337,14 @@ class WidgetReachSlotTests(TestCase):
             count=count,
         )
 
+    def _seed_conversion(self, app_id, kind, count, *, day=20):
+        WidgetConversionCount.objects.create(
+            app_id=app_id,
+            kind=kind,
+            count_date=datetime(2026, 6, day, tzinfo=UTC).date(),
+            count=count,
+        )
+
     def test_screen_b_shows_widget_reach_over_the_window(self):
         self._seed_reach(self.app.id, WidgetEventKind.IMPRESSION, 40)
         self._seed_reach(self.app.id, WidgetEventKind.CLICK_THROUGH, 10)
@@ -344,6 +352,50 @@ class WidgetReachSlotTests(TestCase):
         self.assertTrue(result.widget_reach.available)
         self.assertEqual(result.widget_reach.impressions, 40)
         self.assertEqual(result.widget_reach.click_throughs, 10)
+
+    def test_screen_b_shows_conversions_distinct_from_reach(self):
+        # AC3: reach and conversions render as distinct facts; the reach integers are byte-identical
+        # whether or not conversions exist (separate tables, one source of truth per fact).
+        self._seed_reach(self.app.id, WidgetEventKind.IMPRESSION, 40)
+        self._seed_reach(self.app.id, WidgetEventKind.CLICK_THROUGH, 10)
+        self._seed_conversion(self.app.id, WidgetConversionKind.FOLLOW, 6)
+        self._seed_conversion(self.app.id, WidgetConversionKind.ACCOUNT, 2)
+        slot = reception.build_app_reception(
+            self.owner, self.app.id, window=_window()
+        ).widget_reach
+        self.assertEqual(slot.impressions, 40)  # reach unchanged by conversions
+        self.assertEqual(slot.click_throughs, 10)
+        self.assertEqual(slot.follows, 6)
+        self.assertEqual(slot.accounts, 2)
+        self.assertEqual(slot.conversions_total, 8)  # M2 numerator, derived not stored
+
+    def test_screen_b_truthful_zero_conversion_state(self):
+        # Reach present, conversions 0/0 — the truthful zero state, not hidden.
+        self._seed_reach(self.app.id, WidgetEventKind.CLICK_THROUGH, 10)
+        slot = reception.build_app_reception(
+            self.owner, self.app.id, window=_window()
+        ).widget_reach
+        self.assertTrue(slot.available)
+        self.assertEqual(slot.follows, 0)
+        self.assertEqual(slot.accounts, 0)
+        self.assertEqual(slot.conversions_total, 0)
+
+    def test_screen_b_conversion_read_failure_degrades_whole_slot_together(self):
+        # A conversion-read error degrades the WHOLE widget slot (reach + conversions) as one.
+        self._seed_reach(self.app.id, WidgetEventKind.IMPRESSION, 40)
+        with patch.object(
+            reception.widget,
+            "widget_conversions",
+            side_effect=RuntimeError("conversions down"),
+        ):
+            result = reception.build_app_reception(
+                self.owner, self.app.id, window=_window()
+            )
+        self.assertFalse(result.widget_reach.available)
+        self.assertEqual(result.widget_reach.impressions, 0)  # reach degraded with it
+        self.assertEqual(result.widget_reach.conversions_total, 0)
+        self.assertIsNotNone(result.reach)  # rest of Screen B unaffected
+        self.assertTrue(result.reviews.available)
 
     def test_screen_a_includes_widget_impressions_via_one_bulk_read(self):
         other = make_accepted_app(self.owner, tag_ids=[self.tag.id], name="App B")

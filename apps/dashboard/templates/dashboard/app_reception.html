@@ -89,9 +89,9 @@ no JS; all values auto-escaped (no |safe).
   {% endwith %}
 </section>
 
-{# 5. Widget reach — OFF-PLATFORM reach from the embeddable widget (AC9), kept DISTINCT from the
-   on-platform per-Surface Reach above (different facts); fail-soft (§8). The click-through rate
-   is derived here at display, not stored. #}
+{# 5. Widget reach + conversions — OFF-PLATFORM funnel from the embeddable widget (AC9/AC3), kept
+   DISTINCT from the on-platform per-Surface Reach above (different facts); fail-soft as ONE slot
+   (§8). Both rates (click-through, conversion M2) are derived here at display, not stored. #}
 <section aria-labelledby="widget-reach-heading">
   <h2 id="widget-reach-heading">Widget reach (off-platform)</h2>
   {% if not reception.widget_reach.available %}
@@ -104,6 +104,15 @@ no JS; all values auto-escaped (no |safe).
         <li>Click-throughs to platform: {{ wr.click_throughs }}</li>
         {% if wr.impressions %}
           <li>Click-through rate: {% widthratio wr.click_throughs wr.impressions 100 %}%</li>
+        {% endif %}
+      </ul>
+      <h3>Conversions</h3>
+      <p>What those click-throughs led to on the platform.</p>
+      <ul>
+        <li>Follows from widget: {{ wr.follows }}</li>
+        <li>New accounts from widget: {{ wr.accounts }}</li>
+        {% if wr.click_throughs %}
+          <li>Conversion rate: {% widthratio wr.conversions_total wr.click_throughs 100 %}%</li>
         {% endif %}
       </ul>
     {% endwith %}

@@ -26,6 +26,7 @@ from django.views.decorators.http import require_http_methods
 from apps.core import config, observability
 from apps.subscriptions import notices, selectors, services
 from apps.subscriptions.errors import UnknownAppError
+from apps.widget import source as widget_source
 
 logger = logging.getLogger(__name__)
 
@@ -40,9 +41,13 @@ def follow(request, app_id: UUID):
     An unknown/non-accepted app is a 404 (AC1). A capture/DB failure surfaces as a message
     and redirects back; the durable state is **not-followed** (the slot still shows Follow —
     AC7). Anonymous POSTs are redirected to sign-in by ``login_required`` (AC2).
+
+    On a **genuinely new** follow only, the widget click-through that drove it (if any) is
+    credited fail-soft (widget-conversion-attribution AC1/AC6) — see ``_attribute_follow``.
     """
+    created = False
     try:
-        services.follow_app(request.user, app_id)
+        created = services.follow_app(request.user, app_id)
     except UnknownAppError as exc:
         raise Http404("No such app to follow.") from exc
     except Exception:
@@ -50,7 +55,25 @@ def follow(request, app_id: UUID):
         # is a try-again — never a 500, and honestly not-followed (AC7).
         logger.warning("follow failed app_id=%s", app_id, exc_info=True)
         messages.error(request, _FOLLOW_FAILED_MESSAGE)
-    return redirect("pages:app-page", app_id=app_id)
+    response = redirect("pages:app-page", app_id=app_id)
+    if created:  # only a brand-new follow is a conversion — a re-follow credits nothing
+        _attribute_follow(request, response, app_id)
+    return response
+
+
+def _attribute_follow(request, response, app_id: UUID) -> None:
+    """Credit the follow conversion to its source widget, fail-soft (DESIGN §5.2, AC5/AC6).
+
+    The follow and its ``record_subscribe`` corpus event are **already committed and untouched** —
+    attribution only reads the source marker and bumps a separate aggregate count. Any error is
+    swallowed after logging + ``WIDGET_CONVERSION_DEGRADED`` so attribution can never break a
+    follow that already succeeded.
+    """
+    try:
+        widget_source.attribute_follow(request, response, followed_app_id=app_id)
+    except Exception:
+        logger.warning("follow attribution degraded app_id=%s", app_id, exc_info=True)
+        observability.increment(observability.WIDGET_CONVERSION_DEGRADED)
 
 
 @login_required

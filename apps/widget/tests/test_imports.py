@@ -31,15 +31,31 @@ def _imported_names(module) -> set[str]:
 
 
 class WidgetImportsTests(TestCase):
-    def test_no_module_in_the_app_imports_signals(self):
-        offenders: dict[str, set[str]] = {}
+    def _non_test_modules(self) -> dict[str, object]:
+        modules: dict[str, object] = {}
         for info in pkgutil.walk_packages(
             apps.widget.__path__, prefix="apps.widget."
         ):
             if info.name.endswith(".tests") or ".tests." in info.name:
                 continue  # tests may reference signals to assert the corpus stays empty
-            module = importlib.import_module(info.name)
+            modules[info.name] = importlib.import_module(info.name)
+        return modules
+
+    def test_no_module_in_the_app_imports_signals(self):
+        offenders: dict[str, set[str]] = {}
+        for name, module in self._non_test_modules().items():
             signals_imports = {n for n in _imported_names(module) if "signals" in n}
             if signals_imports:
-                offenders[info.name] = signals_imports
+                offenders[name] = signals_imports
         self.assertEqual(offenders, {}, f"widget must not import signals: {offenders}")
+
+    def test_the_new_attribution_modules_are_actually_walked(self):
+        """Guard the firewall proof: the new conversion-side modules must be in the swept set, so a
+        future `from apps.signals` in any is caught — not silently skipped (DESIGN §12)."""
+        walked = set(self._non_test_modules())
+        for required in (
+            "apps.widget.rollup",
+            "apps.widget.attribution",
+            "apps.widget.source",
+        ):
+            self.assertIn(required, walked)
