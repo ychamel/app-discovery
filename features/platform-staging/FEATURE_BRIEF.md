@@ -1,7 +1,7 @@
 # FEATURE_BRIEF.md — platform-staging
 
-**Status:** DRAFT — awaiting approval (gate **DN-PS-BRIEF** in [CONTROL.md](../../CONTROL.md)).
-**Stage 1 (Product Analyst) artifact.**
+**Status:** **APPROVED** 2026-06-27 (gate **DN-PS-BRIEF** answered in [CONTROL.md](../../CONTROL.md);
+PS-1/2/3 resolved — see *Decisions needed to approve* below). **Stage 1 (Product Analyst) artifact.**
 
 **Upstream source:** global [D-11](../../DECISIONS.md) (next bet = staging-validation-before-live),
 [STRATEGY.md](../../STRATEGY.md) bet sequence, vision [§5.4 step 3](../../curated-app-platform-design.md),
@@ -171,6 +171,13 @@ verdict on the frontend ([D-11](../../DECISIONS.md)).
   the defects it surfaces** in the existing wedge.
 - Producing the two written **verdicts** (go/no-go; frontend evidence).
 - Documenting the deploy as a repeatable procedure.
+- **Two committed `.md` deliverables requested by the user at the gate** (PS-2/PS-3):
+  - An **email-provider setup guide** — the Architect (Stage 2) recommends a specific
+    transactional-email provider within the PS-1 budget (no provider exists today, PS-2); the
+    deploy work writes an `.md` walking through creating the account and wiring credentials.
+  - A **suggested full-role walkthrough script** (`.md`) the user follows to perform and sign
+    off the human-judgment journeys (AC3.2/AC4.2/AC6) — authored at Stage 4 alongside
+    `TEST_PLAN.md`. The user performs the walkthrough themselves (PS-3).
 
 ## Out of scope
 
@@ -196,9 +203,9 @@ verdict on the frontend ([D-11](../../DECISIONS.md)).
 | C4 | **No `STATIC_ROOT`/collectstatic and no deploy manifest** exist in the repo today — static/media serving for non-`DEBUG` is a real gap to close (AC1.2). | **Verified** |
 | C5 | Database is **PostgreSQL-only** (citext/UUID/FTS depend on it); staging needs a persistent managed/hosted Postgres. | **Verified** |
 | C6 | The frontend stays on **server-rendered Django templates**; no SPA is introduced ([D-11](../../DECISIONS.md)). | **Verified** |
-| A1 | Budget/hosting posture (free-tier acceptable vs. paid; throwaway vs. prod-bound) — **PS-1**. | *Unverified — user* |
-| A2 | A real email provider account/credentials will be available for staging — **PS-2**. | *Unverified — user* |
-| A3 | A human is available to perform the UX-judgment walkthrough and record sign-offs — **PS-3**. | *Unverified — user* |
+| A1 | **Resolved (PS-1):** start on **free tier**; a **$20–100/mo** budget is available when deploying; staging is **promoted to production later** (prod-bound, build for durability — not throwaway). | **Resolved — user** |
+| A2 | **Resolved (PS-2):** **no email provider exists yet** — the Architect picks one within budget and the deploy ships an **`.md` setup guide** (see In scope). AC3.1/M5 still gate on a real inbox once configured. | **Resolved — user** |
+| A3 | **Resolved (PS-3):** the **user performs the walkthrough** and records sign-offs; the agent supplies a **suggested walkthrough `.md`** (Stage 4). | **Resolved — user** |
 
 ## Risks
 
@@ -219,18 +226,19 @@ Serves vision **§5.4 step 3** (validate the wedge in staging before recruiting)
 
 ---
 
-## Decisions needed to approve this brief (gate DN-PS-BRIEF)
+## Decisions needed to approve this brief (gate DN-PS-BRIEF) — **RESOLVED 2026-06-27**
 
-Raised in [CONTROL.md](../../CONTROL.md); the Product Analyst stops here until answered.
+Answered by the user in [CONTROL.md](../../CONTROL.md); brief promoted to APPROVED.
 
-- **PS-1 — Budget & staging posture.** Is **free-tier/low-cost** hosting acceptable, or is
-  there a budget? And is this staging environment intended to be **promoted to production
-  later**, or treated as **throwaway** (rebuilt for the eventual prod cutover)? *(Frames the
-  hosting/Postgres/email tier and whether deploy work targets disposability or durability. The
-  specific provider/domain stay a Stage-2 architecture choice per D-11/[D-2](../../DECISIONS.md).)*
-- **PS-2 — Email provider.** Is a real transactional-email provider account available (and which),
-  so magic-link auth and M5 can be exercised? *(Without this, AC3.1/AC4.1 sign-in is blocked.)*
-- **PS-3 — UX walkthrough sign-off owner.** Who performs and signs off the human-judgment
-  walkthrough (AC3.2 / AC4.2 / AC6) on a real device — the user, or the user delegating? *(The
-  agent can build the env, write the walkthrough script, and run all agent-verifiable checks,
-  but UX-credibility judgment is inherently human.)*
+- **PS-1 — Budget & staging posture → RESOLVED.** Start on **free tier**; **$20–100/mo** budget
+  available when deploying; staging is **promoted to production later** (prod-bound → deploy work
+  targets durability, not disposability). The specific provider/domain remain a **Stage-2
+  architecture choice** per D-11/[D-2](../../DECISIONS.md), now bounded by this budget/posture.
+- **PS-2 — Email provider → RESOLVED.** **No provider exists today.** The Architect selects a
+  transactional-email provider within the PS-1 budget; the deploy work ships an **`.md` setup
+  guide** (account creation + credential wiring). Magic-link auth + M5 gate on a real inbox once
+  configured (AC3.1/AC4.1).
+- **PS-3 — UX walkthrough sign-off owner → RESOLVED.** **The user performs and signs off** the
+  human-judgment walkthrough (AC3.2/AC4.2/AC6) on their own device; the agent supplies a
+  **suggested walkthrough `.md`** (authored at Stage 4 with `TEST_PLAN.md`) and runs every
+  agent-verifiable check.
