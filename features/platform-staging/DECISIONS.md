@@ -9,4 +9,4 @@ evidence-gated).
 
 | ID | Decision | Rationale | Status |
 |----|----------|-----------|--------|
-| _none yet_ | | | |
+| PS-DESIGN-1…8 | The Stage-2 deployment/serving stack + shared frontend shell — see [DESIGN.md](DESIGN.md) §15 for the eight-line table. | Promoted to a single repo-wide ADR because they bind infrastructure + a frontend shell every later feature inherits. | **RATIFIED 2026-06-27** as global **[D-12](../../DECISIONS.md)** (DN-PS-DESIGN: user confirmed Render / Resend / Consolidate; standard items 2/3/5/6/8 proceeded on that approval). |

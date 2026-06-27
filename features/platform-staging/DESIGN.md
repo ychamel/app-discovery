@@ -1,7 +1,7 @@
 # DESIGN.md — platform-staging
 
-**Status:** **DRAFT — awaiting gate `DN-PS-DESIGN`** (see *§15 Decisions* + the gate block at
-the end). **Stage 2 (Software Architect) artifact.**
+**Status:** **APPROVED 2026-06-27** (DN-PS-DESIGN resolved — Render / Resend / Consolidate;
+PS-DESIGN-1…8 RATIFIED; global **D-12** recorded). **Stage 2 (Software Architect) artifact.**
 
 **Upstream source:** [FEATURE_BRIEF.md](FEATURE_BRIEF.md) (APPROVED 2026-06-27), global
 [D-11](../../DECISIONS.md) (staging-validation-before-live) + [D-4](../../DECISIONS.md) (the
@@ -439,38 +439,28 @@ walkthrough script (§8, Stage 4). No "TBD" in any §7 contract.
 
 ---
 
-## 15. Decisions (PROPOSED — ratify at `DN-PS-DESIGN`)
+## 15. Decisions (RATIFIED 2026-06-27 — DN-PS-DESIGN resolved)
+
+User confirmed all three gate calls inline: **PS-DESIGN-1 = Render**, **PS-DESIGN-4 = Resend**,
+**PS-DESIGN-7 = Consolidate**; the standard items (2/3/5/6/8) proceed on that approval. All eight
+promoted PROPOSED → RATIFIED and recorded as global **[D-12](../../DECISIONS.md)**.
 
 | ID | Decision | Status |
 |---|---|---|
-| **PS-DESIGN-1** | Host = **Render** Blueprint (web + managed Postgres + disk + free Redis); free now, ~$14–25/mo durable. | PROPOSED |
-| **PS-DESIGN-2** | **gunicorn** + **WhiteNoise** (CompressedManifest) + **`dj-database-url`** (discrete-var fallback). | PROPOSED |
-| **PS-DESIGN-3** | Media on a **persistent disk**; object store (R2 + `django-storages`) = documented growth path. | PROPOSED |
-| **PS-DESIGN-4** | Email = **Resend** over Django SMTP (pure config); Postmark = premium alt; ships `email-provider-setup.md`. | PROPOSED |
-| **PS-DESIGN-5** | Shared cache from **`REDIS_URL`** (Django built-in `RedisCache`), LocMem fallback → limiter correct under workers. | PROPOSED |
-| **PS-DESIGN-6** | Observability = stdout logs + **Sentry** (env-gated) + a new **DB-only `/health/live`** liveness probe (split from `/health`). | PROPOSED |
-| **PS-DESIGN-7** | One **shared responsive base template + stylesheet** in `apps/core`; 6 bases consolidated; **widget stays isolated**. | PROPOSED |
-| **PS-DESIGN-8** | Committed deploy artifacts: `render.yaml`, the 5 deps, settings/env changes, `docs/deploy/{deploy-runbook,email-provider-setup}.md`. | PROPOSED |
+| **PS-DESIGN-1** | Host = **Render** Blueprint (web + managed Postgres + disk + free Redis); free now, ~$14–25/mo durable. | **RATIFIED** |
+| **PS-DESIGN-2** | **gunicorn** + **WhiteNoise** (CompressedManifest) + **`dj-database-url`** (discrete-var fallback). | **RATIFIED** |
+| **PS-DESIGN-3** | Media on a **persistent disk**; object store (R2 + `django-storages`) = documented growth path. | **RATIFIED** |
+| **PS-DESIGN-4** | Email = **Resend** over Django SMTP (pure config); Postmark = premium alt; ships `email-provider-setup.md`. | **RATIFIED** |
+| **PS-DESIGN-5** | Shared cache from **`REDIS_URL`** (Django built-in `RedisCache`), LocMem fallback → limiter correct under workers. | **RATIFIED** |
+| **PS-DESIGN-6** | Observability = stdout logs + **Sentry** (env-gated) + a new **DB-only `/health/live`** liveness probe (split from `/health`). | **RATIFIED** |
+| **PS-DESIGN-7** | One **shared responsive base template + stylesheet** in `apps/core`; 6 bases consolidated; **widget stays isolated**. | **RATIFIED** |
+| **PS-DESIGN-8** | Committed deploy artifacts: `render.yaml`, the 5 deps, settings/env changes, `docs/deploy/{deploy-runbook,email-provider-setup}.md`. | **RATIFIED** |
 
 ---
 
-## Gate — `DN-PS-DESIGN` (raised; Architect stops here)
+## Gate — `DN-PS-DESIGN` (RESOLVED 2026-06-27)
 
-The architecture is fully specified; three calls benefit from explicit user confirmation before
-ratification (external accounts / spend / a scope-shape call). Recorded in
-[CONTROL.md](../../CONTROL.md) *Decisions Needed From You*:
-
-1. **Hosting stack (PS-DESIGN-1).** Confirm **Render** (Blueprint + managed Postgres + disk +
-   free Redis; free tier now, ~$14–25/mo on the durable/prod-bound tier within PS-1). The user
-   holds the account + card and may have a region/provider preference (e.g. an existing Fly/Heroku
-   account).
-2. **Email provider (PS-DESIGN-4 / PS-2).** Confirm **Resend** (free tier fits staging) vs.
-   **Postmark** (deliverability-premium, $15/mo). The user creates the account; the deploy ships
-   the setup `.md` for the chosen one.
-3. **Frontend consolidation appetite (PS-DESIGN-7).** Confirm consolidating the 6 `base.html` into
-   **one shared responsive shell + stylesheet** now (the recommended, DRY, long-term answer — a
-   one-time refactor touching ~30 templates) vs. a lighter in-place polish (faster, more debt).
-
-The remaining decisions (PS-DESIGN-2/3/5/6/8) are standard architecture within the ratified
-budget and proceed on approval of the above. On ratification: promote PS-DESIGN-1…8 → RATIFIED,
-record global **D-12**, set `Stage: 3-plan`, hand to the **Planner / Tech Lead**.
+The user confirmed all three calls inline — **(1) Render**, **(2) Resend**, **(3) Consolidate** —
+and the standard items (PS-DESIGN-2/3/5/6/8) proceeded on that approval. PS-DESIGN-1…8 are
+**RATIFIED**, global **[D-12](../../DECISIONS.md)** is recorded, `Stage` advances to **3-plan**, and
+the feature hands to the **Planner / Tech Lead**.
