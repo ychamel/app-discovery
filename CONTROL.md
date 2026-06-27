@@ -17,8 +17,8 @@ Rules:
 | Field              | Value                                                            |
 |--------------------|------------------------------------------------------------------|
 | **Active feature** | **`platform-staging`** — execute global [D-11](DECISIONS.md): stand up a reachable **staging** environment, deploy the code-complete developer wedge, and walk it end-to-end as **user / developer / admin on web + mobile**; polish + make the server-rendered Django templates ([D-4](DECISIONS.md)) responsive; exercise the deferred deploy work (hosting, domain, the stubbed D-4 email provider, monitoring). Live recruitment (vision §5.4 step 3) follows once staging validates; SPA split deferred + evidence-gated (D-11). `editorial-curation-tools` + `weekly-digest` + D-9 monetization stay **backlog** (density-gated, D-10). |
-| **Stage**          | `1-define` — just scaffolded (Coordinator). Awaiting the **Product Analyst** to author `FEATURE_BRIEF.md` (stories / acceptance criteria / metrics / scope boundaries) from [D-11](DECISIONS.md) + [STRATEGY.md](STRATEGY.md). |
-| **Persona**        | **Product Analyst** (Stage 1, [phase-1-product-analyst.md](process/personas/phase-1-product-analyst.md)) — next to act. |
+| **Stage**          | `1-define` — **brief DRAFTED, at the approval gate.** [FEATURE_BRIEF.md](features/platform-staging/FEATURE_BRIEF.md) authored (6 stories, AC1.1–AC6.2 in Given/When/Then, M1–M7, explicit in/out scope, constraints C1–C6 + assumptions, risks). **Blocked on DN-PS-BRIEF** (PS-1/2/3 below). On approval → `2-design` (Software Architect). |
+| **Persona**        | **Product Analyst** (Stage 1, [phase-1-product-analyst.md](process/personas/phase-1-product-analyst.md)) — **stopped at the gate.** |
 | **Folder**         | [features/platform-staging/](features/platform-staging/) (7 artifacts seeded; brief pending). Prior feature [widget-conversion-attribution](features/widget-conversion-attribution/) released local/dev — **closed-out**. |
 | **Last updated**   | 2026-06-27 (Coordinator — scaffolded `platform-staging` from ratified [D-11](DECISIONS.md), added [INDEX.md](features/INDEX.md) row, set `Stage: 1-define`; no code) |
 
@@ -49,15 +49,17 @@ Rules:
 ### Latest session status (CLAUDE.md §6.7 — overwritten each session)
 
 ```
-Stage: 1-define | Feature: platform-staging | Persona: Coordinator (CLAUDE.md §4) → handing to Product Analyst
-Done: Scaffolded the ratified staging-validation bet (global D-11) into a feature folder. Created features/platform-staging/ with all 7 standard artifacts seeded (brief carries the
-      D-11/STRATEGY.md upstream pointer + the one-line intent; the rest are stage-pending stubs). Added the INDEX.md row (Phase 4 Validation, Stage 1-define, started 2026-06-27).
-      Set Active feature = platform-staging, Stage = 1-define, Persona = Product Analyst in CONTROL.md. Did not scope stories/AC (that is the Product Analyst's Stage-1 job).
-Verified by: n/a (scaffolding only — no code touched).
-Blocked/Deferred: Held-back bets unchanged: network/weekly-digest + editorial-curation-tools backlog (D-10, density-gated); D-9 monetization ratified-but-unbuilt (density-gated).
-      Frontend SPA split deferred + evidence-gated (D-11). Stage-6 retrospectives for shipped features remain deferred until a prod target exists. ePrivacy consent revisit pre-EU-prod.
-Decisions needed: none open.
-Next: Product Analyst (Stage 1) authors features/platform-staging/FEATURE_BRIEF.md from D-11 + STRATEGY.md — stories, acceptance criteria, metrics, explicit scope boundaries — then raises a brief-approval gate. Stop at the gate.
+Stage: 1-define | Feature: platform-staging | Persona: Product Analyst (Stage 1) — stopped at the brief-approval gate
+Done: Authored features/platform-staging/FEATURE_BRIEF.md from D-11 + STRATEGY.md + vision §5.4 step 3. Problem (wedge code-complete but never reachable — unvalidated thesis, unexercised deploy path),
+      goal, 6 user stories, acceptance criteria AC1.1–AC6.2 (all Given/When/Then; each marked agent-verifiable vs. human-judgment), metrics M1–M7, explicit in/out scope, constraints C1–C6 +
+      assumptions A1–A3, top-5 risks, vision alignment. Grounded deploy constraints in code (verified: 12-factor config, security gated on not DEBUG, email = console stub, NO STATIC_ROOT/deploy
+      manifest exists, PG-only). Surfaced 3 user-business decisions as gate DN-PS-BRIEF (budget/posture, email provider, UX sign-off owner); logged them in the feature OPEN_QUESTIONS.md (PS-1/2/3).
+      No architecture/schema/UI proposed (Stage-2 job).
+Verified by: n/a (Stage-1 definition only — no code touched).
+Blocked/Deferred: BLOCKED on DN-PS-BRIEF (PS-1/2/3) — user approval of the brief + the 3 scoping calls. Held-back bets unchanged: network/weekly-digest + editorial-curation-tools backlog
+      (D-10, density-gated); D-9 monetization ratified-but-unbuilt; SPA split deferred + evidence-gated (D-11, this feature only gathers the evidence). ePrivacy consent revisit pre-EU-prod.
+Decisions needed: DN-PS-BRIEF (PS-1 budget & staging posture; PS-2 email provider; PS-3 UX walkthrough sign-off owner) — see Decisions Needed From You.
+Next: User answers DN-PS-BRIEF (approve/amend the brief + PS-1/2/3). On approval → set Stage 2-design, persona Software Architect; promote the brief to APPROVED. Stop until answered.
 ```
 
 ---
@@ -67,13 +69,22 @@ Next: Product Analyst (Stage 1) authors features/platform-staging/FEATURE_BRIEF.
 The agent is blocked on these. Answer inline (edit the **Answer** cell), then the agent
 proceeds.
 
-**None open.** **DN-STRAT-1 resolved 2026-06-27** (ratified [D-11](DECISIONS.md), see
-*Decisions Made* below): next bet = **staging + full-role UX validation before live**;
-frontend stays on server-rendered Django templates (evidence-gated). The next action is the
-**Coordinator** scoping that into a feature (suggested slug `platform-staging`).
+### DN-PS-BRIEF — approve the `platform-staging` brief (+ 3 scoping calls) — **OPEN**
 
-*(Also recently resolved: **DN-WCA-DESIGN** approved 2026-06-27, **DN-WCA-BRIEF** approved
-2026-06-26 — summarized under *Decisions Made* below.)*
+Approve (or amend) [features/platform-staging/FEATURE_BRIEF.md](features/platform-staging/FEATURE_BRIEF.md),
+and answer the three calls it depends on. The Product Analyst is stopped here.
+
+| # | Question | Why it matters | Answer |
+|---|----------|----------------|--------|
+| **PS-1** | **Budget & staging posture** — free-tier/low-cost acceptable, or is there a budget? And is staging meant to be **promoted to production later**, or **throwaway** (rebuilt for the real cutover)? | Frames the hosting/Postgres/email tier and whether deploy work targets disposability or durability. *(Specific provider/domain stay a Stage-2 architecture choice per [D-11](DECISIONS.md)/[D-2](DECISIONS.md).)* | start with free tier, when deploying we'll start with a monthly budget of 20-100 dollars. Staging is meant to be promoted to production later|
+| **PS-2** | **Email provider** — is a real transactional-email account available (which one)? | Magic-link (passwordless) auth + metric M5 are **blocked** without a real transport; the whole journey starts at sign-in (AC3.1/AC4.1). | currently no email provider exists, I'd love an md file describing how to set one up. |
+| **PS-3** | **UX walkthrough sign-off owner** — who performs/signs off the human-judgment walkthrough (AC3.2/AC4.2/AC6) on a real device — you, or a delegate? | The agent can build the env, script the walkthrough, and run all agent-verifiable checks, but UX-credibility judgment is inherently human. | I will perform the walkthrough on my end. Just give a suggested walkthrough in an md file|
+
+**Brief-level approval:** is the brief itself (stories / AC / scope / metrics) approved as
+written? Note any change inline.
+
+*(Recently resolved: **DN-STRAT-1** 2026-06-27 → [D-11](DECISIONS.md); **DN-WCA-DESIGN**
+approved 2026-06-27; **DN-WCA-BRIEF** approved 2026-06-26 — see *Decisions Made* below.)*
 
 ---
 
@@ -120,6 +131,7 @@ folders remain the full record either way.
 
 | Date       | Stage           | Summary                                                                 |
 |------------|-----------------|-------------------------------------------------------------------------|
+| 2026-06-27 | `1-define` (awaiting DN-PS-BRIEF) | **Product Analyst** — authored [features/platform-staging/FEATURE_BRIEF.md](features/platform-staging/FEATURE_BRIEF.md) from [D-11](DECISIONS.md) + [STRATEGY.md](STRATEGY.md) + vision §5.4 step 3: the problem (wedge code-complete but **never reachable** → unvalidated thesis + unexercised deploy path), 6 user stories, acceptance criteria **AC1.1–AC6.2** (all Given/When/Then, each tagged *agent-verifiable* vs *human-judgment*), metrics **M1–M7**, explicit in/out scope, constraints **C1–C6** (grounded in code: 12-factor config, security gated on `not DEBUG`, email = console stub, **no `STATIC_ROOT`/deploy manifest exists**, PG-only) + assumptions A1–A3, top-5 risks, vision alignment. No architecture/schema/UI (Stage-2). Surfaced 3 user-business scoping calls as gate **DN-PS-BRIEF** (PS-1 budget/posture, PS-2 email provider, PS-3 UX sign-off owner); logged PS-1/2/3 in [OPEN_QUESTIONS.md](features/platform-staging/OPEN_QUESTIONS.md). **Raised DN-PS-BRIEF; stopped at the gate.** |
 | 2026-06-27 | `0-coordinator`→`1-define` | **Coordinator** (§4) — scaffolded the ratified [D-11](DECISIONS.md) staging-validation bet into a feature. Created [features/platform-staging/](features/platform-staging/) with all 7 standard artifacts seeded (brief carries the D-11/[STRATEGY.md](STRATEGY.md) upstream pointer + one-line intent; the rest stage-pending), added the [INDEX.md](features/INDEX.md) row (Phase 4 Validation, started 2026-06-27). Set Active feature = `platform-staging`, `Stage: 1-define`, Persona **Product Analyst**. Held bets (network / `weekly-digest` / `editorial-curation-tools` / D-9) stay backlog (density-gated). Did **not** scope stories/AC (Product Analyst's job). No code. Handed to the **Product Analyst**. |
 | 2026-06-27 | `6-post-release` (off-pipeline) | **Strategist** (§4.1, user-invoked) — post-wedge next-bet analysis + **ratification** (DN-STRAT-1 → global **[D-11](DECISIONS.md)**). Finding: 13 features built but **all local/dev only** — nothing has touched a real developer/user, so H1/H2/H3 + the §8 one-line test are unvalidated, and **every standing-fork option (D-9 / network / editorial) is density-gated → premature**. **Ratified next bet:** not another feature and not yet a public launch — **stand up staging, deploy the wedge, walk it end-to-end as user/developer/admin on web + mobile** (also exercises the deferred deploy work: hosting, domain, the stubbed D-4 email provider, monitoring); live recruitment (§5.4 step 3) follows once staging validates. **Frontend ratified:** keep server-rendered Django templates ([D-4](DECISIONS.md)), polish + make responsive; dedicated-SPA split **deferred + evidence-gated** (D-11). Recorded **D-11**, created/updated [STRATEGY.md](STRATEGY.md), resolved DN-STRAT-1. **No Stage change, no code.** Handed to the **Coordinator** to scope (suggested slug `platform-staging`). |
 | 2026-06-27 | `5-release`→`6-post-release` | **Release Engineer** — **released `widget-conversion-attribution` to local/dev** and wrote [RELEASE_NOTES.md](features/widget-conversion-attribution/RELEASE_NOTES.md). Re-verified the build independently (**962 tests green**, `ruff`/`check`/no drift). **Rehearsed rollback** (hard gate): migration `widget/0002` down→up clean on the live PG cluster; `git revert --no-commit 5df8daa` removed the `source`/`rollup`/`kinds` modules + migration `0002` + the two fail-soft hooks ([`subscriptions.views.follow`](apps/subscriptions/views.py), [`accounts.views.register`](apps/accounts/views.py)) + the dashboard funnel slot in one step, `manage.py check` then **clean with no dangling `subscriptions`/`accounts`/`dashboard → widget` import** (**DU-REL-1** proven); restored to `5df8daa` (git clean). Promotion stops at local/dev; Stage-6 retrospective + M1–M6 outcome review deferred until a prod target exists; ePrivacy consent revisit pre-EU-prod. Updated [INDEX.md](features/INDEX.md) (→ closed-out). **The developer-wedge funnel (impression → click → conversion) is now complete.** Handed to the **Coordinator**. |
