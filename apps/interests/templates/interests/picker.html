@@ -59,9 +59,9 @@
                 <ul class="stack" style="--gap: var(--space-2); list-style: none; padding: 0; margin: 0; border-top: 1px solid var(--color-border); padding-top: var(--space-3);">
                   {% for item in row.tags %}
                     <li style="display: flex; align-items: flex-start; gap: var(--space-2.5); padding: var(--space-1.5) 0;">
-                      <input type="checkbox" name="tag_id" id="tag_{{ item.tag.id }}" value="{{ item.tag.id }}"
+                      <input type="checkbox" name="tag_id" id="tag_{{ row.cluster.id }}_{{ item.tag.id }}" value="{{ item.tag.id }}"
                              {% if item.checked %}checked{% endif %} style="width: auto; margin-top: 0.25rem;">
-                      <label for="tag_{{ item.tag.id }}" style="font-weight: var(--font-weight-medium); cursor: pointer; margin: 0; font-size: var(--font-size-sm); line-height: var(--line-tight);">
+                      <label for="tag_{{ row.cluster.id }}_{{ item.tag.id }}" style="font-weight: var(--font-weight-medium); cursor: pointer; margin: 0; font-size: var(--font-size-sm); line-height: var(--line-tight);">
                         {{ item.tag.label }}
                         {% if item.tag.definition %}
                           <span style="display: block; font-weight: var(--font-weight-normal); color: var(--color-muted); font-size: var(--font-size-xs); margin-top: var(--space-0.5);">{{ item.tag.definition }}</span>
@@ -82,4 +82,19 @@
     {% endif %}
   {% endif %}
 </div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const checkboxes = document.querySelectorAll('input[name="tag_id"]');
+    checkboxes.forEach(function(cb) {
+      cb.addEventListener('change', function() {
+        const val = this.value;
+        const isChecked = this.checked;
+        document.querySelectorAll('input[name="tag_id"][value="' + val + '"]').forEach(function(other) {
+          other.checked = isChecked;
+        });
+      });
+    });
+  });
+</script>
 {% endblock %}
