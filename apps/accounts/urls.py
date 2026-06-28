@@ -20,6 +20,8 @@ urlpatterns = [
     path(VERIFY_PATH.lstrip("/"), views.verify, name="verify"),
     path("auth/logout", views.logout, name="logout"),
     path("profile", views.profile, name="profile"),
+    path("profile/display-name", views.update_display_name, name="profile-display-name"),
+    path("profile/delete", views.delete_my_account, name="profile-delete"),
     # JSON API contracts (§5)
     path("me", views.MeView.as_view(), name="me"),
     path("me/roles/developer", views.DeveloperRoleView.as_view(), name="developer-role"),

@@ -13,6 +13,7 @@ single permission from ``apps.accounts.permissions``.
 import logging
 
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth import login as auth_login
 from django.contrib.auth import logout as auth_logout
 from django.contrib.auth.decorators import login_required
@@ -28,7 +29,7 @@ from rest_framework.views import APIView
 
 from apps.accounts import roles
 from apps.accounts.auth_backend import issue_login_link, verify_token
-from apps.accounts.forms import EmailForm, RegisterForm
+from apps.accounts.forms import DisplayNameForm, EmailForm, RegisterForm
 from apps.accounts.models import Account
 from apps.accounts.permissions import HasRole
 from apps.accounts.serializers import AccountSerializer, DisplayNameSerializer
@@ -192,6 +193,50 @@ def profile(request):
         "accounts/profile.html",
         {"account": request.user, "roles": roles.account_roles(request.user)},
     )
+
+
+# The two profile forms post here, NOT to the §5 JSON `/me` API (an HTML form can only emit
+# GET/POST, and `MeView` answers only PATCH/DELETE → the old 405 of BUG-002). These are the
+# server-rendered §9 twins of MeView.patch/delete: Post/Redirect/Get + Django messages, the
+# house pattern (interests/ratings/updates). The JSON `/me` contract is left untouched.
+@login_required
+@require_POST
+def update_display_name(request):
+    """POST profile/display-name — update the signed-in user's display name, then PRG (AC7).
+
+    Validates with the shared ``DisplayNameForm`` (same 1–80 char bound as the serializer),
+    then always redirects with a Django message — so the user gets feedback either way,
+    fixing the silent-idle symptom BUG-002 reported.
+    """
+    form = DisplayNameForm(request.POST)
+    if not form.is_valid():
+        messages.error(request, "Display name must be between 1 and 80 characters.")
+        return redirect("accounts:profile")
+    request.user.display_name = form.cleaned_data["display_name"]
+    request.user.save(update_fields=["display_name"])
+    messages.success(request, "Display name updated.")
+    return redirect("accounts:profile")
+
+
+@login_required
+@require_POST
+def delete_my_account(request):
+    """POST profile/delete — hard-delete the signed-in account after explicit confirm (AC8).
+
+    Guarded on the hidden ``confirm`` field; on confirm it deletes via the one
+    ``delete_account`` service, flushes the session, and lands on the public home page. No
+    flash message is used on success because ``auth_logout`` flushes the session before the
+    redirect could carry it — the landing page is the confirmation. Missing/false confirm
+    leaves the account untouched and surfaces an error.
+    """
+    if request.POST.get("confirm") != "true":
+        messages.error(request, "Account deletion must be confirmed.")
+        return redirect("accounts:profile")
+    delete_account(request.user)
+    auth_logout(request)
+    # Same deletion metric as the §5 API path, so the count is path-independent.
+    observability.increment(observability.DELETION_FULFILMENT)
+    return redirect("home")
 
 
 # ---------------------------------------------------------------------------

@@ -34,7 +34,7 @@
         </dd>
       </dl>
 
-      <form method="post" action="{% url 'accounts:me' %}" data-method="patch" class="stack" style="--gap: var(--space-3); border-top: 1px solid var(--color-border); padding-top: var(--space-4);">
+      <form method="post" action="{% url 'accounts:profile-display-name' %}" class="stack" style="--gap: var(--space-3); border-top: 1px solid var(--color-border); padding-top: var(--space-4);">
         {% csrf_token %}
         <div class="form-field" style="margin-bottom: 0;">
           <label for="id_display_name">Edit display name</label>
@@ -78,7 +78,7 @@
 
         <div class="stack" style="--gap: var(--space-3);">
           <p style="color: var(--color-muted); font-size: var(--font-size-sm); margin: 0; color: var(--color-error);">This permanently removes your account, profile, and roles. This cannot be undone.</p>
-          <form method="post" action="{% url 'accounts:me' %}" data-method="delete" onsubmit="return confirm('Permanently delete your account?');">
+          <form method="post" action="{% url 'accounts:profile-delete' %}" onsubmit="return confirm('Permanently delete your account?');">
             {% csrf_token %}
             <input type="hidden" name="confirm" value="true">
             <button type="submit" class="btn btn--secondary" style="width: 100%; border-color: var(--color-error); color: var(--color-error);">Delete my account</button>
