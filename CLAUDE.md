@@ -26,7 +26,16 @@ scope the next feature, create its folder, then enter Stage 1.
 
 ---
 
-## 2. The routing table
+## 2. The pipelines (Feature Track vs. Patch Track)
+
+Work in this repository is routed to one of two pipelines based on scope:
+1. **Feature Track (Standard Pipeline):** Used for new capabilities, user-facing product features, or major architectural changes.
+2. **Patch Track (Maintenance Pipeline):** Used for bug fixes, test optimizations, refactoring, dependency updates, and technical chores.
+
+> [!IMPORTANT]
+> **Patch Track Scope Gate:** A patch **must not** introduce or modify database schemas (no migrations), change or add public API endpoints, or modify global ADRs. If any of these are required, the work **must** run on the standard Feature Track.
+
+### 2.1 Feature Track routing table
 
 | `Stage` value   | Persona                | Brief                                                        | Reads                                  | Produces                          |
 |-----------------|------------------------|--------------------------------------------------------------|----------------------------------------|-----------------------------------|
@@ -37,27 +46,27 @@ scope the next feature, create its folder, then enter Stage 1.
 | `5-release`     | Release Engineer       | [phase-5-release-engineer.md](process/personas/phase-5-release-engineer.md) | verified build, `DESIGN.md`          | `RELEASE_NOTES.md`, rollout       |
 | `6-post-release`| Retrospective Analyst  | [phase-6-retrospective-analyst.md](process/personas/phase-6-retrospective-analyst.md) | metrics, `FEATURE_BRIEF.md`  | outcome report, cleanup           |
 
-**Off-pipeline personas.** Not every persona is a stage. The **Strategist**
-([process/personas/strategist.md](process/personas/strategist.md)) runs *outside* this
-1→6 flow — invoked on demand to think about **direction** (business strategy, sequencing,
-monetization, positioning, what to build/defer/kill next). It does not appear in the
-routing table because it is not gated by a `Stage` and never changes a feature's `Stage`;
-it hands a chosen direction to the Coordinator to scope. See §4.1.
+### 2.2 Patch Track routing table
 
-Per-feature `OPEN_QUESTIONS.md` and `DECISIONS.md` are shared across all stages and
+| `Stage` value   | Persona                | Brief                                                        | Reads                                  | Produces                          |
+|-----------------|------------------------|--------------------------------------------------------------|----------------------------------------|-----------------------------------|
+| `P-plan`        | Maintenance Planner    | [patch-1-planner.md](process/personas/patch-1-planner.md)    | bug report / chore description         | `PATCH.md` (brief + design + tasks)|
+| `P-build`       | Maintenance Engineer   | [patch-2-engineer.md](process/personas/patch-2-engineer.md)   | `PATCH.md`, codebase                   | code + `TEST_PLAN.md` + `RELEASE_NOTES.md` |
+
+**Off-pipeline personas.** Not every persona is a stage. The **Strategist**
+([process/personas/strategist.md](process/personas/strategist.md)) runs *outside* these
+flows — invoked on demand to think about **direction** (business strategy, sequencing,
+monetization, positioning, what to build/defer/kill next). It hands a chosen direction to the Coordinator to scope. See §4.1.
+
+Per-feature/patch `OPEN_QUESTIONS.md` and `DECISIONS.md` are shared across all stages and
 written by whoever is active. **Repo-wide** decisions (the stack, shared-code root,
 ranking algorithm — anything a later feature could be wrong to contradict) go in the
 top-level [DECISIONS.md](DECISIONS.md) instead, and reusable code is indexed in
-[CODEMAP.md](CODEMAP.md). Each persona file in `process/personas/` is the canonical,
-self-contained spec for its stage — there is no separate playbook to consult.
+[CODEMAP.md](CODEMAP.md).
 
 **Stage transitions are explicit.** A persona only hands off after its exit criteria
 are met. To hand off: write the result into `CONTROL.md`, set the new `Stage`, and
 state the next persona. Never skip a stage; never run two personas in one session.
-
-**A feature is fully done** only when each gate has passed, in order: brief approved →
-design approved → all tasks verified → `TEST_PLAN.md` covers every acceptance criterion →
-released per the rollout plan → outcome measured against the brief.
 
 ---
 
@@ -72,19 +81,25 @@ STRATEGY.md                   ← living strategic picture (wedge, bet sequence,
 curated-app-platform-design.md← product vision / north star
 
 process/
-  personas/                   ← one self-contained brief per stage + the off-pipeline Strategist (loaded on demand)
+  personas/                   ← self-contained briefs per stage + the off-pipeline Strategist
 
 features/
-  README.md                   ← per-feature folder convention
-  INDEX.md                    ← registry of every feature + its outcome (findability)
-  <feature-slug>/             ← all artifacts for one feature live together
+  README.md                   ← folder conventions and creation steps
+  INDEX.md                    ← registry of every feature/patch + its outcome
+  <feature-slug>/             ← all artifacts for one feature live together (Feature Track)
     FEATURE_BRIEF.md
     DESIGN.md
     TASKS.md
     TEST_PLAN.md
     RELEASE_NOTES.md
     OPEN_QUESTIONS.md
-    DECISIONS.md              ← feature-local decisions (repo-wide ones go in /DECISIONS.md)
+    DECISIONS.md
+  patch-<patch-slug>/         ← all artifacts for one patch live together (Patch Track)
+    PATCH.md                  ← brief, root-cause design, and task list consolidated
+    TEST_PLAN.md              ← regression test mapping
+    RELEASE_NOTES.md          ← summary of changes + rehearsed rollback
+    OPEN_QUESTIONS.md
+    DECISIONS.md
 ```
 
 Why per-feature folders: artifacts that belong together stay together, multiple
@@ -232,6 +247,7 @@ bottom without reverse-engineering it, it is wrong, no matter how clever or shor
 ## 7. Reference index
 
 - [CONTROL.md](CONTROL.md) — current stage + open decisions (read first, update last)
+- [issues/README.md](issues/README.md) — registry of tester-reported bugs, UX issues, and questions feeding the Patch Track / Feature Track
 - [CODEMAP.md](CODEMAP.md) — index of shared/reusable code (check before writing helpers)
 - [DECISIONS.md](DECISIONS.md) — global decision log (ADRs); feature-local decisions live in each feature folder
 - [curated-app-platform-design.md](curated-app-platform-design.md) — product vision

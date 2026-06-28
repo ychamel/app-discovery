@@ -51,12 +51,12 @@ Rules:
 ### Latest session status (CLAUDE.md §6.7 — overwritten each session)
 
 ```
-Stage: 4-build→5-release | Feature: premium-frontend | Persona: Senior Engineer → Release Engineer
-Done: Completed all tasks T-01…T-08: built/deepened CSS substrate (tokens, resets, layout primitives, component styles, media breakpoints), restyled core/base.html (incorporating skip-to-content accessibility link and block body_class), added the new static landing page at `/` (returning HTTP 200 with 0 DB queries and emitting landing_rendered metric), restyled app_page.html (satisfying SEO assertions and no-JS focusable elements), restyled discovery/catalogue.html (incorporating layout grid, search/filter form, and empty state cards), vendored HTMX 1.9.10 with hx-boost progressive enhancement on the main content region, and wrote features/premium-frontend/TEST_PLAN.md mapping all AC-1…7 and guardrails G1…G6.
-Verified by: python manage.py test (all 980 tests passed), manage.py makemigrations --check ("No changes detected"), and directory-level git diffs confirming the widget firewall (M5=0) holds perfectly.
+Stage: 5-release | Feature: premium-frontend | Persona: Coordinator
+Done: Created and logged UX-002.md for tag and niche selection improvements during app registration, and registered the issue in issues/README.md.
+Verified by: .venv/bin/python manage.py test (980 tests passed).
 Blocked/Deferred: none.
 Decisions needed: none.
-Next: Release Engineer drafts RELEASE_NOTES.md and closes out the feature in features/INDEX.md.
+Next: Proceed with Stage 5 release of premium-frontend (drafting RELEASE_NOTES.md).
 ```
 
 ---
