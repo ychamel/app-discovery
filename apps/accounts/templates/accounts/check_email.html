@@ -2,27 +2,35 @@
 {% block title %}Check your email · App Discovery{% endblock %}
 
 {% block content %}
-  {% if send_failed %}
-    <h1>We couldn't send your link</h1>
-    <p role="alert">
-      Something went wrong sending the sign-in link to <strong>{{ email }}</strong>.
-      Please try again.
-    </p>
-    <form method="post" action="{% url 'accounts:login' %}">
-      {% csrf_token %}
-      <input type="hidden" name="email" value="{{ email }}">
-      <button type="submit">Resend the link</button>
-    </form>
-  {% else %}
-    <h1>Check your email</h1>
-    <p>
-      If an account exists for <strong>{{ email }}</strong>, we've sent a sign-in link
-      to it. The link works once and expires shortly.
-    </p>
-    <form method="post" action="{% url 'accounts:login' %}">
-      {% csrf_token %}
-      <input type="hidden" name="email" value="{{ email }}">
-      <button type="submit">Resend the link</button>
-    </form>
-  {% endif %}
+<div class="container" style="max-width: 32rem; margin: var(--space-8) auto;">
+  <div class="card stack" style="--gap: var(--space-5); text-align: center;">
+    {% if send_failed %}
+      <div class="empty-state__icon" style="color: var(--color-error);">⚠️</div>
+      <h1 style="margin: 0; font-size: var(--font-size-2xl);">We couldn't send your link</h1>
+      
+      <div class="message error" role="alert" style="text-align: left;">
+        Something went wrong sending the sign-in link to <strong>{{ email }}</strong>. Please try again.
+      </div>
+
+      <form method="post" action="{% url 'accounts:login' %}" class="stack">
+        {% csrf_token %}
+        <input type="hidden" name="email" value="{{ email }}">
+        <button type="submit" class="btn btn--primary" style="width: 100%;">Resend the link</button>
+      </form>
+    {% else %}
+      <div class="empty-state__icon" style="color: var(--color-accent);">✉️</div>
+      <h1 style="margin: 0; font-size: var(--font-size-2xl);">Check your email</h1>
+      
+      <p style="color: var(--color-muted); line-height: var(--line-base); margin: 0;">
+        We've sent a sign-in link to <strong>{{ email }}</strong>. The link works once and expires shortly.
+      </p>
+
+      <form method="post" action="{% url 'accounts:login' %}" class="stack" style="margin-top: var(--space-2);">
+        {% csrf_token %}
+        <input type="hidden" name="email" value="{{ email }}">
+        <button type="submit" class="btn btn--secondary" style="width: 100%;">Resend the link</button>
+      </form>
+    {% endif %}
+  </div>
+</div>
 {% endblock %}

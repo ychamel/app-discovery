@@ -2,18 +2,28 @@
 {% block title %}Sign in · App Discovery{% endblock %}
 
 {% block content %}
-  <h1>Sign in</h1>
-  <p>Enter your email and we'll send you a one-time sign-in link.</p>
+<div class="container" style="max-width: 28rem; margin: var(--space-8) auto;">
+  <div class="card stack" style="--gap: var(--space-5);">
+    <div class="stack" style="--gap: var(--space-2); text-align: center;">
+      <h1 style="margin: 0; font-size: var(--font-size-2xl);">Sign in</h1>
+      <p style="color: var(--color-muted); margin: 0; font-size: var(--font-size-sm);">Enter your email and we'll send you a one-time sign-in link.</p>
+    </div>
 
-  <form method="post" action="{% url 'accounts:login' %}">
-    {% csrf_token %}
-    <p>
-      <label for="id_email">Email</label>
-      {{ form.email }}
-      {% if form.email.errors %}<span role="alert">{{ form.email.errors.0 }}</span>{% endif %}
-    </p>
-    <button type="submit">Send me a sign-in link</button>
-  </form>
+    <form method="post" action="{% url 'accounts:login' %}" class="stack" style="--gap: var(--space-4);">
+      {% csrf_token %}
+      <div class="form-field">
+        <label for="id_email">Email address</label>
+        {{ form.email }}
+        {% if form.email.errors %}
+          <span role="alert" style="color: var(--color-error); font-size: var(--font-size-xs); margin-top: var(--space-1);">{{ form.email.errors.0 }}</span>
+        {% endif %}
+      </div>
+      <button type="submit" class="btn btn--primary" style="width: 100%;">Send me a sign-in link</button>
+    </form>
 
-  <p>No account yet? <a href="{% url 'accounts:register' %}">Create one</a>.</p>
+    <div style="text-align: center; border-top: 1px solid var(--color-border); padding-top: var(--space-4); font-size: var(--font-size-sm); color: var(--color-muted);">
+      No account yet? <a href="{% url 'accounts:register' %}" style="font-weight: var(--font-weight-semibold);">Create one</a>
+    </div>
+  </div>
+</div>
 {% endblock %}

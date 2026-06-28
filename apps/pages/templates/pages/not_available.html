@@ -2,9 +2,12 @@
 {% block title %}App not available · App Discovery{% endblock %}
 
 {% block content %}
-  <h1>This app isn’t available</h1>
-  <p>
-    The app you’re looking for isn’t in the catalogue. It may not have been accepted yet,
-    or it may have been withdrawn.
+<div class="empty-state" style="margin-top: var(--space-8);">
+  <div class="empty-state__icon" style="color: var(--color-error);">⚠️</div>
+  <h1 class="empty-state__title">This app isn’t available</h1>
+  <p class="empty-state__description">
+    The app you’re looking for isn’t in the catalogue. It may not have been accepted yet, or it may have been withdrawn.
   </p>
+  <a href="{% url 'discovery:browse' %}" class="btn btn--primary">Browse Available Apps</a>
+</div>
 {% endblock %}

@@ -1,25 +1,31 @@
 {% extends "updates/base.html" %}
-{% comment %}
-My channels (developer-updates DESIGN §6.5). The developer's *accepted* apps — the only apps
-that can have followers, and so the only postable channels. Each links to its channel. The
-own-nothing state is a 200 (AC1). Server-rendered, no JS; all values auto-escaped.
-{% endcomment %}
 {% block title %}My channels · Developer updates{% endblock %}
 {% block content %}
-<h1>My channels</h1>
+<div class="stack" style="--gap: var(--space-6);">
+  <div>
+    <h1 style="margin: 0;">Update Channels</h1>
+    <p style="color: var(--color-muted); margin: 0; font-size: var(--font-size-lg);">Publish release announcements and early-access updates for your followers.</p>
+  </div>
 
-{% if apps %}
-  <ul aria-label="Channel list">
-    {% for app in apps %}
-      <li>
-        <a href="{% url 'updates:channel' app_id=app.id %}">{{ app.name }}</a>
-      </li>
-    {% endfor %}
-  </ul>
-{% else %}
-  <section>
-    <p>You have no accepted apps yet.</p>
-    <p>Once an app you submit is accepted, you can post updates for its followers here.</p>
-  </section>
-{% endif %}
+  {% if apps %}
+    <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--space-6);">
+      {% for app in apps %}
+        <div class="card stack" style="--gap: var(--space-4);">
+          <h2 style="margin: 0; font-size: var(--font-size-xl);">{{ app.name }}</h2>
+          <p style="color: var(--color-muted); font-size: var(--font-size-sm); margin: 0;">Active updates channel for followers of {{ app.name }}.</p>
+          <a href="{% url 'updates:channel' app_id=app.id %}" class="btn btn--primary" style="text-decoration: none; text-align: center; margin-top: auto;">
+            Manage Channel
+          </a>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <div class="empty-state__icon">📢</div>
+      <h2 class="empty-state__title">No channels available</h2>
+      <p class="empty-state__description">no accepted apps yet — once your application is accepted, a channel will automatically be created here.</p>
+      <a href="{% url 'dashboard:my-apps' %}" class="btn btn--secondary">Go to Dashboard</a>
+    </div>
+  {% endif %}
+</div>
 {% endblock %}

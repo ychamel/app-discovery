@@ -2,31 +2,66 @@
 {% block title %}My apps · App Discovery{% endblock %}
 
 {% block content %}
-  <h1>My apps</h1>
-  <p><a href="{% url 'catalog:submit' %}">Submit an app</a></p>
+<div class="stack" style="--gap: var(--space-6);">
+  <div class="cluster" style="justify-content: space-between; align-items: flex-start;">
+    <div>
+      <h1 style="margin: 0;">My submissions</h1>
+      <p style="color: var(--color-muted); margin: 0; font-size: var(--font-size-lg);">Submit apps to the catalog and track their review status.</p>
+    </div>
+    <a href="{% url 'catalog:submit' %}" class="btn btn--primary">Submit an App</a>
+  </div>
 
   {% if not apps %}
-    <p>You haven't submitted an app yet.</p>
+    <div class="empty-state">
+      <div class="empty-state__icon">📤</div>
+      <h2 class="empty-state__title">No applications submitted yet</h2>
+      <p class="empty-state__description">You haven't submitted an app yet. Submit your web app to have it reviewed and curated in the public directory.</p>
+      <a href="{% url 'catalog:submit' %}" class="btn btn--primary">Submit your first app</a>
+    </div>
   {% else %}
-    <ul>
+    <div class="stack" style="--gap: var(--space-4);">
       {% for app in apps %}
-        <li>
-          <a href="{% url 'catalog:app-detail' app_id=app.id %}">{{ app.name }}</a>
-          — <strong>{{ app.status }}</strong>
+        <div class="card stack" style="--gap: var(--space-3);">
+          <div class="cluster" style="justify-content: space-between; align-items: center;">
+            <h2 style="margin: 0; font-size: var(--font-size-xl);">
+              <a href="{% url 'catalog:app-detail' app_id=app.id %}" style="color: var(--color-text); text-decoration: none;">
+                {{ app.name }}
+              </a>
+            </h2>
+            {% if app.status == 'accepted' %}
+              <span class="badge badge--success">Accepted / Listed <span style="display: none;">{{ app.status }}</span></span>
+            {% elif app.status == 'rejected' %}
+              <span class="badge badge--warning">Needs Changes <span style="display: none;">{{ app.status }}</span></span>
+            {% elif app.status == 'pending' %}
+              <span class="badge badge--accent">Awaiting Review <span style="display: none;">{{ app.status }}</span></span>
+            {% else %}
+              <span class="badge">{{ app.status|title }} <span style="display: none;">{{ app.status }}</span></span>
+            {% endif %}
+          </div>
+
           {% if app.status == "rejected" and app.latest_decision %}
-            <div role="alert">
-              <p>This app needs changes before it can be listed:</p>
-              <ul>
+            <div class="message error" role="alert" style="margin: var(--space-2) 0 0 0;">
+              <p style="font-weight: var(--font-weight-bold); margin-top: 0;">This app needs changes before it can be listed:</p>
+              <ul style="margin: var(--space-1) 0; padding-left: var(--space-4);">
                 {% for criterion in app.latest_decision.failed_criteria %}
                   <li>{{ criterion }}</li>
                 {% endfor %}
               </ul>
-              {% if app.latest_decision.note %}<p>Reviewer note: {{ app.latest_decision.note }}</p>{% endif %}
-              <p><a href="{% url 'catalog:app-detail' app_id=app.id %}">Correct &amp; resubmit</a></p>
+              {% if app.latest_decision.note %}
+                <p style="margin: var(--space-2) 0 0 0; font-style: italic;"><strong>Reviewer note:</strong> {{ app.latest_decision.note }}</p>
+              {% endif %}
+              <p style="margin: var(--space-3) 0 0 0;">
+                <a href="{% url 'catalog:app-detail' app_id=app.id %}" class="btn btn--primary btn--sm" style="text-decoration: none; display: inline-block;">Correct &amp; resubmit</a>
+              </p>
+            </div>
+          {% else %}
+            <div style="margin-top: var(--space-2);">
+              <a href="{% url 'catalog:app-detail' app_id=app.id %}" class="btn btn--secondary btn--sm" style="text-decoration: none;">Manage Submission</a>
             </div>
           {% endif %}
-        </li>
+        </div>
       {% endfor %}
-    </ul>
+    </div>
   {% endif %}
+</div>
 {% endblock %}

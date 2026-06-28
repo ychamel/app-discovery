@@ -16,8 +16,10 @@
     <p style="color: var(--color-muted); margin: 0; font-size: var(--font-size-lg);">Explore and find verified vibe-coded web applications.</p>
   </div>
 
-  {# Search box — reflects the current q; carries the active tag/cluster so search composes
-     with the filter (AND). A real GET form, so it works without JavaScript (C7). #}
+  {% comment %}
+    Search box — reflects the current q; carries the active tag/cluster so search composes
+    with the filter (AND). A real GET form, so it works without JavaScript (C7).
+  {% endcomment %}
   <form method="get" action="{% url 'discovery:browse' %}" role="search" class="search-form">
     <label for="discovery-q" class="visually-hidden">Search apps</label>
     <div class="search-input-group">

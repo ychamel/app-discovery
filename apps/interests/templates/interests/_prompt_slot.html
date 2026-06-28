@@ -1,11 +1,6 @@
-{% comment %}
-  The onboarding nudge (interest-profile DESIGN.md §5.4 — AC3). Encouraged, never a blocker:
-  a one-line link to the picker that self-resolves once any interest is declared. When the
-  user already has interests (or the read fail-softed), `show` is false and this renders
-  nothing — keeping the host profile page intact.
-{% endcomment %}
 {% if show %}
-  <p>
-    <a href="{% url 'interests:picker' %}">Tell us what you're interested in →</a>
-  </p>
+  <div class="message success" style="margin-bottom: var(--space-6); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-4);">
+    <span style="font-weight: var(--font-weight-medium);">Tailor your experience: Tell us what you're interested in so we can customize your feed!</span>
+    <a href="{% url 'interests:picker' %}" class="btn btn--primary btn--sm" style="text-decoration: none;">Choose interests</a>
+  </div>
 {% endif %}

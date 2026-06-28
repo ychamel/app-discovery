@@ -2,18 +2,24 @@
 {% block title %}Link expired · App Discovery{% endblock %}
 
 {% block content %}
-  <h1>That link can't be used</h1>
-  <p role="alert">
-    This sign-in link has expired or was already used. Sign-in links work once and
-    expire shortly after they're sent. Request a fresh one below.
-  </p>
+<div class="container" style="max-width: 32rem; margin: var(--space-8) auto;">
+  <div class="card stack" style="--gap: var(--space-5);">
+    <div class="stack" style="--gap: var(--space-2); text-align: center;">
+      <h1 style="margin: 0; font-size: var(--font-size-2xl);">That link can't be used</h1>
+    </div>
 
-  <form method="post" action="{% url 'accounts:login' %}">
-    {% csrf_token %}
-    <p>
-      <label for="id_email">Email</label>
-      <input type="email" name="email" id="id_email" required>
-    </p>
-    <button type="submit">Send a new link</button>
-  </form>
+    <div class="message error" role="alert" style="margin-bottom: 0;">
+      This sign-in link has expired or was already used. Sign-in links work once and expire shortly after they're sent. Request a fresh one below.
+    </div>
+
+    <form method="post" action="{% url 'accounts:login' %}" class="stack" style="--gap: var(--space-4);">
+      {% csrf_token %}
+      <div class="form-field">
+        <label for="id_email">Email address</label>
+        <input type="email" name="email" id="id_email" required placeholder="you@example.com">
+      </div>
+      <button type="submit" class="btn btn--primary" style="width: 100%;">Send a new link</button>
+    </form>
+  </div>
+</div>
 {% endblock %}

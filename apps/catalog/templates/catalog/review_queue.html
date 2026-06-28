@@ -2,21 +2,49 @@
 {% block title %}Review queue · App Discovery{% endblock %}
 
 {% block content %}
-  <h1>Review queue</h1>
+<div class="stack" style="--gap: var(--space-6);">
+  <div>
+    <h1 style="margin: 0;">Review Queue</h1>
+    <p style="color: var(--color-muted); margin: 0; font-size: var(--font-size-lg);">Evaluate pending applications against objective floor guidelines.</p>
+  </div>
 
   {% if not rows %}
-    <p>No apps awaiting review.</p>
+    <div class="empty-state">
+      <div class="empty-state__icon">✅</div>
+      <h2 class="empty-state__title">No apps awaiting review</h2>
+      <p class="empty-state__description">All submitted applications have been reviewed. There is nothing pending right now.</p>
+    </div>
   {% else %}
-    <ul>
+    <div class="stack" style="--gap: var(--space-4);">
       {% for row in rows %}
-        <li>
-          <a href="{% url 'catalog:review-detail' app_id=row.app.id %}">{{ row.app.name }}</a>
-          — submitted by {{ row.owner.email }} at {{ row.submitted_at }}
+        <div class="card stack" style="--gap: var(--space-3);">
+          <div class="cluster" style="justify-content: space-between; align-items: center;">
+            <h2 style="margin: 0; font-size: var(--font-size-xl);">
+              <a href="{% url 'catalog:review-detail' app_id=row.app.id %}" style="color: var(--color-text); text-decoration: none;">
+                {{ row.app.name }}
+              </a>
+            </h2>
+            <span class="badge badge--accent">Pending Evaluation</span>
+          </div>
+
+          <div style="font-size: var(--font-size-sm); color: var(--color-muted);">
+            Submitted by <strong style="color: var(--color-text);">{{ row.owner.email }}</strong> at {{ row.submitted_at }}
+          </div>
+
           {% if row.duplicate_hint %}
-            <strong role="alert">{{ row.duplicate_hint }} other app(s) share this URL</strong>
+            <div class="message error" role="alert" style="margin: var(--space-2) 0 0 0; padding: var(--space-2.5) var(--space-3); font-size: var(--font-size-sm); font-weight: var(--font-weight-medium);">
+              ⚠️ Duplicate Signal: {{ row.duplicate_hint }} other app(s) share this URL.
+            </div>
           {% endif %}
-        </li>
+
+          <div style="margin-top: var(--space-2);">
+            <a href="{% url 'catalog:review-detail' app_id=row.app.id %}" class="btn btn--primary btn--sm" style="text-decoration: none;">
+              Begin Review →
+            </a>
+          </div>
+        </div>
       {% endfor %}
-    </ul>
+    </div>
   {% endif %}
+</div>
 {% endblock %}

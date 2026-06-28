@@ -2,51 +2,106 @@
 {% block title %}Review {{ app.name }} · App Discovery{% endblock %}
 
 {% block content %}
-  <p><a href="{% url 'catalog:review' %}">← Review queue</a></p>
-  <h1>{{ app.name }}</h1>
+<div class="stack" style="--gap: var(--space-6);">
+  <header class="stack" style="--gap: var(--space-2);">
+    <p style="margin: 0;"><a href="{% url 'catalog:review' %}" class="btn btn--ghost btn--sm" style="margin-left: calc(var(--space-2) * -1);">← Back to Review Queue</a></p>
+    <div class="cluster" style="justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-4);">
+      <h1 style="margin: 0;">Review: {{ app.name }}</h1>
+      <span class="badge badge--accent" style="font-size: var(--font-size-sm); padding: var(--space-1.5) var(--space-3);">Pending Evaluation</span>
+    </div>
+  </header>
 
-  {% if error %}<p role="alert">{{ error }}</p>{% endif %}
+  {% if error %}
+    <div class="message error" role="alert">{{ error }}</div>
+  {% endif %}
 
-  <dl>
-    <dt>Owner</dt><dd>{{ owner_email }}</dd>
-    <dt>URL</dt><dd><a href="{{ app.url }}" rel="noopener noreferrer" target="_blank">{{ app.url }}</a></dd>
-    <dt>Description</dt><dd>{{ app.description }}</dd>
-    <dt>Tags</dt><dd>{% for tag in app.tags %}{{ tag.label }}{% if not forloop.last %}, {% endif %}{% endfor %}</dd>
-    {% if duplicate_hint %}<dt>Duplicate signal</dt><dd role="alert">{{ duplicate_hint }} other app(s) share this URL</dd>{% endif %}
-  </dl>
+  {% if duplicate_hint %}
+    <div class="message error" role="alert" style="margin-bottom: 0;">
+      <strong>⚠️ Potential Duplicate URL Detected:</strong> {{ duplicate_hint }} other app(s) in the database share the same domain or path. Please verify that this is a unique application.
+    </div>
+  {% endif %}
 
-  <section>
-    <h2>Screenshots</h2>
-    {% for media in app.media %}
-      <img src="{{ media.url }}" alt="{{ media.alt_text }}" width="200">
-    {% endfor %}
-  </section>
+  <div class="app-page">
+    <!-- Main Column: Details & Checklist -->
+    <div class="app-page-main stack" style="--gap: var(--space-6);">
+      <!-- App Information Card -->
+      <div class="card stack" style="--gap: var(--space-4);">
+        <h2 style="margin: 0; font-size: var(--font-size-xl); border-bottom: 1px solid var(--color-border); padding-bottom: var(--space-2);">Application Information</h2>
+        
+        <dl style="margin: 0; display: grid; grid-template-columns: 120px 1fr; gap: var(--space-3.5) 0;">
+          <dt style="font-weight: var(--font-weight-semibold); color: var(--color-muted);">Owner</dt>
+          <dd style="margin: 0; color: var(--color-text);">{{ owner_email }}</dd>
+          
+          <dt style="font-weight: var(--font-weight-semibold); color: var(--color-muted);">URL</dt>
+          <dd style="margin: 0;"><a href="{{ app.url }}" rel="noopener noreferrer" target="_blank" style="font-weight: var(--font-weight-semibold);">{{ app.url }} ↗</a></dd>
+          
+          <dt style="font-weight: var(--font-weight-semibold); color: var(--color-muted);">Description</dt>
+          <dd style="margin: 0; color: var(--color-text); line-height: var(--line-base);">{{ app.description }}</dd>
+          
+          <dt style="font-weight: var(--font-weight-semibold); color: var(--color-muted);">Tags</dt>
+          <dd style="margin: 0; display: flex; flex-wrap: wrap; gap: var(--space-1.5);">
+            {% for tag in app.tags %}
+              <span class="badge badge--accent">{{ tag.label }}</span>
+            {% empty %}
+              <span class="badge">No tags</span>
+            {% endfor %}
+          </dd>
+        </dl>
+      </div>
 
-  <section>
-    <h2>Objective checklist</h2>
-    <p>Accept only if every floor passes. To reject, name each floor that fails — there is
-       no "low quality" option; rejection is never a matter of taste.</p>
+      <!-- Screenshots Card -->
+      <div class="card stack" style="--gap: var(--space-4);">
+        <h2 style="margin: 0; font-size: var(--font-size-xl);">Screenshots Gallery</h2>
+        {% if app.media %}
+          <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-4);">
+            {% for media in app.media %}
+              <div style="border: 1px solid var(--color-border); padding: var(--space-1); border-radius: var(--radius); background: var(--color-surface-2);">
+                <a href="{{ media.url }}" target="_blank">
+                  <img src="{{ media.url }}" alt="{{ media.alt_text }}" style="width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: calc(var(--radius) - 2px); display: block;">
+                </a>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p style="color: var(--color-muted); font-size: var(--font-size-sm); margin: 0;">No screenshots uploaded for this application.</p>
+        {% endif %}
+      </div>
 
-    <form method="post" action="{% url 'catalog:review-detail' app_id=app.id %}">
-      {% csrf_token %}
-      <ul>
-        {% for item in checklist %}
-          <li>
-            <label>
-              <input type="checkbox" name="failed_criteria" value="{{ item.value }}">
-              <strong>{{ item.label }}</strong> — {{ item.hint }}
-            </label>
-          </li>
-        {% endfor %}
-      </ul>
+      <!-- Evaluation / Checklist form -->
+      <div class="card stack" style="--gap: var(--space-5);">
+        <h2 style="margin: 0; font-size: var(--font-size-xl); border-bottom: 1px solid var(--color-border); padding-bottom: var(--space-3);">Floor Curation Evaluation</h2>
+        
+        <div class="message warning" style="font-size: var(--font-size-sm); margin-bottom: 0;">
+          <strong>Guideline Checklist:</strong> Accept ONLY if every floor criterion below is satisfied. To reject, select the specific criteria that failed. Rejection must be based strictly on these floors, never subjective taste.
+        </div>
 
-      <p>
-        <label for="id_note">Note to the developer (shown on rejection)</label>
-        <textarea name="note" id="id_note"></textarea>
-      </p>
+        <form method="post" action="{% url 'catalog:review-detail' app_id=app.id %}" class="stack" style="--gap: var(--space-4);">
+          {% csrf_token %}
+          
+          <ul class="stack" style="--gap: var(--space-3); list-style: none; padding: 0; margin: 0;">
+            {% for item in checklist %}
+              <li style="display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius); background-color: var(--color-surface);">
+                <input type="checkbox" name="failed_criteria" id="fail_{{ item.value }}" value="{{ item.value }}" style="width: auto; margin-top: 0.25rem;">
+                <label for="fail_{{ item.value }}" style="cursor: pointer; margin: 0; font-size: var(--font-size-sm); line-height: var(--line-base);">
+                  <span style="color: var(--color-error); display: block; font-size: var(--font-size-base); margin-bottom: var(--space-0.5); font-weight: var(--font-weight-bold);"><strong>{{ item.label }}</strong></span>
+                  <span style="color: var(--color-muted);">{{ item.hint }}</span>
+                </label>
+              </li>
+            {% endfor %}
+          </ul>
 
-      <button type="submit" name="action" value="accept">Accept</button>
-      <button type="submit" name="action" value="reject">Reject (with the floors checked above)</button>
-    </form>
-  </section>
+          <div class="form-field">
+            <label for="id_note">Note to the developer (required on rejection)</label>
+            <textarea name="note" id="id_note" placeholder="Provide helpful instructions for the developer on how to fix the failed criteria..." style="max-width: none; min-height: 100px; resize: vertical;"></textarea>
+          </div>
+
+          <div class="cluster" style="justify-content: flex-end; --gap: var(--space-4); border-top: 1px solid var(--color-border); padding-top: var(--space-5); margin-top: var(--space-2);">
+            <button type="submit" name="action" value="reject" class="btn btn--secondary" style="border-color: var(--color-error); color: var(--color-error);">Reject Submission</button>
+            <button type="submit" name="action" value="accept" class="btn btn--primary">Accept &amp; Publish App</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}

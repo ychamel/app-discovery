@@ -2,29 +2,44 @@
 {% block title %}Create your account · App Discovery{% endblock %}
 
 {% block content %}
-  <h1>Create your account</h1>
+<div class="container" style="max-width: 28rem; margin: var(--space-8) auto;">
+  <div class="card stack" style="--gap: var(--space-5);">
+    <div class="stack" style="--gap: var(--space-2); text-align: center;">
+      <h1 style="margin: 0; font-size: var(--font-size-2xl);">Create your account</h1>
+      <p style="color: var(--color-muted); margin: 0; font-size: var(--font-size-sm);">Join the curated community of high-quality indie web apps.</p>
+    </div>
 
-  {% if email_taken %}
-    <p role="alert">
-      An account already exists for that email.
-      <a href="{% url 'accounts:signin' %}">Sign in instead</a>.
-    </p>
-  {% endif %}
+    {% if email_taken %}
+      <div class="message error" role="alert" style="margin-bottom: 0;">
+        An account already exists for that email.
+        <a href="{% url 'accounts:signin' %}" style="font-weight: var(--font-weight-semibold); text-decoration: underline;">Sign in instead</a>.
+      </div>
+    {% endif %}
 
-  <form method="post" action="{% url 'accounts:register' %}">
-    {% csrf_token %}
-    <p>
-      <label for="id_email">Email</label>
-      {{ form.email }}
-      {% if form.email.errors %}<span role="alert">{{ form.email.errors.0 }}</span>{% endif %}
-    </p>
-    <p>
-      <label for="id_display_name">Display name</label>
-      {{ form.display_name }}
-      {% if form.display_name.errors %}<span role="alert">{{ form.display_name.errors.0 }}</span>{% endif %}
-    </p>
-    <button type="submit">Send me a sign-in link</button>
-  </form>
+    <form method="post" action="{% url 'accounts:register' %}" class="stack" style="--gap: var(--space-4);">
+      {% csrf_token %}
+      <div class="form-field">
+        <label for="id_email">Email address</label>
+        {{ form.email }}
+        {% if form.email.errors %}
+          <span role="alert" style="color: var(--color-error); font-size: var(--font-size-xs); margin-top: var(--space-1);">{{ form.email.errors.0 }}</span>
+        {% endif %}
+      </div>
+      
+      <div class="form-field">
+        <label for="id_display_name">Display name</label>
+        {{ form.display_name }}
+        {% if form.display_name.errors %}
+          <span role="alert" style="color: var(--color-error); font-size: var(--font-size-xs); margin-top: var(--space-1);">{{ form.display_name.errors.0 }}</span>
+        {% endif %}
+      </div>
 
-  <p>Already have an account? <a href="{% url 'accounts:signin' %}">Sign in</a>.</p>
+      <button type="submit" class="btn btn--primary" style="width: 100%;">Create Account</button>
+    </form>
+
+    <div style="text-align: center; border-top: 1px solid var(--color-border); padding-top: var(--space-4); font-size: var(--font-size-sm); color: var(--color-muted);">
+      Already have an account? <a href="{% url 'accounts:signin' %}" style="font-weight: var(--font-weight-semibold);">Sign in</a>
+    </div>
+  </div>
+</div>
 {% endblock %}

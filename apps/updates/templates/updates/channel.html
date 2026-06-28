@@ -1,68 +1,108 @@
 {% extends "updates/base.html" %}
-{% comment %}
-One channel (developer-updates DESIGN §6.5/§7/§8). Three parts, each fail-soft independently:
-  * Audience hint — "Reaches N current followers" (hidden if the read degraded; subscriber_count
-    is None when degraded, 0 is a real "no followers yet").
-  * Post form — kind / title / summary, POST + CSRF. Always shown so a degraded read never
-    blocks posting.
-  * Notices list — the owner's notices, newest-first, each with a Withdraw POST. None signals a
-    degraded read ("couldn't load your notices"); an empty list is the first-post state.
-
-title/summary are untrusted developer input shown to followers → rendered through Django
-auto-escaping (no |safe), bounded by the config length caps at the write boundary (§8).
-{% endcomment %}
 {% block title %}{{ app.name }} · Developer updates{% endblock %}
 {% block content %}
-<h1>{{ app.name }}</h1>
-<p><a href="{% url 'updates:my-channels' %}">← All channels</a></p>
+<div class="stack" style="--gap: var(--space-6);">
+  <header class="stack" style="--gap: var(--space-2);">
+    <p style="margin: 0;"><a href="{% url 'updates:my-channels' %}" class="btn btn--ghost btn--sm" style="margin-left: calc(var(--space-2) * -1);">← Back to Update Channels</a></p>
+    <div class="cluster" style="justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-4);">
+      <h1 style="margin: 0;">{{ app.name }}</h1>
+      {% if subscriber_count is not None %}
+        <span class="badge badge--success" style="font-size: var(--font-size-sm); padding: var(--space-1.5) var(--space-3);">
+          Reaches {{ subscriber_count }} current follower{{ subscriber_count|pluralize }}
+        </span>
+      {% endif %}
+    </div>
+  </header>
 
-{% if subscriber_count is not None %}
-  <p>Reaches {{ subscriber_count }} current follower{{ subscriber_count|pluralize }}.</p>
-{% endif %}
+  <div class="app-page">
+    <!-- Main Column: Post Form and Notices -->
+    <div class="app-page-main stack" style="--gap: var(--space-6);">
+      
+      <!-- Post Form Card -->
+      <div class="card stack" style="--gap: var(--space-4);">
+        <h2 style="margin: 0; font-size: var(--font-size-xl); border-bottom: 1px solid var(--color-border); padding-bottom: var(--space-2);">Post an update</h2>
+        
+        <form method="post" action="{% url 'updates:post' app_id=app.id %}" class="stack" style="--gap: var(--space-4);">
+          {% csrf_token %}
+          
+          <div class="form-field">
+            <label for="kind">Update Type</label>
+            <select name="kind" id="kind" style="max-width: 280px;">
+              <option value="update">Update / Announcement</option>
+              <option value="early_access">Early access invitation</option>
+            </select>
+          </div>
 
-<section aria-label="Post an update">
-  <h2>Post an update</h2>
-  <form method="post" action="{% url 'updates:post' app_id=app.id %}">
-    {% csrf_token %}
-    <p>
-      <label for="kind">Kind</label>
-      <select name="kind" id="kind">
-        <option value="update">Update</option>
-        <option value="early_access">Early access</option>
-      </select>
-    </p>
-    <p>
-      <label for="title">Title</label>
-      <input type="text" name="title" id="title" required>
-    </p>
-    <p>
-      <label for="summary">Summary</label>
-      <textarea name="summary" id="summary" required></textarea>
-    </p>
-    <button type="submit">Post</button>
-  </form>
-</section>
+          <div class="form-field">
+            <label for="title">Title</label>
+            <input type="text" name="title" id="title" required placeholder="e.g. Version 2.0 Released!" style="max-width: none;">
+          </div>
 
-<section aria-label="Your notices">
-  <h2>Your notices</h2>
-  {% if notices is None %}
-    <p role="alert">Couldn't load your notices right now — please try again. You can still post above.</p>
-  {% elif notices %}
-    <ul aria-label="Notice list">
-      {% for notice in notices %}
-        <li>
-          <p>{{ notice.title }}</p>
-          <p>{{ notice.summary }}</p>
-          <form method="post"
-                action="{% url 'updates:withdraw' app_id=app.id notice_id=notice.id %}">
-            {% csrf_token %}
-            <button type="submit">Withdraw</button>
-          </form>
-        </li>
-      {% endfor %}
-    </ul>
-  {% else %}
-    <p>No notices yet — post your first update.</p>
-  {% endif %}
-</section>
+          <div class="form-field">
+            <label for="summary">Summary / Body</label>
+            <textarea name="summary" id="summary" required placeholder="Describe what is new in this update..." style="max-width: none; min-height: 100px; resize: vertical;"></textarea>
+          </div>
+
+          <button type="submit" class="btn btn--primary" style="width: fit-content; min-width: 140px;">Publish Update</button>
+        </form>
+      </div>
+
+      <!-- Published Notices List -->
+      <div class="card stack" style="--gap: var(--space-4);">
+        <h2 style="margin: 0; font-size: var(--font-size-xl); border-bottom: 1px solid var(--color-border); padding-bottom: var(--space-2);">Published notices</h2>
+        
+        {% if notices is None %}
+          <div class="message error" role="alert">
+            Couldn't load your notices right now — please try again. You can still publish new updates using the form above.
+          </div>
+        {% elif notices %}
+          <div class="stack" style="--gap: var(--space-4);">
+            {% for notice in notices %}
+              <div class="card stack" style="--gap: var(--space-2.5); background-color: var(--color-surface); border-color: var(--color-border);">
+                <div class="cluster" style="justify-content: space-between; align-items: flex-start; gap: var(--space-4);">
+                  <div>
+                    <h3 style="margin: 0; font-size: var(--font-size-lg);">{{ notice.title }}</h3>
+                    <span class="badge badge--accent" style="font-size: var(--font-size-xs); margin-top: var(--space-1); display: inline-block;">
+                      {{ notice.get_kind_display|default:notice.kind|title }}
+                    </span>
+                  </div>
+                  <form method="post" action="{% url 'updates:withdraw' app_id=app.id notice_id=notice.id %}" style="margin: 0;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn--ghost btn--sm" style="color: var(--color-error); padding: var(--space-1) var(--space-2);">Withdraw</button>
+                  </form>
+                </div>
+                <p style="margin: 0; color: var(--color-text); font-size: var(--font-size-sm); line-height: var(--line-base);">{{ notice.summary }}</p>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-state" style="padding: var(--space-6) var(--space-4);">
+            <p style="color: var(--color-muted); margin: 0; font-size: var(--font-size-sm);">No notices yet. Post your first update above.</p>
+          </div>
+        {% endif %}
+      </div>
+
+    </div>
+
+    <!-- Sidebar Column: Audience / Info -->
+    <div class="app-page-sidebar stack" style="--gap: var(--space-6);">
+      <div class="card stack" style="--gap: var(--space-3.5);">
+        <h2 style="margin: 0; font-size: var(--font-size-xl);">Channel Audience</h2>
+        {% if subscriber_count is not None %}
+          <div class="stack" style="--gap: var(--space-1);">
+            <span style="font-size: var(--font-size-sm); color: var(--color-muted);">Active Followers</span>
+            <div style="font-size: var(--font-size-4xl); font-weight: var(--font-weight-bold); line-height: 1; color: var(--color-success);">{{ subscriber_count }}</div>
+          </div>
+          <p style="color: var(--color-muted); font-size: var(--font-size-xs); margin: 0; line-height: var(--line-base);">
+            Every time you publish an update, it is instantly delivered to these followers' subscription feeds.
+          </p>
+        {% else %}
+          <div class="message warning" style="font-size: var(--font-size-sm); margin: 0;">
+            Follower counts are temporarily unavailable.
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}

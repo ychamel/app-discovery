@@ -1,52 +1,59 @@
 {% extends "pages/base.html" %}
-{% comment %}
-  The personal followed-apps feed (app-subscriptions DESIGN.md §5g). Two regions:
-    * Notices — the "reason to come back": update/early-access news about followed apps.
-      Empty until a producer ships (developer-updates, Phase 3) → a clear "No news yet"
-      empty state, never an error (AC8).
-    * Followed apps — the user's current follows, most-recent first, each LINKING to its app
-      page so a click flows through the existing re-engagement/visit seams (AC6). Empty → a
-      clear "not following anything yet" state with a browse pointer (AC4).
-
-  All app/notice text is rendered through Django auto-escaping (no |safe) — XSS-safe (§8).
-{% endcomment %}
 {% block title %}Apps you follow · App Discovery{% endblock %}
 
 {% block content %}
-<h1>Apps you follow</h1>
+<div class="stack" style="--gap: var(--space-6);">
+  <div>
+    <h1 style="margin: 0;">Apps you follow</h1>
+    <p style="color: var(--color-muted); margin: 0; font-size: var(--font-size-lg);">Stay updated with the latest releases, announcements, and news from your followed projects.</p>
+  </div>
 
-{# Notices region — the reason to return. Always present; empty state until a producer. #}
-<section aria-label="Notices">
-  <h2>News</h2>
-  {% if notices %}
-    <ul aria-label="Notice list">
-      {% for notice in notices %}
-        <li>
-          <p>{{ notice.title }}</p>
-          <p>{{ notice.summary }}</p>
-        </li>
-      {% endfor %}
-    </ul>
-  {% else %}
-    <p>No news yet.</p>
-  {% endif %}
-</section>
+  <div class="app-page">
+    {# Notices region (News Feed) #}
+    <section class="app-page-main stack" style="--gap: var(--space-5);" aria-label="Notices">
+      <h2 style="font-size: var(--font-size-xl); margin: 0;">Latest News</h2>
+      
+      {% if notices %}
+        <div class="stack" style="--gap: var(--space-4);">
+          {% for notice in notices %}
+            <article class="card stack" style="--gap: var(--space-2);">
+              <h3 style="margin: 0; font-size: var(--font-size-lg);">{{ notice.title }}</h3>
+              <p style="margin: 0; color: var(--color-muted); font-size: var(--font-size-sm);">{{ notice.summary }}</p>
+            </article>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state" style="padding: var(--space-8) var(--space-4);">
+          <div class="empty-state__icon">📰</div>
+          <h3 class="empty-state__title">No news yet</h3>
+          <p class="empty-state__description">Developers of your followed apps haven't posted any updates or announcements yet.</p>
+        </div>
+      {% endif %}
+    </section>
 
-{# Followed-apps region — current follows, each linking to its page (AC6). #}
-<section aria-label="Followed apps">
-  <h2>Your apps</h2>
-  {% if apps %}
-    <ul aria-label="Followed app list">
-      {% for app in apps %}
-        <li>
-          <a href="{% url 'pages:app-page' app_id=app.id %}">{{ app.name }}</a>
-        </li>
-      {% endfor %}
-    </ul>
-  {% else %}
-    {# No public browse surface exists yet (open-search-browse, future) — a text pointer, not
-       a broken link. Repoint to the browse route when that feature ships. #}
-    <p>You're not following any apps yet. Open an app's page to follow it.</p>
-  {% endif %}
-</section>
+    {# Followed-apps region (Sidebar list) #}
+    <section class="app-page-sidebar stack" style="--gap: var(--space-5);" aria-label="Followed apps">
+      <h2 style="font-size: var(--font-size-xl); margin: 0;">Your Followed Apps</h2>
+      
+      {% if apps %}
+        <div class="card" style="padding: var(--space-4);">
+          <ul class="stack" style="--gap: var(--space-2); list-style: none; padding: 0; margin: 0;">
+            {% for app in apps %}
+              <li style="border-bottom: 1px solid var(--color-border); padding-bottom: var(--space-2); margin-bottom: var(--space-2);">
+                <a href="{% url 'pages:app-page' app_id=app.id %}" style="font-weight: var(--font-weight-semibold); display: block;">
+                  {{ app.name }}
+                </a>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% else %}
+        <div class="card stack" style="--gap: var(--space-3); text-align: center;">
+          <p style="color: var(--color-muted); font-size: var(--font-size-sm); margin: 0;">You're not following any apps yet.</p>
+          <a href="{% url 'discovery:browse' %}" class="btn btn--secondary btn--sm">Browse apps</a>
+        </div>
+      {% endif %}
+    </section>
+  </div>
+</div>
 {% endblock %}
