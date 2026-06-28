@@ -108,6 +108,44 @@ class DeveloperPagesTests(TestCase):
         self.assertContains(response, "Reachable &amp; functional")
         self.assertContains(response, "Broken.")
 
+    def test_my_apps_heading_says_my_apps(self):
+        # UX-004: the page heading must reflect the broader "My Apps" concept,
+        # not "My submissions" which is misleading once apps are accepted/live.
+        response = self.client.get(reverse("catalog:my-apps"))
+        self.assertContains(response, "My Apps")
+        self.assertNotContains(response, "My submissions")
+
+    def test_my_apps_status_grouping_shows_group_headers(self):
+        # UX-004: accepted + pending apps must appear under labelled section headers
+        # ("Active", "Awaiting Review") so developers can see their app lifecycles at a glance.
+        pending_app = self._submit_via_service(url="https://pending.example.com")
+        accepted_app = self._submit_via_service(url="https://accepted.example.com")
+        accepted_app.status = App.Status.ACCEPTED
+        accepted_app.save(update_fields=["status"])
+        response = self.client.get(reverse("catalog:my-apps"))
+        self.assertContains(response, "Active")
+        self.assertContains(response, "Awaiting Review")
+        # pending_app should not show an Active header
+        _ = pending_app  # referenced above; assertion is on rendered HTML
+
+    def test_my_apps_accepted_app_has_live_page_link(self):
+        # UX-006: an accepted app must have a "View live page" link pointing at the
+        # public pages:app-page so the developer can reach their public listing directly.
+        app = self._submit_via_service()
+        app.status = App.Status.ACCEPTED
+        app.save(update_fields=["status"])
+        response = self.client.get(reverse("catalog:my-apps"))
+        live_url = reverse("pages:app-page", kwargs={"app_id": app.id})
+        self.assertContains(response, live_url)
+
+    def test_my_apps_pending_app_has_no_live_page_link(self):
+        # UX-006: a pending (not yet accepted) app must NOT show a live-page link since
+        # the public page is not accessible before acceptance.
+        app = self._submit_via_service()
+        response = self.client.get(reverse("catalog:my-apps"))
+        live_url = reverse("pages:app-page", kwargs={"app_id": app.id})
+        self.assertNotContains(response, live_url)
+
     # --- detail / edit / withdraw / resubmit ---
     def test_detail_edit_updates_app(self):
         app = self._submit_via_service()

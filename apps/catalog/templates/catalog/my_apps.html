@@ -5,8 +5,8 @@
 <div class="stack" style="--gap: var(--space-6);">
   <div class="cluster" style="justify-content: space-between; align-items: flex-start;">
     <div>
-      <h1 style="margin: 0;">My submissions</h1>
-      <p style="color: var(--color-muted); margin: 0; font-size: var(--font-size-lg);">Submit apps to the catalog and track their review status.</p>
+      <h1 style="margin: 0;">My Apps</h1>
+      <p style="color: var(--color-muted); margin: 0; font-size: var(--font-size-lg);">Submit and manage your apps and track their review status.</p>
     </div>
     <div class="cluster" style="--gap: var(--space-2);">
       {% comment %}
@@ -26,46 +26,65 @@
       <a href="{% url 'catalog:submit' %}" class="btn btn--primary">Submit your first app</a>
     </div>
   {% else %}
-    <div class="stack" style="--gap: var(--space-4);">
-      {% for app in apps %}
-        <div class="card stack" style="--gap: var(--space-3);">
-          <div class="cluster" style="justify-content: space-between; align-items: center;">
-            <h2 style="margin: 0; font-size: var(--font-size-xl);">
-              <a href="{% url 'catalog:app-detail' app_id=app.id %}" style="color: var(--color-text); text-decoration: none;">
-                {{ app.name }}
-              </a>
-            </h2>
-            {% if app.status == 'accepted' %}
-              <span class="badge badge--success">Accepted / Listed <span style="display: none;">{{ app.status }}</span></span>
-            {% elif app.status == 'rejected' %}
-              <span class="badge badge--warning">Needs Changes <span style="display: none;">{{ app.status }}</span></span>
-            {% elif app.status == 'pending' %}
-              <span class="badge badge--accent">Awaiting Review <span style="display: none;">{{ app.status }}</span></span>
-            {% else %}
-              <span class="badge">{{ app.status|title }} <span style="display: none;">{{ app.status }}</span></span>
-            {% endif %}
-          </div>
+    {% regroup apps by status as status_groups %}
+    <div class="stack" style="--gap: var(--space-6);">
+      {% for group in status_groups %}
+        <div class="stack" style="--gap: var(--space-3);">
+          <h2 style="margin: 0; font-size: var(--font-size-lg); color: var(--color-muted); text-transform: uppercase; letter-spacing: 0.05em;">
+            {% if group.grouper == 'accepted' %}Active
+            {% elif group.grouper == 'pending' %}Awaiting Review
+            {% elif group.grouper == 'rejected' %}Needs Changes
+            {% else %}Withdrawn{% endif %}
+          </h2>
+          <div class="stack" style="--gap: var(--space-4);">
+            {% for app in group.list %}
+              <div class="card stack" style="--gap: var(--space-3);">
+                <div class="cluster" style="justify-content: space-between; align-items: center;">
+                  <h3 style="margin: 0; font-size: var(--font-size-xl);">
+                    <a href="{% url 'catalog:app-detail' app_id=app.id %}" style="color: var(--color-text); text-decoration: none;">
+                      {{ app.name }}
+                    </a>
+                  </h3>
+                  {% if app.status == 'accepted' %}
+                    <span class="badge badge--success">Accepted / Listed <span style="display: none;">{{ app.status }}</span></span>
+                  {% elif app.status == 'rejected' %}
+                    <span class="badge badge--warning">Needs Changes <span style="display: none;">{{ app.status }}</span></span>
+                  {% elif app.status == 'pending' %}
+                    <span class="badge badge--accent">Awaiting Review <span style="display: none;">{{ app.status }}</span></span>
+                  {% else %}
+                    <span class="badge">{{ app.status|title }} <span style="display: none;">{{ app.status }}</span></span>
+                  {% endif %}
+                </div>
 
-          {% if app.status == "rejected" and app.latest_decision %}
-            <div class="message error" role="alert" style="margin: var(--space-2) 0 0 0;">
-              <p style="font-weight: var(--font-weight-bold); margin-top: 0;">This app needs changes before it can be listed:</p>
-              <ul style="margin: var(--space-1) 0; padding-left: var(--space-4);">
-                {% for criterion in app.latest_decision.failed_criteria %}
-                  <li>{{ criterion }}</li>
-                {% endfor %}
-              </ul>
-              {% if app.latest_decision.note %}
-                <p style="margin: var(--space-2) 0 0 0; font-style: italic;"><strong>Reviewer note:</strong> {{ app.latest_decision.note }}</p>
-              {% endif %}
-              <p style="margin: var(--space-3) 0 0 0;">
-                <a href="{% url 'catalog:app-detail' app_id=app.id %}" class="btn btn--primary btn--sm" style="text-decoration: none; display: inline-block;">Correct &amp; resubmit</a>
-              </p>
-            </div>
-          {% else %}
-            <div style="margin-top: var(--space-2);">
-              <a href="{% url 'catalog:app-detail' app_id=app.id %}" class="btn btn--secondary btn--sm" style="text-decoration: none;">Manage Submission</a>
-            </div>
-          {% endif %}
+                {% if app.status == "rejected" and app.latest_decision %}
+                  <div class="message error" role="alert" style="margin: var(--space-2) 0 0 0;">
+                    <p style="font-weight: var(--font-weight-bold); margin-top: 0;">This app needs changes before it can be listed:</p>
+                    <ul style="margin: var(--space-1) 0; padding-left: var(--space-4);">
+                      {% for criterion in app.latest_decision.failed_criteria %}
+                        <li>{{ criterion }}</li>
+                      {% endfor %}
+                    </ul>
+                    {% if app.latest_decision.note %}
+                      <p style="margin: var(--space-2) 0 0 0; font-style: italic;"><strong>Reviewer note:</strong> {{ app.latest_decision.note }}</p>
+                    {% endif %}
+                    <p style="margin: var(--space-3) 0 0 0;">
+                      <a href="{% url 'catalog:app-detail' app_id=app.id %}" class="btn btn--primary btn--sm" style="text-decoration: none; display: inline-block;">Correct &amp; resubmit</a>
+                    </p>
+                  </div>
+                {% else %}
+                  <div class="cluster" style="--gap: var(--space-2); margin-top: var(--space-2);">
+                    {% if app.status == 'accepted' %}
+                      <a href="{% url 'pages:app-page' app_id=app.id %}"
+                         class="btn btn--primary btn--sm"
+                         target="_blank" rel="noopener noreferrer"
+                         style="text-decoration: none;">View live page</a>
+                    {% endif %}
+                    <a href="{% url 'catalog:app-detail' app_id=app.id %}" class="btn btn--secondary btn--sm" style="text-decoration: none;">Manage Submission</a>
+                  </div>
+                {% endif %}
+              </div>
+            {% endfor %}
+          </div>
         </div>
       {% endfor %}
     </div>

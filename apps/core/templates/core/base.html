@@ -25,7 +25,7 @@
               view's own @require_role(developer) gate, so it is never shown to an
               account that would receive a 403 on click.
             {% endcomment %}
-            <li><a href="{% url 'catalog:my-apps' %}">My submissions</a></li>
+            <li><a href="{% url 'catalog:my-apps' %}">My Apps</a></li>
           {% endif %}
           {% if user_is_admin %}
             <li><a href="{% url 'catalog:review' %}">Review queue</a></li>

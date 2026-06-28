@@ -307,7 +307,10 @@ def submit_page(request):
 def my_apps_page(request):
     """GET /apps — the developer's apps with status badges; rejected apps show reasons (AC7)."""
     apps = selectors.list_owned_apps(request.user)
-    return render(request, "catalog/my_apps.html", {"apps": _decorate_apps(apps)})
+    decorated = sorted(
+        _decorate_apps(apps), key=lambda a: _MY_APPS_STATUS_ORDER.get(a["status"], 99)
+    )
+    return render(request, "catalog/my_apps.html", {"apps": decorated})
 
 
 @require_role(roles.DEVELOPER)
@@ -406,6 +409,10 @@ def _render_detail(request, app, form, *, error=None, status_code=200):
 def _decorate_apps(apps):
     """Attach the resolved tags + latest decision each template needs (read-shaping only)."""
     return [AppSerializer(app).data for app in apps]
+
+
+# Presentation priority for My Apps page grouping: live apps first, then in-review, then withdrawn.
+_MY_APPS_STATUS_ORDER = {"accepted": 0, "pending": 1, "rejected": 2, "withdrawn": 3}
 
 
 def _form_initial(app) -> dict:
