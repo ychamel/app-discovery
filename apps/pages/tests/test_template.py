@@ -68,6 +68,15 @@ class FullyPopulatedTests(SimpleTestCase):
         html = _render(_app(), imp=imp)
         self.assertIn(f"?imp={imp}", html)
 
+    def test_try_app_anchor_bypasses_htmx_boost(self):
+        """BUG-004: the Try App anchor must not be HTMX-boosted (hx-boost="false") and
+        must open in a new tab (target="_blank") so the browser follows the redirect
+        natively to the external app URL instead of via AJAX."""
+        html = _render(_app())
+        self.assertIn('hx-boost="false"', html)
+        self.assertIn('target="_blank"', html)
+        self.assertIn('rel="noopener noreferrer"', html)
+
 
 class EmptyAndPartialStateTests(SimpleTestCase):
     """AC2 — empty/single states keep every slot present with no layout-collapsing variance.

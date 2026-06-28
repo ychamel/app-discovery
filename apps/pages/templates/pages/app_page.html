@@ -69,7 +69,7 @@
     <!-- 4. Try-it — the primary action; links to the app's stored URL via pages:try. -->
     <section class="card stack" aria-label="Try it" style="--gap: var(--space-4); text-align: center;">
       <h2 class="visually-hidden">Try Application</h2>
-      <a href="{% url 'pages:try' app_id=app.id %}{% if imp %}?imp={{ imp }}{% endif %}" class="btn btn--primary btn--lg" style="display: flex;">
+      <a href="{% url 'pages:try' app_id=app.id %}{% if imp %}?imp={{ imp }}{% endif %}" class="btn btn--primary btn--lg" style="display: flex;" hx-boost="false" target="_blank" rel="noopener noreferrer">
         Try {{ app.name }}
       </a>
     </section>

@@ -16,11 +16,11 @@ Rules:
 
 | Field              | Value                                                            |
 |--------------------|------------------------------------------------------------------|
-| **Active feature** | **`patch-try-app-redirect`** — [`BUG-004`](issues/BUG-004.md) (High): "Try App" button stuck on platform URL due to HTMX boost intercepting cross-origin redirect. |
-| **Stage**          | **`P-plan`** |
-| **Persona**        | **Maintenance Planner** ([patch-1-planner.md](process/personas/patch-1-planner.md)). |
-| **Folder**         | [`features/patch-try-app-redirect/`](features/patch-try-app-redirect/) |
-| **Last updated**   | 2026-06-29 (Coordinator — triaged BUG-004; scaffold complete; → Maintenance Planner). |
+| **Active feature** | **none** |
+| **Stage**          | **`0-coordinator`** |
+| **Persona**        | **Coordinator** |
+| **Folder**         | — |
+| **Last updated**   | 2026-06-29 (Maintenance Engineer — BUG-004 patch built + closed-out; 1 000 tests). |
 
 > **Closed-out features** (Stage 6 skipped per the standing pattern — reopenable; all
 > released local/dev, rollback rehearsed; live-metrics/outcome reports deferred until a
@@ -42,12 +42,12 @@ Rules:
 ### Latest session status (CLAUDE.md §6.7 — overwritten each session)
 
 ```
-Stage: P-plan | Feature: patch-try-app-redirect | Persona: Coordinator → Maintenance Planner (complete)
-Done: Triaged all open issues. BUG-004 (High) root cause confirmed: hx-boost="true" on <main> intercepts the "Try App" anchor; HTMX follows the 302→app.url via AJAX; cross-origin fetch fails; user never navigates to the external app. Scaffolded features/patch-try-app-redirect/ (5 artifacts). Wrote the full PATCH.md: 3 tasks (T-01 red-first test asserting hx-boost="false"+target="_blank"+rel on the anchor → T-02 add those attributes to app_page.html:72 → T-03 verify). Also surfaced DN-Q002/DN-Q003/DN-Q004 (product decisions) and noted BUG-005 + UX-004 as queued.
-Verified by: n/a — no code touched (plan only).
-Blocked/Deferred: P-build awaits DN-BUG004-PLAN approval. BUG-005 queued after BUG-004. Q-002/Q-003/Q-004 await product decisions. UX-004 + UX-002 + UX-001 queued.
-Decisions needed: DN-BUG004-PLAN (blocks P-build), DN-Q002, DN-Q003, DN-Q004 (queued, non-blocking).
-Next: User approves DN-BUG004-PLAN → Maintenance Engineer builds the patch.
+Stage: P-build → closed-out → 0-coordinator | Feature: patch-try-app-redirect | Persona: Maintenance Engineer
+Done: Built the approved BUG-004 patch. T-01 red-first (test_try_app_anchor_bypasses_htmx_boost in apps/pages/tests/test_template.py) — confirmed failure on unpatched template (hx-boost="false" absent). T-02 added hx-boost="false" target="_blank" rel="noopener noreferrer" to the Try App anchor in app_page.html:72. T-03 verified: 1 000 tests green (+1), ruff/check clean, makemigrations --check = no drift (No-Schema Assertion held — Patch Track confirmed). Rollback rehearsed (DU-REL-1): stash → pages tests green on reverted tree → stash pop intact. Wrote TEST_PLAN.md + RELEASE_NOTES.md. Closed BUG-004 RESOLVED in issues/README.md, INDEX.md, BUG-004.md. Active feature → none; Persona → Coordinator.
+Verified by: 1 000 tests green; ruff clean; manage.py check clean; makemigrations --check no drift; rollback rehearsed.
+Blocked/Deferred: BUG-005 queued. Q-002/Q-003/Q-004 await product decisions. UX-004 + UX-002 + UX-001 queued.
+Decisions needed: DN-Q002, DN-Q003, DN-Q004 (non-blocking, queued). DN-PS-DEPLOY (the active next bet, reopened).
+Next: User picks next issue to resolve, or proceeds with the live staging deploy (DN-PS-DEPLOY).
 ```
 
 ---
@@ -57,7 +57,7 @@ Next: User approves DN-BUG004-PLAN → Maintenance Engineer builds the patch.
 The agent is blocked on these. Answer inline (edit the **Answer** cell), then the agent
 proceeds.
 
-**DN-BUG004-PLAN — 2026-06-29 (blocks P-build).** The [`patch-try-app-redirect` PATCH.md](features/patch-try-app-redirect/PATCH.md) is ready for review. Plan: T-01 red-first test (assert `hx-boost="false"` + `target="_blank"` + `rel="noopener noreferrer"` on the Try App anchor) → T-02 add those 3 attributes to the anchor in `app_page.html:72` → T-03 verify (≥999 tests / ruff / check / no drift / rollback). Template-only, no schema. Approve to proceed to P-build: `[approved / changes needed]` → _unanswered_
+~~**DN-BUG004-PLAN**~~ — **RESOLVED 2026-06-29** (user approved via "proceed" → built + closed-out by Maintenance Engineer; **BUG-004 RESOLVED**, 1 000 tests).
 
 **DN-Q002 — 2026-06-29 (non-blocking, queued).** Should a user be able to submit a review for their own app? See [`Q-002`](issues/Q-002.md) for full context. Recommendation: **Option A — block self-review** (hide/disable the review form when `request.user == app.developer`; show a notice). Standard practice on every comparable platform. Answer here when ready: `[Option A / B / C / keep as-is]` → _unanswered_
 
