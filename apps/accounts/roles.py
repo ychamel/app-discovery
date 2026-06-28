@@ -18,6 +18,14 @@ BASE_ROLE = USER
 # future privileged role are grant-only via the audited admin path — never self-serve.
 SELF_SERVE_ROLES = frozenset({DEVELOPER})
 
+# Roles each role implicitly grants. Admin is a superset of developer — an admin
+# account can do everything a developer can without needing both groups assigned.
+ROLE_IMPLIES: dict[str, frozenset[str]] = {
+    ADMIN: frozenset({DEVELOPER, USER}),
+    DEVELOPER: frozenset({USER}),
+    USER: frozenset(),
+}
+
 
 def account_roles(account) -> list[str]:
     """The role names an account currently holds, sorted for stable output."""

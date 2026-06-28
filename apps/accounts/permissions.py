@@ -15,6 +15,7 @@ from functools import wraps
 from django.core.exceptions import PermissionDenied
 from rest_framework.permissions import BasePermission
 
+from apps.accounts import roles as _roles
 from apps.core import observability
 
 logger = logging.getLogger("apps.accounts.authz")
@@ -32,8 +33,11 @@ def account_has_role(user, role: str) -> bool:
     try:
         if user is None or not getattr(user, "is_authenticated", False):
             return False
-        # Membership of a non-existent group is simply False, so unknown roles deny.
-        allowed = user.groups.filter(name=role).exists()
+        user_groups = set(user.groups.values_list("name", flat=True))
+        # Direct membership, or implied by a higher role (e.g. admin implies developer).
+        allowed = role in user_groups or any(
+            role in _roles.ROLE_IMPLIES.get(g, frozenset()) for g in user_groups
+        )
         return allowed
     except Exception:
         # A lookup error must deny, not crash or allow. Logged for the auth-error metric.

@@ -20,3 +20,9 @@ register = template.Library()
 def is_developer(user) -> bool:
     """True iff ``user`` holds the developer role (the template-side read of the gate)."""
     return account_has_role(user, roles.DEVELOPER)
+
+
+@register.simple_tag
+def is_admin(user) -> bool:
+    """True iff ``user`` holds the admin role (the template-side read of the gate)."""
+    return account_has_role(user, roles.ADMIN)
