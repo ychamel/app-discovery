@@ -49,6 +49,7 @@ Every issue logged in this directory must have a corresponding row in this table
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | `BUG-000` | Bug | 2026-06-28 | QA Team | App detail page profile link broken when anonymous | Medium | `RESOLVED` | [`BUG-000.md`](BUG-000.md) | [`features/patch-anonymous-profile-link/`](../features/patch-anonymous-profile-link/) |
 | `BUG-001` | Bug | 2026-06-28 | Developer / QA Team | Interest picker duplicate subcategories label click highlights previous occurrence | Medium | `TRIAGED` | [`BUG-001.md`](BUG-001.md) | Patch Track (queued) — core fix = unique HTML IDs; cross-cluster sync gated on `Q-001` |
+| `BUG-002` | Bug | 2026-06-28 | User / Developer | Profile display name update fails with 405 Method Not Allowed and idles | High | `NEW` | [`BUG-002.md`](BUG-002.md) | TBD |
 | `UX-001` | UX | 2026-06-28 | QA Team / UX | Mobile touch target sizes for catalog search filters are too small | Medium | `TRIAGED` | [`UX-001.md`](UX-001.md) | Patch Track (queued) — responsive CSS only |
 | `UX-002` | UX | 2026-06-28 | Developer / User | App registration tags selection is overwhelming and niche selection is difficult | Medium | `NEW` | [`UX-002.md`](UX-002.md) | Pending scope decision (Patch vs Feature) — see CONTROL.md `DN-UX002-SCOPE` |
 | `UX-003` | UX | 2026-06-28 | User | No navigation path to view and manage pending/withdrawn app submissions | High | `RESOLVED` | [`UX-003.md`](UX-003.md) | [`features/patch-developer-submissions-nav/`](../features/patch-developer-submissions-nav/) |

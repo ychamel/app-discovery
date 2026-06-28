@@ -16,11 +16,11 @@ Rules:
 
 | Field              | Value                                                            |
 |--------------------|------------------------------------------------------------------|
-| **Active feature** | **None** — `patch-developer-submissions-nav` **RESOLVED + closed-out** (released local/dev). [`UX-003`](issues/UX-003.md) (High) fixed: developers now reach their submissions via a developer-gated header link + dashboard sub-nav/empty-state CTA + reciprocal link. Next: **Coordinator** picks the next issue/feature. Queued issues (triaged): **UX-001** (responsive CSS), **BUG-001** (per-cluster HTML IDs — DN-Q001 → Option 1), **UX-002** (tag picker — DN-UX002 → minimal patch). Held bets: **DN-PS-DEPLOY** (live deploy) + `ui-modernization`. |
+| **Active feature** | **None** — `patch-developer-submissions-nav` **RESOLVED + closed-out** (released local/dev). [`UX-003`](issues/UX-003.md) (High) fixed: developers now reach their submissions via a developer-gated header link + dashboard sub-nav/empty-state CTA + reciprocal link. Next: **Coordinator** picks the next issue/feature. Queued issues: **BUG-002** (edit display name 405, NEW), **UX-001** (responsive CSS, triaged), **BUG-001** (per-cluster HTML IDs — DN-Q001 → Option 1, triaged), **UX-002** (tag picker — DN-UX002 → minimal patch, triaged). Held bets: **DN-PS-DEPLOY** (live deploy) + `ui-modernization`. |
 | **Stage**          | `done` (patch closed-out) → **`0-coordinator`** for the next selection. |
 | **Persona**        | **Coordinator** (no active feature) — ready to scope the next issue/feature with the user. |
 | **Folder**         | [features/patch-developer-submissions-nav/](features/patch-developer-submissions-nav/) (all artifacts filled: PATCH.md + TEST_PLAN.md + RELEASE_NOTES.md). Issue triage registry: [issues/README.md](issues/README.md). |
-| **Last updated**   | 2026-06-28 (Maintenance Engineer — built T-01…T-05, 988 tests green, ruff/check/no-drift clean, rollback rehearsed; closed UX-003 out). |
+| **Last updated**   | 2026-06-28 (Coordinator — logged BUG-002: profile display name update 405 error / idling). |
 
 > **Closed-out features** (Stage 6 skipped per the standing pattern — reopenable; all
 > released local/dev, rollback rehearsed; live-metrics/outcome reports deferred until a
@@ -42,12 +42,12 @@ Rules:
 ### Latest session status (CLAUDE.md §6.7 — overwritten each session)
 
 ```
-Stage: done (closed-out) | Feature: patch-developer-submissions-nav | Persona: Maintenance Engineer
-Done: Built the approved patch for UX-003, T-01 red-first. T-02 new `is_developer` simple_tag (apps/accounts/templatetags/account_roles.py) delegating to the one account_has_role gate (CODEMAP indexed); T-03 developer-gated "My submissions" header link in core/base.html (mirrors @require_role(developer)); T-04 dashboard Analytics⇄Submissions sub-nav + empty-state "View my submissions" CTA; T-05 reciprocal "View analytics" link on the submissions list. 8 new tests (3 tag + 3 header + 1 dashboard + 1 catalog). Wrote TEST_PLAN.md + RELEASE_NOTES.md; closed UX-003 out in INDEX.md + issues registry.
-Verified by: 988 tests green (980 baseline + 8), 0 skipped; ruff clean; manage.py check clean; makemigrations --check = no drift (No-Schema Assertion holds → Patch Track confirmed). Rollback rehearsed (DU-REL-1): stashed the whole patch to simulate the revert → clean check + no drift + 391 touched-app tests green on the reverted tree; restored intact.
-Blocked/Deferred: none for this patch. Held bets unchanged: DN-PS-DEPLOY (live staging deploy), ui-modernization. Queued issues: UX-001, BUG-001 (DN-Q001 → Option 1), UX-002 (DN-UX002 → minimal patch).
-Decisions needed: none blocking. DN-PS-DEPLOY open/held. DN-Q001-TAXONOMY + DN-UX002-SCOPE answered (recorded), pending Coordinator scoping into patches.
-Next: Coordinator — with the user, pick the next issue (UX-001 / BUG-001 / UX-002) or activate a held bet, scaffold it, and enter its first stage.
+Stage: 0-coordinator | Feature: None | Persona: Coordinator
+Done: Logged BUG-002 under issues/BUG-002.md (profile display name update fails with 405 Method Not Allowed and idles without error feedback due to MeView not defining POST and hx-boost/HTMX default error-handling behavior). Registered BUG-002 in the unified issue registry (issues/README.md).
+Verified by: n/a
+Blocked/Deferred: none. Held bets: DN-PS-DEPLOY (live staging deploy), ui-modernization. Queued issues: BUG-002 (NEW), UX-001 (TRIAGED), BUG-001 (TRIAGED), UX-002 (TRIAGED).
+Decisions needed: none blocking. DN-PS-DEPLOY open/held. DN-Q001-TAXONOMY + DN-UX002-SCOPE resolved.
+Next: Coordinator — with the user, pick the next issue to triage/resolve or bet to activate (e.g. BUG-002), scaffold it, and enter its first stage.
 ```
 
 ---
