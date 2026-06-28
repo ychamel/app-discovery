@@ -16,11 +16,11 @@ Rules:
 
 | Field              | Value                                                            |
 |--------------------|------------------------------------------------------------------|
-| **Active feature** | **None.** `patch-profile-form-actions` (BUG-002) **built + closed out** (released local/dev). Queued issues awaiting a Coordinator pick: **UX-001** (responsive CSS, triaged), **BUG-001** (per-cluster HTML IDs — DN-Q001 → Option 1, triaged), **UX-002** (tag picker — DN-UX002 → minimal patch (a), triaged). Held bets: **DN-PS-DEPLOY** (live deploy) + `ui-modernization`. |
-| **Stage**          | **`0-coordinator`** — pick the next patch/feature (or the user runs the live deploy, DN-PS-DEPLOY). |
-| **Persona**        | **Coordinator** ([CLAUDE.md](CLAUDE.md) §4). |
-| **Folder**         | Last: [features/patch-profile-form-actions/](features/patch-profile-form-actions/) — [PATCH.md](features/patch-profile-form-actions/PATCH.md) + [TEST_PLAN.md](features/patch-profile-form-actions/TEST_PLAN.md) + [RELEASE_NOTES.md](features/patch-profile-form-actions/RELEASE_NOTES.md). Issue triage registry: [issues/README.md](issues/README.md). |
-| **Last updated**   | 2026-06-28 (Maintenance Engineer — built BUG-002 fix, 997 tests, closed out; back to Coordinator). |
+| **Active feature** | **`patch-interest-picker-duplicates`** (BUG-001). Queued issues awaiting a Coordinator pick: **UX-001** (responsive CSS, triaged), **UX-002** (tag picker — DN-UX002 → minimal patch (a), triaged). Held bets: **DN-PS-DEPLOY** (live deploy) + `ui-modernization`. |
+| **Stage**          | **`P-plan`** |
+| **Persona**        | **Maintenance Planner** ([CLAUDE.md](CLAUDE.md) §2.2). |
+| **Folder**         | [features/patch-interest-picker-duplicates/](features/patch-interest-picker-duplicates/) — [PATCH.md](features/patch-interest-picker-duplicates/PATCH.md) + [TEST_PLAN.md](features/patch-interest-picker-duplicates/TEST_PLAN.md) + [RELEASE_NOTES.md](features/patch-interest-picker-duplicates/RELEASE_NOTES.md). Issue triage registry: [issues/README.md](issues/README.md). |
+| **Last updated**   | 2026-06-28 (Coordinator — picked BUG-001, scaffolded patch folder, set Active=patch-interest-picker-duplicates, Stage=P-plan, Persona=Maintenance Planner). |
 
 > **Closed-out features** (Stage 6 skipped per the standing pattern — reopenable; all
 > released local/dev, rollback rehearsed; live-metrics/outcome reports deferred until a
@@ -42,12 +42,12 @@ Rules:
 ### Latest session status (CLAUDE.md §6.7 — overwritten each session)
 
 ```
-Stage: P-build (closed-out) → 0-coordinator | Feature: patch-profile-form-actions | Persona: Maintenance Engineer → Coordinator
-Done: Built the approved BUG-002 patch, T-01 red-first (9 new ProfileFormActionTests failed against today's code for the right reason — NoReverseMatch, the profile-display-name/profile-delete routes absent). T-02 two server-rendered §9 views in accounts/views.py: update_display_name (@login_required @require_POST; reuses DisplayNameForm; PRG + messages) and delete_my_account (named so it doesn't shadow the imported delete_account service; confirm-guarded; reuses the delete_account service + auth_logout; redirects home; increments the same DELETION_FULFILMENT metric as the §5 path). T-03 two §9 routes in accounts/urls.py (profile/display-name, profile/delete). T-04 re-pointed both forms in profile.html + dropped the dead data-method. MeView left byte-unchanged → /me §5 contract intact. Wrote TEST_PLAN.md + RELEASE_NOTES.md; closed BUG-002 out (INDEX.md + issues registry + BUG-002.md).
-Verified by: 997 tests green (988 baseline + 9 new), 0 skipped; ruff clean; manage.py check clean; makemigrations --check = NO DRIFT (No-Schema Assertion held → Patch Track confirmed). Rollback rehearsed (DU-REL-1): stashed the 4 changed files → reverted tree had clean check / no drift / 91 accounts tests green → patch restored intact.
-Blocked/Deferred: none for this patch. Held bets: DN-PS-DEPLOY (live staging deploy — the active next bet), ui-modernization. Queued issues for the next pick: UX-001 (TRIAGED), BUG-001 (TRIAGED, Option 1), UX-002 (TRIAGED, scope a).
+Stage: 0-coordinator → P-plan | Feature: patch-interest-picker-duplicates | Persona: Coordinator → Maintenance Planner
+Done: Picked BUG-001 as the next active patch. Created the folder features/patch-interest-picker-duplicates/ and seeded the 5 patch files (PATCH.md, TEST_PLAN.md, RELEASE_NOTES.md, OPEN_QUESTIONS.md, DECISIONS.md). Registered the patch in features/INDEX.md and updated the status of BUG-001 in issues/README.md and issues/BUG-001.md to IN-PROGRESS.
+Verified by: n/a
+Blocked/Deferred: none. Held bets: DN-PS-DEPLOY (live staging deploy — the active next bet), ui-modernization.
 Decisions needed: DN-PS-DEPLOY (open/held — the user runs the live deploy). No blocker.
-Next: Coordinator — pick the next patch/feature (queued: UX-001 / BUG-001 / UX-002) or the user runs the DN-PS-DEPLOY live deploy.
+Next: Maintenance Planner — write PATCH.md (brief + design + tasks).
 ```
 
 ---
