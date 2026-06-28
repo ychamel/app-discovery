@@ -1,0 +1,103 @@
+# Render Blueprint — Curated App Discovery Platform (platform-staging, global D-12).
+#
+# This file IS the repeatable deploy (AC2.1): applying it provisions the whole stack —
+# web service + managed Postgres + a persistent media disk + a free Key Value (Redis)
+# cache. The full procedure (provision order, the dashboard secrets to set, the AC1
+# verification) lives in docs/deploy/deploy-runbook.md.
+#
+# Secrets are NEVER committed here: externally-obtained values are `sync: false`
+# (set once in the Render dashboard) and DJANGO_SECRET_KEY is `generateValue: true`
+# (Render generates a strong secret). No secret literal appears in this file (AC2.2).
+
+services:
+  # --- Web service (gunicorn) ------------------------------------------------
+  - type: web
+    name: app-discovery
+    runtime: python
+    # `free` for the initial staging spin-up. Switch to `starter` (~$7/mo) for the
+    # prod-bound tier so the instance does not sleep AND so the persistent disk below
+    # is available (disks require a paid instance) — the single free→paid field,
+    # inside the PS-1 $20–100/mo envelope (DESIGN §4.1).
+    plan: free
+    # collectstatic runs at build so the hashed/compressed STATIC_ROOT is baked into
+    # the instance and served by WhiteNoise at runtime (DESIGN §4.2).
+    buildCommand: "pip install -e . && python manage.py collectstatic --noinput"
+    # Migrations run before each deploy goes live, on an empty PG on the first deploy
+    # (AC1.3). Release step = migrate + collectstatic (the two together, DESIGN §7.4).
+    preDeployCommand: "python manage.py migrate --noinput"
+    startCommand: "gunicorn config.wsgi:application"
+    # The orchestrator probes the DB-only liveness route, never the SMTP-touching
+    # /health, so an email blip cannot loop restarts (DESIGN §4.6, T-07).
+    healthCheckPath: /health/live
+    # Persistent disk for uploaded screenshots (mutable media; DESIGN §4.3). Mounted at
+    # MEDIA_ROOT. Requires a paid `plan` above. Growth path = object store (R2), config-only.
+    disk:
+      name: media
+      mountPath: /var/media
+      sizeGB: 1
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12"
+      - key: DJANGO_DEBUG
+        value: "false"
+      # Render generates a strong secret — no committed value, never rotated into git.
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      # Set to the service host once known, e.g. app-discovery.onrender.com (+ custom domain).
+      - key: DJANGO_ALLOWED_HOSTS
+        sync: false
+      # Scheme-qualified HTTPS origin(s), e.g. https://app-discovery.onrender.com (Django 4+).
+      - key: CSRF_TRUSTED_ORIGINS
+        sync: false
+      # Absolute base URL used to build magic-link URLs in email.
+      - key: PUBLIC_BASE_URL
+        sync: false
+      - key: MEDIA_ROOT
+        value: /var/media
+      # DATABASE_URL is wired automatically from the managed Postgres below.
+      - key: DATABASE_URL
+        fromDatabase:
+          name: app-discovery-db
+          property: connectionString
+      # REDIS_URL is wired automatically from the Key Value service below → the auth
+      # rate limiter is correct across gunicorn workers (DESIGN §4.5, T-08).
+      - key: REDIS_URL
+        fromService:
+          name: app-discovery-cache
+          type: keyvalue
+          property: connectionString
+      # Email transport over SMTP (Resend). Creds set in the dashboard; see
+      # docs/deploy/email-provider-setup.md (DESIGN §4.4, T-04).
+      - key: EMAIL_BACKEND
+        value: django.core.mail.backends.smtp.EmailBackend
+      - key: EMAIL_HOST
+        sync: false
+      - key: EMAIL_PORT
+        sync: false
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+      - key: EMAIL_USE_TLS
+        sync: false
+      - key: DEFAULT_FROM_EMAIL
+        sync: false
+      # Error monitoring; unset ⇒ disabled (env-gated, DESIGN §4.6, T-09).
+      - key: SENTRY_DSN
+        sync: false
+
+  # --- Key Value (Redis) cache ----------------------------------------------
+  - type: keyvalue
+    name: app-discovery-cache
+    plan: free
+    # Rate-limit counters are ephemeral and the limiter fails open, so evicting under
+    # memory pressure is safe (DESIGN §6).
+    maxmemoryPolicy: allkeys-lru
+    # Reachable only from the services in this Blueprint (no public ingress).
+    ipAllowList: []
+
+databases:
+  # --- Managed PostgreSQL ----------------------------------------------------
+  - name: app-discovery-db
+    # `free` for 90 days, then ~$7/mo; the prod-bound tier uses a paid plan (DESIGN §4.1).
+    plan: free

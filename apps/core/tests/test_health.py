@@ -25,6 +25,28 @@ class HealthEndpointTests(TestCase):
         self.assertFalse(response.json()["email"])
 
 
+class LivenessEndpointTests(TestCase):
+    """The DB-only liveness probe (platform-staging T-07, DESIGN §4.6)."""
+
+    def test_live_ok_when_db_reachable(self):
+        response = self.client.get(reverse("health-live"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"status": "ok"})
+
+    def test_live_down_returns_503_when_db_unreachable(self):
+        with mock.patch("apps.core.views._database_ok", return_value=False):
+            response = self.client.get(reverse("health-live"))
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.json(), {"status": "down"})
+
+    def test_live_never_opens_an_smtp_connection(self):
+        """An email outage must not affect liveness (the whole point of the split)."""
+        with mock.patch("apps.core.observability._email_ok") as email_probe:
+            response = self.client.get(reverse("health-live"))
+        self.assertEqual(response.status_code, 200)
+        email_probe.assert_not_called()
+
+
 class MetricEmissionTests(TestCase):
     def test_increment_emits_named_metric_with_tags(self):
         with self.assertLogs("apps.metrics", level="INFO") as captured:

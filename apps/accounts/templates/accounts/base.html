@@ -1,13 +1,2 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}App Discovery{% endblock %}</title>
-</head>
-<body>
-  <main>
-    {% block content %}{% endblock %}
-  </main>
-</body>
-</html>
+{% extends "core/base.html" %}
+{# accounts surfaces inherit the shared responsive shell (platform-staging DESIGN §5); child pages override title/head/content through the chain. #}

@@ -4,16 +4,19 @@ Feature routes are owned by each app and included here. The accounts app
 publishes the auth/profile/admin-role surfaces (DESIGN.md §5/§9).
 """
 
-from django.conf import settings
-from django.conf.urls.static import static
-from django.contrib import admin
-from django.urls import include, path
+import re
 
-from apps.core.views import health
+from django.conf import settings
+from django.contrib import admin
+from django.urls import include, path, re_path
+
+from apps.core.views import health, health_live, serve_media
 
 urlpatterns = [
     path("django-admin/", admin.site.urls),
     path("health", health, name="health"),
+    # DB-only liveness for the platform health check / uptime monitor (DESIGN §4.6).
+    path("health/live", health_live, name="health-live"),
     path("taxonomy/", include("apps.taxonomy.urls")),
     path("catalog/", include("apps.catalog.urls")),
     # The app-pages activation switch (DESIGN.md §12): removing this include rolls the
@@ -52,7 +55,14 @@ urlpatterns = [
     path("", include("apps.accounts.urls")),
 ]
 
-# Serve uploaded app screenshots from MEDIA_ROOT in development only; in production a
-# web server / object store fronts MEDIA_URL (DESIGN.md §9).
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Serve uploaded app screenshots from MEDIA_ROOT in ALL environments — not just DEBUG.
+# Unlike static assets (WhiteNoise serves those, hashed + immutable), media is mutable user
+# data living on the persistent disk, so staging (DEBUG=false) must serve it too or uploaded
+# screenshots 404 (platform-staging DESIGN §4.3). This is the deliberate, bounded single-node
+# trade-off (DESIGN §10): acceptable at staging scale; the documented growth path is
+# STORAGES["default"] → an object store (R2 + django-storages), a config-only swap that drops
+# this route. Mirrors django.conf.urls.static.static() but without its DEBUG-only guard.
+_media_prefix = settings.MEDIA_URL.lstrip("/")
+urlpatterns += [
+    re_path(rf"^{re.escape(_media_prefix)}(?P<path>.*)$", serve_media, name="media"),
+]

@@ -1,0 +1,53 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}App Discovery{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'core/app.css' %}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <header class="site-header">
+    <nav class="site-nav" aria-label="Primary">
+      <a class="site-brand" href="{% url 'discovery:browse' %}">App Discovery</a>
+      <ul class="site-nav-links">
+        <li><a href="{% url 'discovery:browse' %}">Discover</a></li>
+        {% if user.is_authenticated %}
+          <li><a href="{% url 'subscriptions:feed' %}">Following</a></li>
+          <li><a href="{% url 'accounts:profile' %}">Profile</a></li>
+          <li>
+            {# Mirrors the profile-page sign-out: a CSRF-protected POST (logout flushes the session). #}
+            <form class="site-nav-signout" method="post" action="{% url 'accounts:logout' %}">
+              {% csrf_token %}
+              <button type="submit">Sign out</button>
+            </form>
+          </li>
+        {% else %}
+          <li><a href="{% url 'accounts:signin' %}">Sign in</a></li>
+          <li><a href="{% url 'accounts:register' %}">Register</a></li>
+        {% endif %}
+      </ul>
+    </nav>
+  </header>
+
+  <main class="site-main">
+    {% comment %}
+      Django messages render once here so every consolidated surface keeps the message
+      display the updates base used to carry on its own (platform-staging DESIGN §5).
+    {% endcomment %}
+    {% if messages %}
+      <ul class="messages" aria-label="Messages">
+        {% for message in messages %}
+          <li class="message {{ message.tags }}">{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <p>App Discovery — curated apps, ranked by merit, never by spend.</p>
+  </footer>
+</body>
+</html>

@@ -9,6 +9,12 @@ dependencies = [
     "psycopg[binary]>=3.1",
     "PyYAML>=6.0",  # parses the human-editable taxonomy seed file (apps/taxonomy, DESIGN §6)
     "Pillow>=10.0",  # validates uploaded app screenshots at the boundary (apps/catalog, DESIGN §9)
+    # --- Deployment / serving stack (platform-staging DESIGN §4, global D-12) ---
+    "gunicorn>=22.0",  # production WSGI server (Render start command)
+    "whitenoise>=6.6",  # serve hashed/compressed static (incl. admin) without a second web server
+    "dj-database-url>=2.1",  # parse a single DATABASE_URL; falls back to discrete DB_* locally
+    "redis>=5.0",  # client for the shared cache (auth limiter correct across gunicorn workers)
+    "sentry-sdk[django]>=2.0",  # error monitoring; only active when SENTRY_DSN is set (env-gated)
 ]
 
 [project.optional-dependencies]

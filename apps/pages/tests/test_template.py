@@ -36,9 +36,16 @@ def _render(app, *, imp=None):
     return render_to_string("pages/app_page.html", {"app": app, "imp": imp}, request=request)
 
 
+# Landmarks contributed by the shared responsive shell (core/base.html), not by the page
+# itself — excluded so this fingerprint stays about the page's own slots (platform-staging T-06).
+_SHELL_CHROME_LABELS = {"Primary", "Messages"}
+
+
 def _slot_labels(html):
-    """The ordered sequence of slot landmarks — the structural fingerprint of the page."""
-    return re.findall(r'aria-label="([^"]+)"', html)
+    """The ordered sequence of the page's OWN slot landmarks (excluding the shared-shell
+    chrome) — the structural fingerprint of the page."""
+    labels = re.findall(r'aria-label="([^"]+)"', html)
+    return [label for label in labels if label not in _SHELL_CHROME_LABELS]
 
 
 class FullyPopulatedTests(SimpleTestCase):

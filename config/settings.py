@@ -12,6 +12,8 @@ owned by `apps.core.config` so there is one typed source of truth for them.
 import os
 from pathlib import Path
 
+import dj_database_url
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
@@ -113,6 +115,9 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # Serves hashed/compressed static directly from the app process (no second web
+    # server). Must sit immediately after SecurityMiddleware (WhiteNoise docs).
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -151,17 +156,24 @@ ASGI_APPLICATION = "config.asgi.application"
 # ---------------------------------------------------------------------------
 # Database — PostgreSQL only (citext + UUID rely on it; see DESIGN.md §4)
 # ---------------------------------------------------------------------------
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": env("DB_NAME", "identity"),
-        "USER": env("DB_USER", "postgres"),
-        "PASSWORD": env("DB_PASSWORD", ""),
-        # HOST may be a hostname or, for a local unix socket, a directory path.
-        "HOST": env("DB_HOST", "localhost"),
-        "PORT": env("DB_PORT", "5432"),
+# One env-selected source of truth: a managed host hands out a single DATABASE_URL,
+# so parse it when present; otherwise fall back to the discrete DB_* vars (local dev
+# unchanged). dj-database-url emits the same postgresql ENGINE this project requires.
+_database_url = env("DATABASE_URL")
+if _database_url:
+    DATABASES = {"default": dj_database_url.parse(_database_url, conn_max_age=600)}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": env("DB_NAME", "identity"),
+            "USER": env("DB_USER", "postgres"),
+            "PASSWORD": env("DB_PASSWORD", ""),
+            # HOST may be a hostname or, for a local unix socket, a directory path.
+            "HOST": env("DB_HOST", "localhost"),
+            "PORT": env("DB_PORT", "5432"),
+        }
     }
-}
 
 
 # ---------------------------------------------------------------------------
@@ -195,6 +207,11 @@ SECURE_SSL_REDIRECT = not DEBUG
 SECURE_CONTENT_TYPE_NOSNIFF = True
 # Trust the proxy's X-Forwarded-Proto so SSL redirect/secure cookies work behind a TLS proxy.
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+# Django 4+ requires the HTTPS origin(s) be trusted for cross-origin-referer POSTs behind a
+# TLS proxy (e.g. https://app.onrender.com). Comma-separated, scheme-qualified; empty locally.
+CSRF_TRUSTED_ORIGINS = [
+    o for o in (env("CSRF_TRUSTED_ORIGINS", "") or "").split(",") if o
+]
 # HSTS only when serving HTTPS, to avoid locking out local http development.
 if not DEBUG:
     SECURE_HSTS_SECONDS = 31536000  # one year
@@ -224,6 +241,16 @@ DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", "no-reply@app-discovery.local")
 # Base URL used to build absolute magic-link URLs in emails.
 PUBLIC_BASE_URL = env("PUBLIC_BASE_URL", "http://localhost:8000")
 
+# SMTP transport settings — read by Django's SMTP backend only (the console default
+# ignores them, so local dev / tests are unaffected). Defaults mirror Django's own
+# stock defaults, so an unset env is byte-identical to vanilla Django. Set these in
+# production to a real provider (Resend) — see docs/deploy/email-provider-setup.md.
+EMAIL_HOST = env("EMAIL_HOST", "localhost")
+EMAIL_PORT = int(env("EMAIL_PORT", "25"))
+EMAIL_HOST_USER = env("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", default=False)
+
 
 # ---------------------------------------------------------------------------
 # Internationalization & static files
@@ -234,6 +261,25 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = "static/"
+# collectstatic gathers every app's static/ dir here (AppDirectoriesFinder auto-discovers
+# them — no STATICFILES_DIRS needed). In production WhiteNoise serves these hashed +
+# compressed, and the manifest backend fails loud at build if a referenced asset is missing.
+# In DEBUG (local dev / tests) the plain backend is used so {% static %} resolves without a
+# pre-built manifest — the standard dev-safe default (DESIGN §14).
+STATIC_ROOT = BASE_DIR / "staticfiles"
+_staticfiles_backend = (
+    "django.contrib.staticfiles.storage.StaticFilesStorage"
+    if DEBUG
+    else "whitenoise.storage.CompressedManifestStaticFilesStorage"
+)
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": _staticfiles_backend,
+    },
+}
 
 # Uploaded app screenshots live under MEDIA_ROOT and are served at MEDIA_URL
 # (submission-intake DESIGN.md §9). The numeric size/count limits are typed tunables
@@ -242,6 +288,46 @@ MEDIA_URL = "media/"
 MEDIA_ROOT = env("MEDIA_ROOT") or str(BASE_DIR / "media")
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
+# ---------------------------------------------------------------------------
+# Cache — a shared backend so the fail-open auth rate limiter holds across workers
+# ---------------------------------------------------------------------------
+# The auth limiter (apps/core/ratelimit.py) counts in the default cache. With no CACHES,
+# each gunicorn worker gets a private per-process LocMemCache, so the per-email/per-IP
+# limits become N× looser (a security degradation). Wire Django's built-in RedisCache from
+# REDIS_URL when set; fall back to LocMemCache when unset so local dev / tests are unchanged.
+def _cache_settings(redis_url: str | None) -> dict:
+    if redis_url:
+        return {
+            "default": {
+                "BACKEND": "django.core.cache.backends.redis.RedisCache",
+                "LOCATION": redis_url,
+            }
+        }
+    return {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
+
+
+CACHES = _cache_settings(env("REDIS_URL"))
+
+
+# ---------------------------------------------------------------------------
+# Error monitoring — Sentry, initialized only when SENTRY_DSN is set (env-gated)
+# ---------------------------------------------------------------------------
+# The only error-visibility layer beyond the stdout structured logs above. Unset ⇒ disabled
+# (and sentry_sdk is never imported), so local dev / tests are untouched. send_default_pii is
+# off, consistent with the platform's no-raw-email/no-PII posture (DESIGN §4.6).
+def _init_sentry(dsn: str | None) -> bool:
+    """Initialize Sentry when a DSN is configured; return whether it was initialized."""
+    if not dsn:
+        return False
+    import sentry_sdk
+
+    sentry_sdk.init(dsn=dsn, send_default_pii=False)
+    return True
+
+
+_SENTRY_ENABLED = _init_sentry(env("SENTRY_DSN"))
 
 
 # ---------------------------------------------------------------------------

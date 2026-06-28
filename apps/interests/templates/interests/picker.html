@@ -19,11 +19,7 @@
 {% if degraded %}
   <p role="alert">Couldn't load interests right now — please try again.</p>
 {% else %}
-  {% if messages %}
-    <ul aria-label="Messages">
-      {% for message in messages %}<li>{{ message }}</li>{% endfor %}
-    </ul>
-  {% endif %}
+  {# Django messages render once in the shared shell (core/base.html) — no per-page list. #}
   {% if error %}
     <p role="alert">{{ error }}</p>
   {% endif %}

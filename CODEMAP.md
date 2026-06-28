@@ -73,8 +73,16 @@ _Built by `identity-accounts` Stage 4. Entries are added as each shared item shi
 - metric name constants (`REGISTRATION_COMPLETION`, `SIGNIN_SUCCESS`, `AUTH_ERROR`, `ROLE_GATE_DECISION`, `EMAIL_SEND_FAILURE`, `DELETION_FULFILMENT`, `DEVELOPER_ROLE_ADOPTION`, `ADMIN_ROLE_CHANGE`, `SIGNOUT`) — `apps/core/observability.py`
 - taxonomy metric constants (`TAXONOMY_TAG_ADDED`, `TAXONOMY_TAG_RENAMED`, `TAXONOMY_TAG_RETIRED`, `TAXONOMY_REFERENCE_BREAK`, `TAXONOMY_INTEGRITY_VIOLATION`) — `apps/core/observability.py`
 - catalog metric constants (`SUBMISSION_STARTED`, `SUBMISSION_COMPLETED`, `SUBMISSION_CREATED`, `APP_WITHDRAWN`, `APP_RESUBMITTED`, `APP_ACCEPTED`, `APP_REJECTED`, `REVIEW_DECISION`, `TAG_OFF_VOCABULARY_REJECTED`, `DUPLICATE_FLAGGED`) — `apps/core/observability.py`
-- `check_health() -> dict` — DB + email reachability (backs `/health`) — `apps/core/observability.py`
+- `check_health() -> dict` — DB + email reachability (backs `/health`, the operator deep probe) — `apps/core/observability.py`
+- `_database_ok()` / `_email_ok()` — the two individual reachability probes `check_health` composes; `_database_ok` is reused by the DB-only liveness view — `apps/core/observability.py`
 - `RequestContextFilter` + `RequestContextMiddleware` — inject request id + account UUID into logs — `apps/core/observability.py`, `apps/core/middleware.py`
+
+### Core platform views & deployment shell (`apps/core`, platform-staging / D-12)
+- `views.health` (`GET /health`) — operator deep probe (DB **+** opens a live SMTP socket); `views.health_live` (`GET /health/live`) — **DB-only** liveness for the orchestrator/uptime monitor (never touches email/cache), the platform-staging health-check target — `apps/core/views.py`
+- `views.serve_media` (`/media/<path>`) — serves uploaded media from `settings.MEDIA_ROOT` (read at request time) in **all** environments, not just DEBUG; the deliberate single-node staging trade-off, object-store is the growth path — `apps/core/views.py`, `config/urls.py`
+- **`core/base.html`** — the **shared responsive shell every wedge surface inherits** (header nav + auth state, `<main>`, footer, `<meta viewport>`, the single `core/app.css` link, Django `messages` rendered once). Block contract (additive-only): `{% block title %}` (default "App Discovery") / `{% block head %}` / `{% block content %}`. **Extend this — do not add a 7th per-app base.html.** The 6 app bases (`accounts`/`catalog`/`dashboard`/`discovery`/`pages`/`updates`) are thin `{% extends "core/base.html" %}` stubs. The embeddable **widget stays isolated** (self-contained inline `<style>`, no platform stylesheet — AC3.3 firewall) — `apps/core/templates/core/base.html`
+- `core/app.css` — the one mobile-first, dependency-free, no-build platform stylesheet (tokens, responsive nav, accessible form/table/card styles, ~600/900 px breakpoints) — `apps/core/static/core/app.css`
+- settings deployment helpers: `_cache_settings(redis_url)` (RedisCache from `REDIS_URL`, LocMem fallback → limiter correct across workers) · `_init_sentry(dsn)` (env-gated Sentry, no-op when unset) · `DATABASE_URL` bridge (dj-database-url, discrete `DB_*` fallback) · WhiteNoise manifest static (gated on `not DEBUG`) — `config/settings.py`
 
 ### Identity model (`apps/accounts/models.py`)
 - `Account` — canonical cross-feature identity (UUID id, citext email, display_name, roles via groups; passwordless) — `apps/accounts/models.py`
