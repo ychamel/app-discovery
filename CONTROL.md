@@ -16,11 +16,11 @@ Rules:
 
 | Field              | Value                                                            |
 |--------------------|------------------------------------------------------------------|
-| **Active feature** | **none** — `patch-dashboard-window-label` ([BUG-003](issues/BUG-003.md)) **RESOLVED + closed-out**. Queued next: **UX-001** (responsive CSS, triaged), **UX-002** (tag picker — minimal patch (a), triaged). Held bets: **DN-PS-DEPLOY** (live deploy) + `ui-modernization`. |
-| **Stage**          | **`0-coordinator`** |
-| **Persona**        | **Coordinator** ([CLAUDE.md](CLAUDE.md) §4). |
-| **Folder**         | n/a (between patches). Issue triage registry: [issues/README.md](issues/README.md). |
-| **Last updated**   | 2026-06-29 (Maintenance Engineer — built + closed out BUG-003; 999 tests; → Coordinator). |
+| **Active feature** | **`patch-try-app-redirect`** — [`BUG-004`](issues/BUG-004.md) (High): "Try App" button stuck on platform URL due to HTMX boost intercepting cross-origin redirect. |
+| **Stage**          | **`P-plan`** |
+| **Persona**        | **Maintenance Planner** ([patch-1-planner.md](process/personas/patch-1-planner.md)). |
+| **Folder**         | [`features/patch-try-app-redirect/`](features/patch-try-app-redirect/) |
+| **Last updated**   | 2026-06-29 (Coordinator — triaged BUG-004; scaffold complete; → Maintenance Planner). |
 
 > **Closed-out features** (Stage 6 skipped per the standing pattern — reopenable; all
 > released local/dev, rollback rehearsed; live-metrics/outcome reports deferred until a
@@ -42,12 +42,12 @@ Rules:
 ### Latest session status (CLAUDE.md §6.7 — overwritten each session)
 
 ```
-Stage: 0-coordinator | Feature: none (patch-dashboard-window-label closed-out) | Persona: Maintenance Engineer → Coordinator
-Done: Built the approved BUG-003 patch (DN-DWL-PLAN approved). T-01 red-first regression test (test_template_tags_render_no_literal_braces) — confirmed it failed on the unpatched template with both literal tags ({{ w.label }} and {{ summary.curated_impressions }}) in the captured response body. T-02 joined both multiline tags onto one line in my_apps.html (selected-window label L32 + curated-count L57-58). T-03 verified + wrote TEST_PLAN.md + RELEASE_NOTES.md. Closed BUG-003 in INDEX.md, issues/README.md, BUG-003.md.
-Verified by: 999 tests green (+1); ruff check clean; manage.py check clean; makemigrations --check = no drift (No-Schema Assertion held); repo-wide multiline-tag sweep now returns ZERO matches; rollback rehearsed (DU-REL-1 — stashed patch → check/no-drift/60 dashboard tests green on reverted tree → restored intact).
-Blocked/Deferred: none. Held bets: DN-PS-DEPLOY (live staging deploy — the active next bet), ui-modernization.
-Decisions needed: none.
-Next: Coordinator — pick the next patch (queued: UX-001 responsive CSS, UX-002 tag-picker minimal (a)) or progress DN-PS-DEPLOY, with the user.
+Stage: P-plan | Feature: patch-try-app-redirect | Persona: Coordinator → Maintenance Planner (complete)
+Done: Triaged all open issues. BUG-004 (High) root cause confirmed: hx-boost="true" on <main> intercepts the "Try App" anchor; HTMX follows the 302→app.url via AJAX; cross-origin fetch fails; user never navigates to the external app. Scaffolded features/patch-try-app-redirect/ (5 artifacts). Wrote the full PATCH.md: 3 tasks (T-01 red-first test asserting hx-boost="false"+target="_blank"+rel on the anchor → T-02 add those attributes to app_page.html:72 → T-03 verify). Also surfaced DN-Q002/DN-Q003/DN-Q004 (product decisions) and noted BUG-005 + UX-004 as queued.
+Verified by: n/a — no code touched (plan only).
+Blocked/Deferred: P-build awaits DN-BUG004-PLAN approval. BUG-005 queued after BUG-004. Q-002/Q-003/Q-004 await product decisions. UX-004 + UX-002 + UX-001 queued.
+Decisions needed: DN-BUG004-PLAN (blocks P-build), DN-Q002, DN-Q003, DN-Q004 (queued, non-blocking).
+Next: User approves DN-BUG004-PLAN → Maintenance Engineer builds the patch.
 ```
 
 ---
@@ -56,6 +56,14 @@ Next: Coordinator — pick the next patch (queued: UX-001 responsive CSS, UX-002
 
 The agent is blocked on these. Answer inline (edit the **Answer** cell), then the agent
 proceeds.
+
+**DN-BUG004-PLAN — 2026-06-29 (blocks P-build).** The [`patch-try-app-redirect` PATCH.md](features/patch-try-app-redirect/PATCH.md) is ready for review. Plan: T-01 red-first test (assert `hx-boost="false"` + `target="_blank"` + `rel="noopener noreferrer"` on the Try App anchor) → T-02 add those 3 attributes to the anchor in `app_page.html:72` → T-03 verify (≥999 tests / ruff / check / no drift / rollback). Template-only, no schema. Approve to proceed to P-build: `[approved / changes needed]` → _unanswered_
+
+**DN-Q002 — 2026-06-29 (non-blocking, queued).** Should a user be able to submit a review for their own app? See [`Q-002`](issues/Q-002.md) for full context. Recommendation: **Option A — block self-review** (hide/disable the review form when `request.user == app.developer`; show a notice). Standard practice on every comparable platform. Answer here when ready: `[Option A / B / C / keep as-is]` → _unanswered_
+
+**DN-Q003 — 2026-06-29 (non-blocking, queued).** Should a user be able to follow their own app? See [`Q-003`](issues/Q-003.md) for full context. Recommendation: **Option A — block self-follow** (hide/disable the Follow button when `request.user == app.developer`; follower count reflects only external interest). Answer here when ready: `[Option A / B / C / keep as-is]` → _unanswered_
+
+**DN-Q004 — 2026-06-29 (non-blocking, queued).** Should apps display an aggregate review score, and should curator vs. community ratings be shown separately? See [`Q-004`](issues/Q-004.md) for full context. Recommendation: **Option B or C** (show two distinct scores: curator + community, or curated-only on catalog + both on detail page). This is likely Feature Track work (may involve computed aggregates). Answer here when ready: `[A / B / C / D / defer]` → _unanswered_
 
 **DN-PS-DEPLOY — REOPENED 2026-06-28 (the active next bet).** With `premium-frontend` signed off +
 closed out, the sequencing condition is met (staging now debuts on the polished UI), so the live
