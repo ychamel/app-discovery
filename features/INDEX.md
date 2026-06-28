@@ -43,6 +43,7 @@ is decision **D2** and belongs to the user.
 | Slug | Source issue | Stage | Started | One-line outcome |
 |------|--------------|-------|---------|------------------|
 | [patch-developer-submissions-nav](patch-developer-submissions-nav/) | [`UX-003`](../issues/UX-003.md) (High) | closed-out (released local/dev) | 2026-06-28 | **RESOLVED** — developers now reach their submissions: a developer-gated "My submissions" header link (new `is_developer` tag delegating to the one role gate) + a dashboard Analytics⇄Submissions sub-nav & empty-state "View my submissions" CTA + a reciprocal "View analytics" link. **988 tests** (8 new, red-first), ruff/check clean, no migration drift; rollback rehearsed. Presentation-only — Patch Track scope held. |
+| [patch-profile-form-actions](patch-profile-form-actions/) | [`BUG-002`](../issues/BUG-002.md) (High) | P-plan | 2026-06-28 | _Profile **Edit display name** + **Delete account** forms plain-POST to the DRF `/me` API (no `post()`) → **405**, silently swallowed by `hx-boost` (`data-method` is dead markup, no project JS). Fix = dedicated server-rendered POST handler(s) in the accounts §9 human-flow, `/me` JSON contract untouched. No schema/migration → Patch Track. Maintenance Planner writing PATCH.md._ |
 
 > Stage values: see the routing table in [../CLAUDE.md](../CLAUDE.md) §2. `backlog` is a
 > pre-pipeline holding state, not a canonical pipeline stage.
