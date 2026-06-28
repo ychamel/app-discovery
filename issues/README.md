@@ -60,6 +60,8 @@ Every issue logged in this directory must have a corresponding row in this table
 | `Q-004` | Question | 2026-06-29 | User | Should apps display an aggregate review score; should curated ratings be shown separately? | Medium | `NEW` | [`Q-004.md`](Q-004.md) | TBD |
 | `BUG-004` | Bug | 2026-06-29 | User | "Try App" button links to platform URL instead of the app's own external URL | High | `RESOLVED` | [`BUG-004.md`](BUG-004.md) | [`features/patch-try-app-redirect/`](../features/patch-try-app-redirect/) — closed-out (released local/dev): added `hx-boost="false" target="_blank" rel="noopener noreferrer"` to the Try App anchor; browser follows the 302 natively to the external URL. 1 red-first test; 1 000 tests green; no migration drift; rollback rehearsed |
 | `BUG-005` | Bug | 2026-06-29 | User | "Share" button does not work on localhost; fallback behaviour unclear | Low–Medium | `NEW` | [`BUG-005.md`](BUG-005.md) | TBD |
+| `UX-005` | UX | 2026-06-29 | User | No way for developers to preview their app page before approval | Medium | `NEW` | [`UX-005.md`](UX-005.md) | TBD |
+| `UX-006` | UX | 2026-06-29 | User | No direct link from "My Submissions" to the public app page post-approval | Medium | `NEW` | [`UX-006.md`](UX-006.md) | TBD |
 
 
 ---
