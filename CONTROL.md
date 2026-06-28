@@ -16,11 +16,11 @@ Rules:
 
 | Field              | Value                                                            |
 |--------------------|------------------------------------------------------------------|
-| **Active feature** | **none** |
-| **Stage**          | **`0-coordinator`** |
-| **Persona**        | **Coordinator** |
-| **Folder**         | — |
-| **Last updated**   | 2026-06-29 (Maintenance Engineer — BUG-004 patch built + closed-out; 1 000 tests). |
+| **Active feature** | **patch-my-apps-status-display** |
+| **Stage**          | **`P-plan`** |
+| **Persona**        | **Maintenance Planner** |
+| **Folder**         | `features/patch-my-apps-status-display/` |
+| **Last updated**   | 2026-06-29 (Coordinator — triaged UX-004/005/006/BUG-005; scaffolded patch-my-apps-status-display; handed to Maintenance Planner). |
 
 > **Closed-out features** (Stage 6 skipped per the standing pattern — reopenable; all
 > released local/dev, rollback rehearsed; live-metrics/outcome reports deferred until a
@@ -42,12 +42,12 @@ Rules:
 ### Latest session status (CLAUDE.md §6.7 — overwritten each session)
 
 ```
-Stage: P-build → closed-out → 0-coordinator | Feature: patch-try-app-redirect | Persona: Maintenance Engineer
-Done: Built the approved BUG-004 patch. T-01 red-first (test_try_app_anchor_bypasses_htmx_boost in apps/pages/tests/test_template.py) — confirmed failure on unpatched template (hx-boost="false" absent). T-02 added hx-boost="false" target="_blank" rel="noopener noreferrer" to the Try App anchor in app_page.html:72. T-03 verified: 1 000 tests green (+1), ruff/check clean, makemigrations --check = no drift (No-Schema Assertion held — Patch Track confirmed). Rollback rehearsed (DU-REL-1): stash → pages tests green on reverted tree → stash pop intact. Wrote TEST_PLAN.md + RELEASE_NOTES.md. Closed BUG-004 RESOLVED in issues/README.md, INDEX.md, BUG-004.md. Active feature → none; Persona → Coordinator.
-Verified by: 1 000 tests green; ruff clean; manage.py check clean; makemigrations --check no drift; rollback rehearsed.
-Blocked/Deferred: BUG-005 queued. Q-002/Q-003/Q-004 await product decisions. UX-004 + UX-002 + UX-001 queued.
-Decisions needed: DN-Q002, DN-Q003, DN-Q004 (non-blocking, queued). DN-PS-DEPLOY (the active next bet, reopened).
-Next: User picks next issue to resolve, or proceeds with the live staging deploy (DN-PS-DEPLOY).
+Stage: P-plan | Feature: patch-my-apps-status-display | Persona: Maintenance Planner
+Done: Investigated UX-004 + UX-006. Root cause confirmed (certain): (1) my_apps.html:8 hardcodes "My submissions" — never changes with lifecycle; (2) my_apps_page does not sort the decorated list; the template has no grouping structure — apps render in insertion order with no section headers (status badges already exist, lines 38-46, not a gap); (3) no conditional live-page link for accepted apps. All three gaps are presentation-layer only (one view + one template). Wrote PATCH.md: 6 ordered S-tasks — T-01 = red-first (4 test cases), T-02 heading rename, T-03 sort in view, T-04 regroup headers, T-05 live-page link, T-06 verify+docs. No-Schema Assertion stated (no migration/API/ADR). Surfaced DN-MAS-PLAN for approval.
+Verified by: n/a (no code touched).
+Blocked/Deferred: UX-005 (patch-developer-app-preview), BUG-005 (patch-share-button-fallback), UX-002, UX-001 queued. Q-002/Q-003/Q-004 await product decisions.
+Decisions needed: DN-MAS-PLAN (approval gates P-build). DN-Q002, DN-Q003, DN-Q004 (non-blocking). DN-PS-DEPLOY (live staging deploy).
+Next: User approves DN-MAS-PLAN → Maintenance Engineer builds the patch.
 ```
 
 ---
@@ -56,6 +56,8 @@ Next: User picks next issue to resolve, or proceeds with the live staging deploy
 
 The agent is blocked on these. Answer inline (edit the **Answer** cell), then the agent
 proceeds.
+
+**DN-MAS-PLAN — 2026-06-29.** Approve the [`patch-my-apps-status-display` PATCH.md](features/patch-my-apps-status-display/PATCH.md) to build. Fix: (1) rename H1 "My submissions" → "My Apps"; (2) sort apps by status priority + add section headers ("Active", "Awaiting Review", "Needs Changes", "Withdrawn"); (3) add "View live page" link for accepted apps pointing to `pages:app-page`. 6 S-tasks, T-01 = 4 red-first tests. No-Schema Assertion holds (template + one view sort). Patch Track scope confirmed. Answer: `[proceed / hold]` → _unanswered_
 
 ~~**DN-BUG004-PLAN**~~ — **RESOLVED 2026-06-29** (user approved via "proceed" → built + closed-out by Maintenance Engineer; **BUG-004 RESOLVED**, 1 000 tests).
 
@@ -121,6 +123,7 @@ folders remain the full record either way.
 
 | Date       | Stage           | Summary                                                                 |
 |------------|-----------------|-------------------------------------------------------------------------|
+| 2026-06-29 | `0-coordinator`→`P-plan` | **Coordinator** — triaged all 4 NEW issues: **UX-004 + UX-006** bundled → `patch-my-apps-status-display` (both touch [`catalog/my_apps.html`](apps/catalog/templates/catalog/my_apps.html): rename "My Submissions" → "My Apps" + status badges/grouping + "View live page" link for ACCEPTED apps; template-only → Patch Track → IN-PROGRESS); **UX-005** → `patch-developer-app-preview` (view-logic owner bypass, no schema → TRIAGED, queued); **BUG-005** → `patch-share-button-fallback` (JS Web Share fallback → TRIAGED, queued). Scaffolded [features/patch-my-apps-status-display/](features/patch-my-apps-status-display/) (5 artifacts), added INDEX.md Patch Track row, updated all 4 issue files + [issues/README.md](issues/README.md). **No code touched.** Set Active=patch-my-apps-status-display, Stage=P-plan, Persona=Maintenance Planner. |
 | 2026-06-29 | `P-build`→closed-out → `0-coordinator` | **Maintenance Engineer** — built the approved **BUG-003** patch (DN-DWL-PLAN). **T-01 red-first** ([`test_template_tags_render_no_literal_braces`](apps/dashboard/tests/test_views.py)) — confirmed it failed on the unpatched template with **both** literal tags in the captured response body. **T-02** joined both multiline variable tags onto one line in [`my_apps.html`](apps/dashboard/templates/dashboard/my_apps.html): the selected-window `{{ w.label }}` (L32) **and** the card's `{{ summary.curated_impressions }}` (L57-58). **T-03** verified + wrote [TEST_PLAN.md](features/patch-dashboard-window-label/TEST_PLAN.md) + [RELEASE_NOTES.md](features/patch-dashboard-window-label/RELEASE_NOTES.md). **999 tests green** (+1), `ruff`/`check` clean, **`makemigrations --check` = no drift** (No-Schema Assertion held → Patch Track confirmed), and the **repo-wide multiline-tag sweep now returns ZERO matches**. **Rollback rehearsed (DU-REL-1):** stashed the patch → clean `check`/no-drift/60 dashboard tests green on the reverted tree → restored intact. **Closed BUG-003 out** in [INDEX.md](features/INDEX.md) + [issues registry](issues/README.md) + [BUG-003.md](issues/BUG-003.md). **Active feature → none; Persona → Coordinator.** |
 | 2026-06-28 | `P-plan` | **Maintenance Planner** — investigated **BUG-003** and wrote the full [PATCH.md](features/patch-dashboard-window-label/PATCH.md) (Problem Statement / Proposed Fix / Task List). **Root cause confirmed (certain):** Django's `tag_re` is compiled **without** `re.DOTALL`, so a `{{ … }}` tag split across a newline is never tokenized and renders literally. Ran a **repo-wide sweep** of every `*.html` for newline-spanning `{{…}}`/`{%…%}` tags → **exactly two offenders, both in [`my_apps.html`](apps/dashboard/templates/dashboard/my_apps.html)**: [L32-33](apps/dashboard/templates/dashboard/my_apps.html#L32-L33) (`{{ w.label }}`, the reported selected-window symptom) **and** [L58-59](apps/dashboard/templates/dashboard/my_apps.html#L58-L59) (`{{ summary.curated_impressions }}`, an **unreported sibling** that renders literally whenever a dev has curated impressions). Both folded into the fix (the sweep's whole point). **3 ordered tasks, T-01 = red-first regression test** (renders `dashboard:my-apps` with a seeded curated impression; asserts the labels render + `assertNotContains "{{"`). **No-Schema Assertion stated** (template-only → Patch Track holds). **No code touched.** Surfaced **DN-DWL-PLAN** (approval gates `P-build`). |
 | 2026-06-28 | `0-coordinator`→`P-plan` | **Coordinator** — new bug report from the user: the dashboard's selected reporting period shows literal `{{ w.label }}`. **Logged [BUG-003](issues/BUG-003.md)** and **triaged it against live code — root cause certain:** [`my_apps.html:32-33`](apps/dashboard/templates/dashboard/my_apps.html#L32-L33) splits the active-window `{{ w.label }}` variable tag across two lines; Django's `tag_re` (`django/template/base.py`) is compiled **without** `re.DOTALL`, so a multiline `{{ … }}` tag isn't tokenized and renders literally — confirmed empirically on Django 5.2.15 (`tag_re.findall` returns nothing for the multiline form). Only the **selected** window uses the multiline form (the non-selected branch at [:36](apps/dashboard/templates/dashboard/my_apps.html#L36) is single-line), matching the reported symptom. **Scope gate → Patch Track** (template-only one-line fix; no schema/API/ADR). Scaffolded [features/patch-dashboard-window-label/](features/patch-dashboard-window-label/) (5 artifacts; PATCH.md carries the triage + proposed fix incl. a repo-wide sweep for the same pattern), added the [INDEX.md](features/INDEX.md) Patch Track row, set BUG-003 **IN-PROGRESS** in [issues/README.md](issues/README.md). **No code touched.** Set **Active=patch-dashboard-window-label, Stage=P-plan, Persona=Maintenance Planner**. Handed to the **Maintenance Planner**. |
