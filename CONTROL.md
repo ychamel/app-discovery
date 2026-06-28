@@ -52,7 +52,7 @@ Rules:
 
 ```
 Stage: 5-release | Feature: premium-frontend | Persona: Coordinator
-Done: Created and logged UX-002.md for tag and niche selection improvements during app registration, and registered the issue in issues/README.md.
+Done: Created and logged UX-003.md for tracking open applications / navigation pathways, and registered it in issues/README.md.
 Verified by: .venv/bin/python manage.py test (980 tests passed).
 Blocked/Deferred: none.
 Decisions needed: none.

@@ -51,6 +51,7 @@ Every issue logged in this directory must have a corresponding row in this table
 | `BUG-001` | Bug | 2026-06-28 | Developer / QA Team | Interest picker duplicate subcategories label click highlights previous occurrence | Medium | `NEW` | [`BUG-001.md`](BUG-001.md) | `TBD` |
 | `UX-001` | UX | 2026-06-28 | QA Team / UX | Mobile touch target sizes for catalog search filters are too small | Medium | `NEW` | [`UX-001.md`](UX-001.md) | `TBD` |
 | `UX-002` | UX | 2026-06-28 | Developer / User | App registration tags selection is overwhelming and niche selection is difficult | Medium | `NEW` | [`UX-002.md`](UX-002.md) | `TBD` |
+| `UX-003` | UX | 2026-06-28 | User | No navigation path to view and manage pending/withdrawn app submissions | High | `NEW` | [`UX-003.md`](UX-003.md) | `TBD` |
 | `Q-001` | Question | 2026-06-28 | Developer / QA Team | Duplicate vs. Unique Interest Subcategories Design Choice | Medium | `NEW` | [`Q-001.md`](Q-001.md) | `TBD` |
 
 
