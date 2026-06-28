@@ -92,6 +92,12 @@ class DeveloperPagesTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "haven't submitted")
 
+    def test_my_apps_links_to_dashboard(self):
+        # UX-003 reciprocal link: the submissions list must reach the analytics dashboard
+        # so both developer surfaces are mutually discoverable.
+        response = self.client.get(reverse("catalog:my-apps"))
+        self.assertContains(response, f'href="{reverse("dashboard:my-apps")}"')
+
     def test_my_apps_shows_status_and_rejection_reasons(self):
         app = self._submit_via_service()
         reviewer = make_developer("rev@example.com")

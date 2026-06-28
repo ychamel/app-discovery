@@ -6,64 +6,92 @@
   <div class="cluster" style="justify-content: space-between; align-items: flex-start;">
     <div>
       <h1 style="margin: 0;">Developer Dashboard</h1>
-      <p style="color: var(--color-muted); margin: 0; font-size: var(--font-size-lg);">Monitor metrics and performance for your accepted applications.</p>
+      <p style="color: var(--color-muted); margin: 0; font-size: var(--font-size-lg);">Monitor metrics and performance
+        for your accepted applications.</p>
     </div>
     <a href="{% url 'catalog:submit' %}" class="btn btn--primary">Submit an App</a>
   </div>
 
+  {% comment %}
+    Sub-nav across the two developer surfaces (UX-003): this analytics view (current) and
+    the full submissions list, where pending/rejected/withdrawn apps live. No JS.
+  {% endcomment %}
+  <nav aria-label="Developer views" class="cluster" style="--gap: var(--space-2);">
+    <span aria-current="page" class="btn btn--secondary btn--sm">Analytics</span>
+    <a href="{% url 'catalog:my-apps' %}" class="btn btn--ghost btn--sm">Submissions</a>
+  </nav>
+
   <div class="stack" style="--gap: var(--space-4);">
-    <h2 style="font-size: var(--font-size-sm); font-weight: var(--font-weight-bold); text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-muted); margin: 0;">Reporting Period</h2>
-    <nav aria-label="Reporting window" class="cluster" style="--gap: var(--space-1.5); background-color: var(--color-surface); padding: var(--space-1.5); border-radius: var(--radius); border: 1px solid var(--color-border); width: fit-content;">
+    <h2
+      style="font-size: var(--font-size-sm); font-weight: var(--font-weight-bold); text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-muted); margin: 0;">
+      Reporting Period</h2>
+    <nav aria-label="Reporting window" class="cluster"
+      style="--gap: var(--space-1.5); background-color: var(--color-surface); padding: var(--space-1.5); border-radius: var(--radius); border: 1px solid var(--color-border); width: fit-content;">
       {% for w in windows %}
-        {% if w.key == active_window.key %}
-          <span aria-current="true" class="btn btn--primary btn--sm" style="font-weight: var(--font-weight-semibold);">{{ w.label }}</span>
-        {% else %}
-          <a href="?window={{ w.key }}" class="btn btn--ghost btn--sm" style="color: var(--color-muted); font-weight: var(--font-weight-medium);">{{ w.label }}</a>
-        {% endif %}
+      {% if w.key == active_window.key %}
+      <span aria-current="true" class="btn btn--primary btn--sm" style="font-weight: var(--font-weight-semibold);">{{
+        w.label }}</span>
+      {% else %}
+      <a href="?window={{ w.key }}" class="btn btn--ghost btn--sm"
+        style="color: var(--color-muted); font-weight: var(--font-weight-medium);">{{ w.label }}</a>
+      {% endif %}
       {% endfor %}
     </nav>
   </div>
 
   {% if summaries %}
-    <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--space-6);">
-      {% for summary in summaries %}
-        <div class="card stack" style="--gap: var(--space-4);">
-          <h3 style="margin: 0; font-size: var(--font-size-xl);">
-            <a href="{% url 'dashboard:app' app_id=summary.app_id %}?window={{ active_window.key }}" style="color: var(--color-text); text-decoration: none;">
-              {{ summary.app_name }}
-            </a>
-          </h3>
-          
-          <dl style="margin: 0; display: grid; grid-template-columns: 1fr; gap: var(--space-2); font-size: var(--font-size-sm); border-top: 1px solid var(--color-border); padding-top: var(--space-3);">
-            <div class="cluster" style="justify-content: space-between;">
-              <dt style="color: var(--color-muted);">On-platform Reach</dt>
-              <dd style="margin: 0; font-weight: var(--font-weight-semibold);">{{ summary.total_impressions }} shows <span style="font-weight: var(--font-weight-normal); color: var(--color-success);">({{ summary.curated_impressions }} curated)</span></dd>
-            </div>
-            
-            <div class="cluster" style="justify-content: space-between;">
-              <dt style="color: var(--color-muted);">Click-throughs</dt>
-              <dd style="margin: 0; font-weight: var(--font-weight-semibold);">{{ summary.click_throughs }}</dd>
-            </div>
+  <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--space-6);">
+    {% for summary in summaries %}
+    <div class="card stack" style="--gap: var(--space-4);">
+      <h3 style="margin: 0; font-size: var(--font-size-xl);">
+        <a href="{% url 'dashboard:app' app_id=summary.app_id %}?window={{ active_window.key }}"
+          style="color: var(--color-text); text-decoration: none;">
+          {{ summary.app_name }}
+        </a>
+      </h3>
 
-            <div class="cluster" style="justify-content: space-between;">
-              <dt style="color: var(--color-muted);">Widget Reach</dt>
-              <dd style="margin: 0; font-weight: var(--font-weight-semibold);">{{ summary.widget_impressions }} views</dd>
-            </div>
-          </dl>
-
-          <a href="{% url 'dashboard:app' app_id=summary.app_id %}?window={{ active_window.key }}" class="btn btn--secondary btn--sm" style="margin-top: auto; text-align: center; text-decoration: none;">
-            View Detailed Telemetry →
-          </a>
+      <dl
+        style="margin: 0; display: grid; grid-template-columns: 1fr; gap: var(--space-2); font-size: var(--font-size-sm); border-top: 1px solid var(--color-border); padding-top: var(--space-3);">
+        <div class="cluster" style="justify-content: space-between;">
+          <dt style="color: var(--color-muted);">On-platform Reach</dt>
+          <dd style="margin: 0; font-weight: var(--font-weight-semibold);">{{ summary.total_impressions }} shows <span
+              style="font-weight: var(--font-weight-normal); color: var(--color-success);">({{
+              summary.curated_impressions }} curated)</span></dd>
         </div>
-      {% endfor %}
+
+        <div class="cluster" style="justify-content: space-between;">
+          <dt style="color: var(--color-muted);">Click-throughs</dt>
+          <dd style="margin: 0; font-weight: var(--font-weight-semibold);">{{ summary.click_throughs }}</dd>
+        </div>
+
+        <div class="cluster" style="justify-content: space-between;">
+          <dt style="color: var(--color-muted);">Widget Reach</dt>
+          <dd style="margin: 0; font-weight: var(--font-weight-semibold);">{{ summary.widget_impressions }} views</dd>
+        </div>
+      </dl>
+
+      <a href="{% url 'dashboard:app' app_id=summary.app_id %}?window={{ active_window.key }}"
+        class="btn btn--secondary btn--sm" style="margin-top: auto; text-align: center; text-decoration: none;">
+        View Detailed Telemetry →
+      </a>
     </div>
+    {% endfor %}
+  </div>
   {% else %}
-    <div class="empty-state">
-      <div class="empty-state__icon">📈</div>
-      <h2 class="empty-state__title">No accepted apps yet</h2>
-      <p class="empty-state__description">You have no accepted apps yet. Once your app is submitted and accepted, its performance metrics will appear here.</p>
+  <div class="empty-state">
+    <div class="empty-state__icon">📈</div>
+    <h2 class="empty-state__title">No accepted apps yet</h2>
+    <p class="empty-state__description">You have no accepted apps yet. Once your app is submitted and accepted, its
+      performance metrics will appear here.</p>
+    <div class="cluster" style="--gap: var(--space-2); justify-content: center;">
       <a href="{% url 'catalog:submit' %}" class="btn btn--primary">Submit your first app</a>
+      {% comment %}
+        UX-003: a developer with only pending/rejected apps would otherwise dead-end
+        here — point them to where those submissions actually live.
+      {% endcomment %}
+      <a href="{% url 'catalog:my-apps' %}" class="btn btn--secondary">View my submissions</a>
     </div>
+  </div>
   {% endif %}
 </div>
 {% endblock %}

@@ -8,7 +8,14 @@
       <h1 style="margin: 0;">My submissions</h1>
       <p style="color: var(--color-muted); margin: 0; font-size: var(--font-size-lg);">Submit apps to the catalog and track their review status.</p>
     </div>
-    <a href="{% url 'catalog:submit' %}" class="btn btn--primary">Submit an App</a>
+    <div class="cluster" style="--gap: var(--space-2);">
+      {% comment %}
+        Reciprocal link to the analytics dashboard (UX-003): makes both developer
+        surfaces mutually reachable from the single header entry point.
+      {% endcomment %}
+      <a href="{% url 'dashboard:my-apps' %}" class="btn btn--secondary">View analytics</a>
+      <a href="{% url 'catalog:submit' %}" class="btn btn--primary">Submit an App</a>
+    </div>
   </div>
 
   {% if not apps %}

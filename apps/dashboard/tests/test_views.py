@@ -63,6 +63,15 @@ class MyAppsListTests(DashboardViewTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "no accepted apps")
 
+    def test_empty_state_links_to_submissions(self):
+        # UX-003 regression: a developer with no *accepted* apps must not dead-end on the
+        # dashboard — the empty state guides them to catalog:my-apps where their pending/
+        # rejected submissions actually live.
+        response = self.client.get(self._my_apps_url())
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "View my submissions")
+        self.assertContains(response, f'href="{reverse("catalog:my-apps")}"')
+
 
 class AccessControlTests(DashboardViewTestCase):
     def test_non_developer_gets_403_on_both_routes(self):

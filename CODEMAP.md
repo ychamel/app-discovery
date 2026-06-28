@@ -96,6 +96,7 @@ _Built by `identity-accounts` Stage 4. Entries are added as each shared item shi
 - `account_has_role(user, role) -> bool` — the one fail-closed gate decision — `apps/accounts/permissions.py`
 - `HasRole(role)` — DRF permission class factory — `apps/accounts/permissions.py`
 - `require_role(role)` — Django view decorator (raises 403 when denied) — `apps/accounts/permissions.py`
+- `{% is_developer user as flag %}` (`account_roles`) — the template-side read of the role gate; delegates to `account_has_role` (one source of truth, inherits fail-closed); presentation-only, never a security boundary — `apps/accounts/templatetags/account_roles.py`
 - `grant_role` / `revoke_role` — audited role change (writes RoleGrant atomically) — `apps/accounts/services.py`
 - `UnknownRoleError` — raised for a role with no group (→ 400) — `apps/accounts/services.py`
 

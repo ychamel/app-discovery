@@ -1,4 +1,4 @@
-{% load static %}<!DOCTYPE html>
+{% load static account_roles %}<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -17,6 +17,15 @@
       <ul class="site-nav-links">
         <li><a href="{% url 'discovery:browse' %}">Discover</a></li>
         {% if user.is_authenticated %}
+          {% is_developer user as user_is_developer %}
+          {% if user_is_developer %}
+            {% comment %}
+              Developer-only entry point to the submissions list (UX-003): mirrors the
+              view's own @require_role(developer) gate, so it is never shown to an
+              account that would receive a 403 on click.
+            {% endcomment %}
+            <li><a href="{% url 'catalog:my-apps' %}">My submissions</a></li>
+          {% endif %}
           <li><a href="{% url 'subscriptions:feed' %}">Following</a></li>
           <li><a href="{% url 'accounts:profile' %}">Profile</a></li>
           <li>
