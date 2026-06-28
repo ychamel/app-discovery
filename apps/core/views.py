@@ -2,9 +2,11 @@
 
 from django.conf import settings
 from django.http import JsonResponse
+from django.shortcuts import render
+from django.views.decorators.http import require_GET
 from django.views.static import serve as static_serve
 
-from apps.core.observability import _database_ok, check_health
+from apps.core.observability import _database_ok, check_health, increment, LANDING_RENDERED
 
 
 def health(request):
@@ -39,3 +41,14 @@ def serve_media(request, path):
     bounded single-node trade-off and the object-store growth path.
     """
     return static_serve(request, path, document_root=settings.MEDIA_ROOT)
+
+
+@require_GET
+def landing(request):
+    """The platform landing page (DESIGN.md §5.2).
+
+    Renders a static marketing page (value proposition + entry points).
+    Does not read from the database or require authentication.
+    """
+    increment(LANDING_RENDERED)
+    return render(request, "core/landing.html")

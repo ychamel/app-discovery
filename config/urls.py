@@ -10,7 +10,7 @@ from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path, re_path
 
-from apps.core.views import health, health_live, serve_media
+from apps.core.views import health, health_live, landing, serve_media
 
 urlpatterns = [
     path("django-admin/", admin.site.urls),
@@ -52,6 +52,7 @@ urlpatterns = [
     # widget.selectors, so pulling only this include would not be a clean revert). Own prefix;
     # /widget/ is free — no collision with the pages /apps/ surface.
     path("widget/", include("apps.widget.urls")),
+    path("", landing, name="home"),
     path("", include("apps.accounts.urls")),
 ]
 

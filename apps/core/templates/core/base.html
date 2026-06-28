@@ -5,9 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}App Discovery{% endblock %}</title>
   <link rel="stylesheet" href="{% static 'core/app.css' %}">
+  <script defer src="{% static 'core/vendor/htmx.min.js' %}"></script>
   {% block head %}{% endblock %}
 </head>
-<body>
+<body class="{% block body_class %}{% endblock %}">
+  <a href="#main" class="skip-link">Skip to content</a>
+
   <header class="site-header">
     <nav class="site-nav" aria-label="Primary">
       <a class="site-brand" href="{% url 'discovery:browse' %}">App Discovery</a>
@@ -31,7 +34,7 @@
     </nav>
   </header>
 
-  <main class="site-main">
+  <main class="site-main" id="main" hx-boost="true">
     {% comment %}
       Django messages render once here so every consolidated surface keeps the message
       display the updates base used to carry on its own (platform-staging DESIGN §5).
@@ -47,7 +50,9 @@
   </main>
 
   <footer class="site-footer">
-    <p>App Discovery — curated apps, ranked by merit, never by spend.</p>
+    <div class="container">
+      <p>App Discovery — curated apps, ranked by merit, never by spend.</p>
+    </div>
   </footer>
 </body>
 </html>
