@@ -20,7 +20,7 @@ Rules:
 | **Stage**          | **`P-plan`** |
 | **Persona**        | **Maintenance Planner** ([CLAUDE.md](CLAUDE.md) §2.2). |
 | **Folder**         | [features/patch-interest-picker-duplicates/](features/patch-interest-picker-duplicates/) — [PATCH.md](features/patch-interest-picker-duplicates/PATCH.md) + [TEST_PLAN.md](features/patch-interest-picker-duplicates/TEST_PLAN.md) + [RELEASE_NOTES.md](features/patch-interest-picker-duplicates/RELEASE_NOTES.md). Issue triage registry: [issues/README.md](issues/README.md). |
-| **Last updated**   | 2026-06-28 (Coordinator — picked BUG-001, scaffolded patch folder, set Active=patch-interest-picker-duplicates, Stage=P-plan, Persona=Maintenance Planner). |
+| **Last updated**   | 2026-06-28 (Maintenance Planner — wrote PATCH.md for BUG-001, surfaced DN-PIPD-PLAN). |
 
 > **Closed-out features** (Stage 6 skipped per the standing pattern — reopenable; all
 > released local/dev, rollback rehearsed; live-metrics/outcome reports deferred until a
@@ -42,12 +42,12 @@ Rules:
 ### Latest session status (CLAUDE.md §6.7 — overwritten each session)
 
 ```
-Stage: 0-coordinator → P-plan | Feature: patch-interest-picker-duplicates | Persona: Coordinator → Maintenance Planner
-Done: Picked BUG-001 as the next active patch. Created the folder features/patch-interest-picker-duplicates/ and seeded the 5 patch files (PATCH.md, TEST_PLAN.md, RELEASE_NOTES.md, OPEN_QUESTIONS.md, DECISIONS.md). Registered the patch in features/INDEX.md and updated the status of BUG-001 in issues/README.md and issues/BUG-001.md to IN-PROGRESS.
-Verified by: n/a
+Stage: P-plan | Feature: patch-interest-picker-duplicates | Persona: Maintenance Planner
+Done: Wrote the PATCH.md implementation plan for BUG-001 (Duplicate interest subcategories click-target issue). Root cause pinned to non-unique HTML IDs in picker.html template when tags are associated with multiple active clusters. Design uses cluster ID-prefixed IDs and incorporates a vanilla JS event listener to sync visual states client-side. Created T-01 regression test, T-02 unique HTML IDs, T-03 client-side sync, and T-04 verify test suite/clean up tasks.
+Verified by: manage.py test (all 997 tests pass prior to patch implementation)
 Blocked/Deferred: none. Held bets: DN-PS-DEPLOY (live staging deploy — the active next bet), ui-modernization.
-Decisions needed: DN-PS-DEPLOY (open/held — the user runs the live deploy). No blocker.
-Next: Maintenance Planner — write PATCH.md (brief + design + tasks).
+Decisions needed: DN-PIPD-PLAN (patch plan approval).
+Next: Maintenance Engineer — build patch-interest-picker-duplicates (upon approval).
 ```
 
 ---
@@ -56,6 +56,9 @@ Next: Maintenance Planner — write PATCH.md (brief + design + tasks).
 
 The agent is blocked on these. Answer inline (edit the **Answer** cell), then the agent
 proceeds.
+
+**DN-PIPD-PLAN — OPEN 2026-06-28.** Do you approve the proposed patch plan for the duplicate interest subcategories click-target issue (BUG-001) in [PATCH.md](features/patch-interest-picker-duplicates/PATCH.md)?
+*   **Answer**:
 
 **DN-PS-DEPLOY — REOPENED 2026-06-28 (the active next bet).** With `premium-frontend` signed off +
 closed out, the sequencing condition is met (staging now debuts on the polished UI), so the live
@@ -113,6 +116,7 @@ folders remain the full record either way.
 
 | Date       | Stage           | Summary                                                                 |
 |------------|-----------------|-------------------------------------------------------------------------|
+| 2026-06-28 | `P-plan` | **Maintenance Planner** — investigated **BUG-001** (duplicate subcategories click target issue) and wrote [PATCH.md](features/patch-interest-picker-duplicates/PATCH.md). **Root cause pinned (certain):** the checkbox `id` and label `for` attributes in `picker.html` are generated using only `tag_{{ item.tag.id }}`, resulting in duplicate IDs on the page when a tag is assigned to multiple active clusters. Label clicks toggle the first occurrence in the DOM. **Design** = update template to use `id="tag_{{ row.cluster.id }}_{{ item.tag.id }}"` + include lightweight client-side vanilla JavaScript to sync duplicate checkbox states. **No-Schema Assertion** holds. **4 ordered tasks, T-01 = red-first regression test.** **No code touched.** Surfaced **DN-PIPD-PLAN** for user approval. |
 | 2026-06-28 | `P-build`→closed-out → `0-coordinator` | **Maintenance Engineer** — built the approved **BUG-002** patch, **T-01 red-first** (9 new `ProfileFormActionTests` failed for the right reason — `NoReverseMatch`, the new routes absent). **T-02** two server-rendered §9 views in [`accounts/views.py`](apps/accounts/views.py): [`update_display_name`](apps/accounts/views.py) (`@login_required @require_POST`; reuses [`DisplayNameForm`](apps/accounts/forms.py#L23); PRG + `messages`) + [`delete_my_account`](apps/accounts/views.py) (named so it doesn't shadow the imported `delete_account` service; `confirm`-guarded; reuses [`services.delete_account`](apps/accounts/services.py#L58) + `auth_logout`; redirects `home`; same `DELETION_FULFILMENT` metric as the §5 path). **T-03** two §9 routes in [`accounts/urls.py`](apps/accounts/urls.py) (`profile/display-name`, `profile/delete`); **T-04** re-pointed both forms in [`profile.html`](apps/accounts/templates/accounts/profile.html) + dropped the dead `data-method`. **`MeView` byte-unchanged → `/me` §5 contract intact.** **997 tests green** (+9), `ruff`/`check` clean, **`makemigrations --check` = no drift** (No-Schema Assertion held → Patch Track confirmed). **Rollback rehearsed (DU-REL-1):** stashed the 4 changed files → clean `check`/no-drift/91 accounts tests green on the reverted tree → restored intact. Wrote [TEST_PLAN.md](features/patch-profile-form-actions/TEST_PLAN.md) + [RELEASE_NOTES.md](features/patch-profile-form-actions/RELEASE_NOTES.md); **closed BUG-002 out** in [INDEX.md](features/INDEX.md) + [issues registry](issues/README.md) + [BUG-002.md](issues/BUG-002.md). **Active feature → none; Persona → Coordinator.** |
 | 2026-06-28 | `P-plan` | **Maintenance Planner** — investigated **BUG-002** against the live code and wrote [PATCH.md](features/patch-profile-form-actions/PATCH.md). **Root cause pinned (certain):** the *Edit display name* ([profile.html:37](apps/accounts/templates/accounts/profile.html#L37)) + *Delete account* ([profile.html:81](apps/accounts/templates/accounts/profile.html#L81)) forms plain-`POST` to the JSON `/me` API ([`MeView`](apps/accounts/views.py#L200) has `get`/`patch`/`delete`, **no `post()`**) → **405**; `data-method` is dead markup (no project JS; `hx-boost` submits the real POST + swallows the 405 → silent idle). **Design** = two server-rendered **§9** handlers (Post/Redirect/Get + Django `messages`, the established interests/ratings/updates pattern) on new routes `profile/display-name` + `profile/delete`, re-point the two forms, drop dead `data-method`. **Reuses existing** [`DisplayNameForm`](apps/accounts/forms.py#L23) + [`services.delete_account`](apps/accounts/services.py#L58); **`/me` JSON contract byte-unchanged**. **No-Schema Assertion** stated (no migration/API/ADR → Patch Track holds). **5 ordered tasks, T-01 = red-first regression test.** **No code touched.** Surfaced **DN-PFA-PLAN** (approval gates `P-build`). |
 | 2026-06-28 | `0-coordinator`→`P-plan` | **Coordinator** — picked **BUG-002** (High; the only non-Medium open issue) and **triaged it against the live code**: [`profile.html`](apps/accounts/templates/accounts/profile.html) wires **both** the *Edit display name* ([L37](apps/accounts/templates/accounts/profile.html#L37)) and *Delete account* ([L81](apps/accounts/templates/accounts/profile.html#L81)) forms as plain `method="post"` to `accounts:me` — the DRF [`MeView`](apps/accounts/views.py#L200) (get/patch/delete, **no `post()`**) → **405**; `data-method` is **dead markup** (grep: only those 2 forms, and there is **no project JS** — only vendored `htmx.min.js`, and `hx-boost` ignores `data-method` + swallows the 405). **Same root cause for both forms.** **Scope gate → Patch Track** (`display_name` + `delete_account` already exist → no schema; fix = dedicated server-rendered §9 handler(s), `/me` JSON contract untouched). Scaffolded [features/patch-profile-form-actions/](features/patch-profile-form-actions/) (5 artifacts; PATCH.md carries the *Source & triage*), added the [INDEX.md](features/INDEX.md) Patch Track row, set BUG-002 **IN-PROGRESS** in [issues/README.md](issues/README.md) + [BUG-002.md](issues/BUG-002.md). Also recorded the user's two answered decisions — **DN-Q001 → Option 1** (Q-001 **ANSWERED**), **DN-UX002 → minimal (a)** (UX-002 **TRIAGED**). **No code touched.** Set **Active=patch-profile-form-actions, Stage=P-plan, Persona=Maintenance Planner**. Handed to the **Maintenance Planner**. |
