@@ -72,6 +72,22 @@ class MyAppsListTests(DashboardViewTestCase):
         self.assertContains(response, "View my submissions")
         self.assertContains(response, f'href="{reverse("catalog:my-apps")}"')
 
+    def test_template_tags_render_no_literal_braces(self):
+        # BUG-003 regression: a {{ … }} variable tag split across two lines is not
+        # tokenized by Django's lexer (tag_re lacks re.DOTALL) and leaks to the page as
+        # literal text. Two such tags existed in my_apps.html — the selected window's
+        # {{ w.label }} and the card's {{ summary.curated_impressions }}. Render the page
+        # with a curated impression so both code paths execute, then assert nothing leaked.
+        app = make_accepted_app(self.dev, tag_ids=[self.tag.id], name="Mine A")
+        self._impress(app, Surface.DIGEST)  # curated surface (D-8) → curated count > 0
+
+        response = self.client.get(self._my_apps_url())
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Last month")  # the default window's label rendered
+        self.assertContains(response, "(1 curated)")  # the curated count rendered
+        self.assertNotContains(response, "{{")  # no template expression leaked to output
+
 
 class AccessControlTests(DashboardViewTestCase):
     def test_non_developer_gets_403_on_both_routes(self):
