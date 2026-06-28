@@ -3,8 +3,6 @@
 from django.test import TestCase
 from django.urls import reverse
 
-from apps.core import observability
-
 
 class LandingPageTests(TestCase):
     def test_landing_page_returns_200(self):
@@ -16,11 +14,11 @@ class LandingPageTests(TestCase):
         """Landing page contains value-prop text and core entry point links."""
         response = self.client.get(reverse("home"))
         self.assertEqual(response.status_code, 200)
-        
+
         # Verify value-prop text/headline
         self.assertContains(response, "Discover the Best Indie Web Apps")
         self.assertContains(response, "curated catalog")
-        
+
         # Verify entry-point links
         self.assertContains(response, reverse("discovery:browse"))
         self.assertContains(response, reverse("accounts:register"))
@@ -30,7 +28,7 @@ class LandingPageTests(TestCase):
         """Landing page logs a landing_rendered metric on access."""
         with self.assertLogs("apps.metrics", level="INFO") as captured:
             response = self.client.get(reverse("home"))
-        
+
         self.assertEqual(response.status_code, 200)
         output = "\n".join(captured.output)
         self.assertIn("metric=landing_rendered", output)

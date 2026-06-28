@@ -6,7 +6,7 @@ from django.shortcuts import render
 from django.views.decorators.http import require_GET
 from django.views.static import serve as static_serve
 
-from apps.core.observability import _database_ok, check_health, increment, LANDING_RENDERED
+from apps.core.observability import LANDING_RENDERED, _database_ok, check_health, increment
 
 
 def health(request):
