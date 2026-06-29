@@ -28,13 +28,15 @@ from django.core.validators import URLValidator
 from django.db import transaction
 from django.utils import timezone
 
-from apps.catalog import gate
+from apps.catalog import facets, gate
 from apps.catalog.errors import (
+    InvalidFacetError,
     InvalidTagError,
     InvalidTransitionError,
     MediaLimitError,
 )
-from apps.catalog.models import App, AppMedia, AppTag, ReviewDecision
+from apps.catalog.facets import FacetCardinality
+from apps.catalog.models import App, AppFacet, AppMedia, AppTag, ReviewDecision
 from apps.catalog.urlnorm import normalize_url
 from apps.core import config, observability
 from apps.taxonomy import selectors as taxonomy
@@ -45,6 +47,13 @@ _UNSET = object()
 
 # Allowed upload formats (DESIGN.md §9) → the extension used for the generated filename.
 _ALLOWED_IMAGE_FORMATS = {"PNG": "png", "JPEG": "jpg", "WEBP": "webp"}
+
+# Allowed demo-clip containers (app-page-redesign DESIGN.md §5.1/§9.4) → generated extension.
+# Sniffed from magic bytes (never the client's content-type/extension): MP4 carries an
+# ``ftyp`` box at offset 4; WebM/Matroska opens with the EBML magic ``1A 45 DF A3``.
+_CLIP_MP4 = "mp4"
+_CLIP_WEBM = "webm"
+_WEBM_MAGIC = b"\x1a\x45\xdf\xa3"
 
 _validate_http_url = URLValidator(schemes=["http", "https"])
 
@@ -74,11 +83,27 @@ def _maintain_search_vector(app: App) -> None:
 
 # --- Submission --------------------------------------------------------------
 @transaction.atomic
-def submit_app(owner, *, name, description, url, tag_ids, media) -> App:
+def submit_app(
+    owner,
+    *,
+    name,
+    description,
+    url,
+    tag_ids,
+    media,
+    tagline="",
+    deep_dive="",
+    facet_values=None,
+    demo_clip=None,
+    demo_clip_alt="",
+) -> App:
     """Create a ``pending`` app from a complete, valid submission (AC1/AC4).
 
-    Refuses (writing nothing) unless every required field is present and valid. On success
-    the app enters the review queue and ``submission_created`` is emitted.
+    Refuses (writing nothing) unless every **required** field is present and valid. The
+    marketing fields (``tagline``/``deep_dive``/``facet_values``/``demo_clip`` + its alt) are
+    **optional** (app-page-redesign DESIGN.md §8) — the required submission floor is unchanged
+    — but each is validated at this boundary when supplied. On success the app enters the
+    review queue and ``submission_created`` is emitted.
     """
     clean_name = _require_text(name, "name")
     clean_description = _require_text(description, "description")
@@ -88,6 +113,12 @@ def submit_app(owner, *, name, description, url, tag_ids, media) -> App:
     _check_media_count(0, len(media_list))
     for upload in media_list:
         _validate_image(upload)
+    # Validate the optional marketing fields before any write (atomic — nothing persists on a
+    # bad facet/clip). The clip is sniffed + size-capped and requires alt text when present.
+    clean_tagline = _clean_tagline(tagline)
+    clean_deep_dive = _clean_deep_dive(deep_dive)
+    facet_pairs = _require_valid_facets(facet_values)
+    clip_container = _validate_clip(demo_clip, demo_clip_alt) if demo_clip else None
 
     app = App.objects.create(
         owner=owner,
@@ -97,10 +128,18 @@ def submit_app(owner, *, name, description, url, tag_ids, media) -> App:
         normalized_url=normalize_url(clean_url),
         status=App.Status.PENDING,
         last_submitted_at=timezone.now(),
+        tagline=clean_tagline,
+        deep_dive=clean_deep_dive,
+        demo_clip_alt=(demo_clip_alt or "").strip() if demo_clip else "",
     )
     _set_tags(app, unique_tag_ids)
     for position, upload in enumerate(media_list):
         _store_media(app, upload, position=position)
+    if demo_clip:
+        _store_clip(app, demo_clip, clip_container)
+        app.save(update_fields=["demo_clip"])  # the file was set save=False above
+    if facet_pairs:
+        _set_facets(app, facet_pairs)
 
     _maintain_search_vector(app)
     _flag_duplicate_if_any(app)
@@ -110,13 +149,27 @@ def submit_app(owner, *, name, description, url, tag_ids, media) -> App:
 
 # --- Owner edits -------------------------------------------------------------
 @transaction.atomic
-def edit_app(app, *, name=_UNSET, description=_UNSET, url=_UNSET, tag_ids=_UNSET) -> App:
-    """Edit an app's metadata/tags (AC8). Only supplied fields change.
+def edit_app(
+    app,
+    *,
+    name=_UNSET,
+    description=_UNSET,
+    url=_UNSET,
+    tag_ids=_UNSET,
+    tagline=_UNSET,
+    deep_dive=_UNSET,
+    facet_values=_UNSET,
+    demo_clip=_UNSET,
+    demo_clip_alt=_UNSET,
+) -> App:
+    """Edit an app's metadata/tags/marketing fields (AC8). Only supplied fields change.
 
-    If the app is ``accepted`` and any gate-relevant field actually changes, it returns to
-    ``pending`` (it leaves the catalog until re-reviewed). A ``pending``/``rejected`` app
-    updates in place — a rejected app re-enters review only via the explicit
-    ``resubmit_app`` (T-06), never as a side effect of an edit.
+    If the app is ``accepted`` and any **gate-relevant** field actually changes, it returns
+    to ``pending`` (it leaves the catalog until re-reviewed). Which fields are gate-relevant
+    is ``gate.gate_relevant_fields()`` — the core floor always, plus the config-toggled
+    marketing fields (D-14b). A ``pending``/``rejected`` app updates in place — a rejected app
+    re-enters review only via the explicit ``resubmit_app`` (T-06), never as an edit side
+    effect.
     """
     changed_fields: set[str] = set()
     update_fields: list[str] = []
@@ -145,6 +198,28 @@ def edit_app(app, *, name=_UNSET, description=_UNSET, url=_UNSET, tag_ids=_UNSET
         if _tags_changed(app, unique_tag_ids):
             _set_tags(app, unique_tag_ids)
             changed_fields.add("tags")
+    if tagline is not _UNSET:
+        clean_tagline = _clean_tagline(tagline)
+        if clean_tagline != app.tagline:
+            app.tagline = clean_tagline
+            changed_fields.add("tagline")
+            update_fields.append("tagline")
+    if deep_dive is not _UNSET:
+        clean_deep_dive = _clean_deep_dive(deep_dive)
+        if clean_deep_dive != app.deep_dive:
+            app.deep_dive = clean_deep_dive
+            changed_fields.add("deep_dive")
+            update_fields.append("deep_dive")
+    if facet_values is not _UNSET:
+        facet_pairs = _require_valid_facets(facet_values)
+        if _facets_changed(app, facet_pairs):
+            _set_facets(app, facet_pairs)
+            changed_fields.add("facets")
+    # The clip (file + its alt) is its own helper — sniff/size/alt validation and the
+    # set/replace/remove cases are too involved for an inline block (one function, one job).
+    clip_update = _apply_clip_edit(app, demo_clip, demo_clip_alt)
+    changed_fields |= clip_update
+    update_fields.extend(_CLIP_PERSIST_FIELDS if clip_update else [])
 
     if update_fields:
         update_fields.append("updated_at")
@@ -258,6 +333,84 @@ def _set_tags(app, unique_tag_ids: list[uuid.UUID]) -> None:
     )
 
 
+# --- Marketing copy (optional; app-page-redesign DESIGN.md §5.1/§8) ----------
+def _clean_tagline(value) -> str:
+    """Strip the pitch line; refuse one over the 300-char column cap (fail loud at the boundary).
+
+    Empty/blank is allowed (the field is optional → graceful-empty page, M2).
+    """
+    text = (value or "").strip() if isinstance(value, str) else ""
+    if len(text) > 300:
+        raise ValidationError({"tagline": "Tagline is too long (max 300 characters)."})
+    return text
+
+
+def _clean_deep_dive(value) -> str:
+    """Strip the long-form deep dive; refuse one over the configured cap. Empty allowed (M2)."""
+    text = (value or "").strip() if isinstance(value, str) else ""
+    max_length = config.app_page_deep_dive_max_length()
+    if len(text) > max_length:
+        raise ValidationError(
+            {"deep_dive": f"Deep dive is too long (max {max_length} characters)."}
+        )
+    return text
+
+
+# --- Typed facets (optional; the AppTag pattern, firewalled from ranking) -----
+def _require_valid_facets(facet_values) -> list[tuple[str, str]]:
+    """Validate ``(facet, value)`` pairs: in-vocabulary + cardinality-respecting; dedupe.
+
+    Each pair is checked against ``facets.is_valid_facet_value`` (off-vocabulary refused,
+    nothing written — mirrors ``_require_valid_tags``); a SINGLE-cardinality facet may carry
+    at most one value (a 2nd distinct value is refused). Returns the unique pairs to write
+    (replace-set semantics applied by ``_set_facets``). ``None``/empty ⇒ ``[]`` (clear/none).
+    """
+    pairs = list(facet_values or [])
+    unique: list[tuple[str, str]] = []
+    seen: set[tuple[str, str]] = set()
+    single_choice: dict[str, str] = {}  # facet → its one chosen value (SINGLE cardinality)
+    for raw in pairs:
+        facet, value = _coerce_facet_pair(raw)
+        if not facets.is_valid_facet_value(facet, value):
+            raise InvalidFacetError(f"Not a valid facet value: {facet!r}={value!r}.")
+        if (facet, value) in seen:
+            continue
+        if facets.cardinality_of(facet) is FacetCardinality.SINGLE:
+            if facet in single_choice and single_choice[facet] != value:
+                raise InvalidFacetError(
+                    f"Facet {facet!r} allows only one value (got "
+                    f"{single_choice[facet]!r} and {value!r})."
+                )
+            single_choice[facet] = value
+        seen.add((facet, value))
+        unique.append((facet, value))
+    return unique
+
+
+def _coerce_facet_pair(raw) -> tuple[str, str]:
+    """Coerce one item to a ``(facet, value)`` string pair, or raise loudly if malformed."""
+    try:
+        facet, value = raw
+    except (TypeError, ValueError):
+        raise InvalidFacetError(
+            f"A facet must be a (facet, value) pair, got {raw!r}."
+        ) from None
+    return str(facet), str(value)
+
+
+def _facets_changed(app, pairs: list[tuple[str, str]]) -> bool:
+    current = {(af.facet, af.value) for af in app.app_facets.all()}
+    return current != set(pairs)
+
+
+def _set_facets(app, pairs: list[tuple[str, str]]) -> None:
+    """Replace the app's facet set with exactly ``pairs`` (already validated)."""
+    app.app_facets.all().delete()
+    AppFacet.objects.bulk_create(
+        [AppFacet(app=app, facet=facet, value=value) for facet, value in pairs]
+    )
+
+
 def _check_media_count(existing: int, adding: int) -> None:
     """Raise if ``existing + adding`` would exceed the per-app media cap (§9)."""
     max_count = config.catalog_media_max_count()
@@ -324,6 +477,109 @@ def _store_media(app, upload, *, position: int, alt_text: str = "") -> AppMedia:
     return media
 
 
+# --- Demo clip (optional; app-page-redesign DESIGN.md §5.1/§9.4) -------------
+# The App columns persisted whenever the clip or its alt changes (one place, no drift).
+_CLIP_PERSIST_FIELDS = ["demo_clip", "demo_clip_alt"]
+
+
+def _validate_clip(upload, alt) -> str:
+    """Validate one demo-clip upload; return its container (``mp4``/``webm``) or raise loudly.
+
+    Same discipline as images: size-capped, container sniffed from **magic bytes** (never the
+    client's content-type), and a present clip **requires** alt text (C5/A4). Raises
+    ``MediaLimitError`` (nothing stored) on any failure.
+    """
+    if not (alt or "").strip():
+        raise MediaLimitError("A demo clip needs a short text description (alt text).")
+    max_bytes = config.catalog_clip_max_bytes()
+    size = getattr(upload, "size", None)
+    if size is not None and size > max_bytes:
+        raise MediaLimitError(f"Demo clip exceeds the {max_bytes}-byte limit.")
+    container = _sniff_clip_container(upload)
+    if container is None:
+        raise MediaLimitError("Demo clip must be an MP4 or WebM video.")
+    return container
+
+
+def _sniff_clip_container(upload) -> str | None:
+    """Return ``mp4``/``webm`` from the upload's magic bytes, or None if it is neither."""
+    try:
+        upload.seek(0)
+        head = upload.read(16)
+    except (OSError, ValueError):
+        return None
+    finally:
+        try:
+            upload.seek(0)
+        except (OSError, ValueError):
+            pass
+    if head[:4] == _WEBM_MAGIC:
+        return _CLIP_WEBM
+    if head[4:8] == b"ftyp":  # ISO base media (MP4/M4V) carries an ftyp box at offset 4
+        return _CLIP_MP4
+    return None
+
+
+def _store_clip(app, upload, container: str) -> None:
+    """Persist the demo clip under a framework-generated name (never the client's filename).
+
+    Sets ``app.demo_clip`` in memory (``save=False``); the caller commits it with the rest of
+    the row so the write stays in the one ``submit_app``/``edit_app`` transaction.
+    """
+    generated_name = f"{uuid.uuid4().hex}.{container}"
+    upload.seek(0)
+    app.demo_clip.save(generated_name, upload, save=False)
+
+
+def _apply_clip_edit(app, demo_clip, demo_clip_alt) -> set[str]:
+    """Apply a demo-clip edit; return the changed gate-field keys (``{"demo_clip"}`` or empty).
+
+    Cases (the ``_UNSET`` sentinel distinguishes "leave alone" from an explicit value):
+      * both unset → no change;
+      * ``demo_clip`` set to a falsy value (``None``/empty) → **remove** the clip + its alt;
+      * ``demo_clip`` set to a file → validate (sniff + size + alt) and **replace**;
+      * only ``demo_clip_alt`` supplied → update the alt text of an existing clip.
+    A change to the clip or its alt is a ``demo_clip`` gate change (the clip is one public
+    claim), so it rides the config-toggled re-review like the other marketing fields.
+    """
+    if demo_clip is _UNSET:
+        return _edit_clip_alt_only(app, demo_clip_alt)
+    if not demo_clip:
+        return _remove_clip(app)
+    return _replace_clip(app, demo_clip, demo_clip_alt)
+
+
+def _edit_clip_alt_only(app, demo_clip_alt) -> set[str]:
+    if demo_clip_alt is _UNSET or not app.demo_clip:
+        return set()
+    new_alt = (demo_clip_alt or "").strip()
+    if not new_alt or new_alt == app.demo_clip_alt:
+        return set()
+    app.demo_clip_alt = new_alt
+    return {"demo_clip"}
+
+
+def _remove_clip(app) -> set[str]:
+    if not app.demo_clip:
+        return set()
+    app.demo_clip.delete(save=False)
+    app.demo_clip = None
+    app.demo_clip_alt = ""
+    return {"demo_clip"}
+
+
+def _replace_clip(app, demo_clip, demo_clip_alt) -> set[str]:
+    effective_alt = (
+        demo_clip_alt if demo_clip_alt is not _UNSET else app.demo_clip_alt
+    )
+    container = _validate_clip(demo_clip, effective_alt)
+    if app.demo_clip:
+        app.demo_clip.delete(save=False)
+    _store_clip(app, demo_clip, container)
+    app.demo_clip_alt = (effective_alt or "").strip()
+    return {"demo_clip"}
+
+
 def _return_to_review_if_accepted(app, changed_fields: set[str]) -> None:
     """Return an accepted app to ``pending`` when a gate-relevant field changed (AC8).
 
@@ -333,7 +589,7 @@ def _return_to_review_if_accepted(app, changed_fields: set[str]) -> None:
     """
     if app.status != App.Status.ACCEPTED:
         return
-    if not (changed_fields & gate.GATE_RELEVANT_FIELDS):
+    if not (changed_fields & gate.gate_relevant_fields()):
         return
     app.status = App.Status.PENDING
     app.last_submitted_at = timezone.now()

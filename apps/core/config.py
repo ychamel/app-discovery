@@ -87,6 +87,22 @@ DEFAULT_WIDGET_CACHE_MAX_AGE_SECONDS = 60
 # remaining-window re-issue after a credit — so the window lives in exactly one place, never a
 # magic number in the codec.
 DEFAULT_WIDGET_ATTRIBUTION_WINDOW_DAYS = 30
+# app-page-redesign tunables (app-page-redesign DESIGN.md §8/§8.1). The deep-dive length cap
+# and the demo-clip byte ceiling are validated at the catalog write boundary; the devlog limit
+# bounds the on-page devlog slot so it stays O(limit). No magic numbers in the write path or
+# the devlog tag.
+DEFAULT_APP_PAGE_DEEP_DIVE_MAX_LENGTH = 8000
+DEFAULT_CATALOG_CLIP_MAX_BYTES = 10 * 1024 * 1024  # 10 MB
+DEFAULT_APP_PAGE_DEVLOG_LIMIT = 5
+# How many *other* apps by the same developer the identity block shows (DESIGN.md §6/§9.1).
+# Bounds the one ``accepted_apps_by_owner`` query so the page read stays O(limit).
+DEFAULT_APP_PAGE_OTHER_APPS_LIMIT = 6
+# The new public-claim fields whose edit on an ACCEPTED app forces re-review (D-14b /
+# APR-DESIGN-2). This is the **candidate set**; which of them are actually gated is config —
+# default all on (honesty-first), relaxable per field without a code change (see
+# ``app_page_gated_fields``). The core floor (name/description/url/tags/media) is always gated
+# and lives in ``catalog.gate``, not here. This tuple is the one source of the candidate keys.
+APP_PAGE_TOGGLEABLE_GATE_FIELDS = ("tagline", "deep_dive", "facets", "demo_clip")
 
 
 def _resolve_raw(setting_name: str, env_name: str, default: int) -> object:
@@ -347,6 +363,68 @@ def widget_attribution_window_days() -> int:
     )
 
 
+def app_page_deep_dive_max_length() -> int:
+    """Max characters accepted in an app's deep-dive long-form (DESIGN.md §5.1/§8)."""
+    return _positive_int(
+        "APP_PAGE_DEEP_DIVE_MAX_LENGTH",
+        "APP_PAGE_DEEP_DIVE_MAX_LENGTH",
+        DEFAULT_APP_PAGE_DEEP_DIVE_MAX_LENGTH,
+    )
+
+
+def catalog_clip_max_bytes() -> int:
+    """Max byte size accepted for one uploaded demo clip (DESIGN.md §5.1/§9.4)."""
+    return _positive_int(
+        "CATALOG_CLIP_MAX_BYTES",
+        "CATALOG_CLIP_MAX_BYTES",
+        DEFAULT_CATALOG_CLIP_MAX_BYTES,
+    )
+
+
+def app_page_devlog_limit() -> int:
+    """Max devlog notices rendered in the app-page devlog slot (DESIGN.md §6/§9.5)."""
+    return _positive_int(
+        "APP_PAGE_DEVLOG_LIMIT",
+        "APP_PAGE_DEVLOG_LIMIT",
+        DEFAULT_APP_PAGE_DEVLOG_LIMIT,
+    )
+
+
+def app_page_other_apps_limit() -> int:
+    """Max other-apps-by-this-developer shown in the app-page identity block (DESIGN.md §6)."""
+    return _positive_int(
+        "APP_PAGE_OTHER_APPS_LIMIT",
+        "APP_PAGE_OTHER_APPS_LIMIT",
+        DEFAULT_APP_PAGE_OTHER_APPS_LIMIT,
+    )
+
+
+def app_page_gated_fields() -> frozenset[str]:
+    """The new public-claim fields currently gated for re-review (D-14b / APR-DESIGN-2).
+
+    Defaults to **all** of ``APP_PAGE_TOGGLEABLE_GATE_FIELDS`` (honesty-first), so editing any
+    marketing field on an accepted app re-enters review. Overridable to **relax** per field —
+    set ``APP_PAGE_GATED_FIELDS`` (a Django setting collection, or a comma-separated env
+    string) to the subset that should still gate; the value is intersected with the candidate
+    set so an unknown name can never widen the gate. The empty string / empty collection means
+    "gate none of the new fields". Tunable from deployment behaviour without a code change.
+    """
+    candidates = frozenset(APP_PAGE_TOGGLEABLE_GATE_FIELDS)
+    if hasattr(settings, "APP_PAGE_GATED_FIELDS"):
+        return candidates & _as_field_set(settings.APP_PAGE_GATED_FIELDS)
+    env_value = os.environ.get("APP_PAGE_GATED_FIELDS")
+    if env_value is not None:
+        return candidates & _as_field_set(env_value)
+    return candidates
+
+
+def _as_field_set(raw) -> frozenset[str]:
+    """Coerce a setting/env field list (collection or comma string) to a frozenset of names."""
+    if isinstance(raw, str):
+        return frozenset(name.strip() for name in raw.split(",") if name.strip())
+    return frozenset(str(name).strip() for name in raw if str(name).strip())
+
+
 def validate_all() -> None:
     """Evaluate every tunable so misconfiguration surfaces at startup, not at use."""
     login_token_ttl()
@@ -375,3 +453,8 @@ def validate_all() -> None:
     widget_render_rate_limit_per_ip_per_minute()
     widget_cache_max_age_seconds()
     widget_attribution_window_days()
+    app_page_deep_dive_max_length()
+    catalog_clip_max_bytes()
+    app_page_devlog_limit()
+    app_page_other_apps_limit()
+    app_page_gated_fields()

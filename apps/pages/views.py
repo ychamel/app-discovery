@@ -36,7 +36,7 @@ def app_page(request, app_id: UUID):
     (fail-soft) and its id embedded so try-it/share link to this shown instance (DESIGN §6).
     """
     started = time.perf_counter()
-    app = catalog.get_catalogued_app(app_id)
+    app = catalog.get_app_page_content(app_id)
     if app is None:
         return _not_available(request)
 

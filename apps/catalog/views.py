@@ -25,8 +25,13 @@ from rest_framework.views import APIView
 from apps.accounts import roles
 from apps.accounts.permissions import HasRole, require_role
 from apps.catalog import notifications, selectors, services
-from apps.catalog.errors import InvalidTagError, InvalidTransitionError, MediaLimitError
-from apps.catalog.forms import SubmissionForm
+from apps.catalog.errors import (
+    InvalidFacetError,
+    InvalidTagError,
+    InvalidTransitionError,
+    MediaLimitError,
+)
+from apps.catalog.forms import FACET_VALUE_SEPARATOR, SubmissionForm
 from apps.catalog.serializers import (
     AppSerializer,
     DecisionResultSerializer,
@@ -59,7 +64,7 @@ def _service_call(func, *args, **kwargs) -> Response | None:
         return None
     except DjangoValidationError as exc:
         return Response(_field_errors(exc), status=status.HTTP_400_BAD_REQUEST)
-    except (InvalidTagError, MediaLimitError) as exc:
+    except (InvalidTagError, InvalidFacetError, MediaLimitError) as exc:
         return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
     except InvalidTransitionError as exc:
         return Response({"detail": str(exc)}, status=status.HTTP_409_CONFLICT)
@@ -94,10 +99,15 @@ class AppCreateView(_DeveloperView):
                 url=request.data.get("url"),
                 tag_ids=request.data.getlist("tag_ids"),
                 media=request.FILES.getlist("media"),
+                tagline=request.data.get("tagline", ""),
+                deep_dive=request.data.get("deep_dive", ""),
+                facet_values=_facet_pairs(request.data),
+                demo_clip=request.FILES.get("demo_clip"),
+                demo_clip_alt=request.data.get("demo_clip_alt", ""),
             )
         except DjangoValidationError as exc:
             return Response(_field_errors(exc), status=status.HTTP_400_BAD_REQUEST)
-        except (InvalidTagError, MediaLimitError) as exc:
+        except (InvalidTagError, InvalidFacetError, MediaLimitError) as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
         observability.increment(observability.SUBMISSION_COMPLETED)
         return _app_response(app, status_code=status.HTTP_201_CREATED)
@@ -120,6 +130,10 @@ class AppDetailView(_DeveloperView):
     def patch(self, request, app_id):
         app = _owned_or_404(request, app_id)
         edits = _supplied_edits(request.data)
+        # A replacement clip rides multipart FILES, not the JSON/form body — wire it in so the
+        # API can set/replace the clip too (the create path already reads request.FILES).
+        if "demo_clip" in request.FILES:
+            edits["demo_clip"] = request.FILES["demo_clip"]
         failure = _service_call(services.edit_app, app, **edits)
         if failure is not None:
             return failure
@@ -188,7 +202,11 @@ class AppResubmitView(_DeveloperView):
 
 
 def _supplied_edits(data) -> dict:
-    """Extract only the edit fields actually present in the request body."""
+    """Extract only the edit fields actually present in the request body.
+
+    Absent keys are left out so ``edit_app`` leaves them unchanged (the ``_UNSET`` contract);
+    a present ``facet_values`` (even empty) means "replace the set", including clearing it.
+    """
     edits: dict = {}
     if "name" in data:
         edits["name"] = data.get("name")
@@ -200,7 +218,39 @@ def _supplied_edits(data) -> dict:
         edits["tag_ids"] = (
             data.getlist("tag_ids") if hasattr(data, "getlist") else data.get("tag_ids")
         )
+    if "tagline" in data:
+        edits["tagline"] = data.get("tagline")
+    if "deep_dive" in data:
+        edits["deep_dive"] = data.get("deep_dive")
+    if "facet_values" in data:
+        edits["facet_values"] = _facet_pairs(data)
+    if "demo_clip_alt" in data:
+        edits["demo_clip_alt"] = data.get("demo_clip_alt")
     return edits
+
+
+def _facet_pairs(data) -> list[tuple[str, str]]:
+    """Parse the request's ``facet_values`` into the service's ``(facet, value)`` pairs.
+
+    Accepts the form/HTML encoding (a list of ``"<facet>:<value>"`` strings) **and** an
+    already-split ``[facet, value]`` pair list (JSON). The service validates each pair against
+    the registry, so a malformed value here simply surfaces as a loud ``InvalidFacetError``.
+    """
+    raw = data.getlist("facet_values") if hasattr(data, "getlist") else data.get("facet_values")
+    return _pairs_from_encoded(raw)
+
+
+def _pairs_from_encoded(values) -> list[tuple[str, str]]:
+    """Turn ``"<facet>:<value>"`` strings (or ``[facet, value]`` pairs) into service pairs."""
+    pairs: list[tuple[str, str]] = []
+    for item in values or []:
+        if isinstance(item, str):
+            facet, _, value = item.partition(FACET_VALUE_SEPARATOR)
+            pairs.append((facet, value))
+        else:
+            facet, value = item
+            pairs.append((str(facet), str(value)))
+    return pairs
 
 
 # --- Review API (endpoints 9–10; AC3/AC5/AC6/AC7) ----------------------------
@@ -293,8 +343,13 @@ def submit_page(request):
                 url=form.cleaned_data["url"],
                 tag_ids=form.cleaned_data["tags"],
                 media=media,
+                tagline=form.cleaned_data["tagline"],
+                deep_dive=form.cleaned_data["deep_dive"],
+                facet_values=_pairs_from_encoded(form.cleaned_data["facets"]),
+                demo_clip=request.FILES.get("demo_clip"),
+                demo_clip_alt=form.cleaned_data["demo_clip_alt"],
             )
-        except (DjangoValidationError, InvalidTagError, MediaLimitError) as exc:
+        except (DjangoValidationError, InvalidTagError, InvalidFacetError, MediaLimitError) as exc:
             _attach_service_errors(form, exc)
         else:
             observability.increment(observability.SUBMISSION_COMPLETED)
@@ -346,15 +401,24 @@ def _handle_detail_action(request, app):
 def _edit_action(request, app):
     form = SubmissionForm(request.POST)
     if form.is_valid():
+        edits = {
+            "name": form.cleaned_data["name"],
+            "description": form.cleaned_data["description"],
+            "url": form.cleaned_data["url"],
+            "tag_ids": form.cleaned_data["tags"],
+            "tagline": form.cleaned_data["tagline"],
+            "deep_dive": form.cleaned_data["deep_dive"],
+            "facet_values": _pairs_from_encoded(form.cleaned_data["facets"]),
+            "demo_clip_alt": form.cleaned_data["demo_clip_alt"],
+        }
+        # Only touch the clip when the developer actually uploads one — a metadata edit must
+        # never wipe an existing clip (a missing file is "unchanged", not "remove").
+        uploaded_clip = request.FILES.get("demo_clip")
+        if uploaded_clip is not None:
+            edits["demo_clip"] = uploaded_clip
         try:
-            services.edit_app(
-                app,
-                name=form.cleaned_data["name"],
-                description=form.cleaned_data["description"],
-                url=form.cleaned_data["url"],
-                tag_ids=form.cleaned_data["tags"],
-            )
-        except (DjangoValidationError, InvalidTagError, MediaLimitError) as exc:
+            services.edit_app(app, **edits)
+        except (DjangoValidationError, InvalidTagError, InvalidFacetError, MediaLimitError) as exc:
             _attach_service_errors(form, exc)
         else:
             return redirect("catalog:app-detail", app_id=app.id)
@@ -421,6 +485,13 @@ def _form_initial(app) -> dict:
         "description": app.description,
         "url": app.url,
         "tags": [str(app_tag.tag_id) for app_tag in app.app_tags.all()],
+        "tagline": app.tagline,
+        "deep_dive": app.deep_dive,
+        "facets": [
+            f"{facet.facet}{FACET_VALUE_SEPARATOR}{facet.value}"
+            for facet in app.app_facets.all()
+        ],
+        "demo_clip_alt": app.demo_clip_alt,
     }
 
 

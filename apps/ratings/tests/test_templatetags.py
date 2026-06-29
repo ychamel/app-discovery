@@ -105,11 +105,13 @@ class ReviewsSlotRenderTests(TestCase):
         )
 
     # --- structural: slot edit is content-only ----------------------------
-    def test_app_page_keeps_its_six_slots_and_reviews_section_intact(self):
+    def test_app_page_keeps_its_slots_and_reviews_section_intact(self):
+        # The reviews-slot edit is content-only: the app page's other uniform slots are intact
+        # (landmarks per app-page-redesign §7) and the Reviews section still renders.
         html = self.client.get(self.page_url).content.decode()
         for aria in (
-            'aria-label="Categories"',
-            'aria-label="Screenshots"',
+            'aria-label="App summary"',
+            'aria-label="Media"',
             'aria-label="About"',
             'aria-label="Try it"',
             'aria-label="Share"',

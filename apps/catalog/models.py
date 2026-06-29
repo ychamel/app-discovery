@@ -60,6 +60,17 @@ class App(models.Model):
     description = models.TextField()
     # The URL as entered (displayed back); validated http(s) + well-formed at the boundary.
     url = models.CharField(max_length=2000)
+    # --- Marketing/launch-page content (app-page-redesign DESIGN.md §5.1) ---------------
+    # All optional and additive: a legacy/sparse app stores the empty default and renders the
+    # graceful-empty page state (M2). Written only through catalog.services, validated there.
+    # Text columns use blank + default="" (never NULL) so there is one empty representation.
+    # NONE of these is a tier/payment/identity field — page uniformity stays structural (R2).
+    tagline = models.CharField(max_length=300, blank=True, default="")
+    deep_dive = models.TextField(blank=True, default="")
+    # The one optional self-hosted demo clip (MP4/WebM), stored under a generated name on the
+    # same media storage as screenshots; null=True because a FileField stores "" poorly.
+    demo_clip = models.FileField(upload_to="app_clips/%Y/%m/", blank=True, null=True)
+    demo_clip_alt = models.CharField(max_length=200, blank=True, default="")
     # Canonical form from urlnorm.normalize_url for the duplicate SIGNAL (§6c). Indexed,
     # NOT unique — review is manual (SI-2) and rejected/withdrawn dupes may coexist.
     normalized_url = CITextField(max_length=2000)
@@ -123,6 +134,40 @@ class AppTag(models.Model):
 
     def __str__(self) -> str:
         return f"{self.app_id} → {self.tag_id}"
+
+
+class AppFacet(models.Model):
+    """One typed facet value on an app — a soft, code-validated reference (mirrors AppTag).
+
+    ``facet``/``value`` are keys from the code-fixed ``catalog.facets`` registry, **not** DB
+    FKs: validated with ``is_valid_facet_value`` at the write boundary (app-page-redesign
+    DESIGN.md §5.2) and resolved through the registry at read — a value later removed from
+    the registry is silently dropped at display, never an error (the D-5 pattern).
+
+    Firewalled from ranking/discovery (D-14a): this is **not** ``AppTag``, so it never enters
+    ``search_catalogue``'s tag filter or the interest matcher — facets are display-only in v1.
+    Cardinality (one pricing value, many platforms) is enforced in the write service; the
+    unique constraint here stops duplicate values, making illegal multiplicity unrepresentable.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    app = models.ForeignKey(App, on_delete=models.CASCADE, related_name="app_facets")
+    facet = models.CharField(max_length=32)
+    value = models.CharField(max_length=48)
+
+    class Meta:
+        db_table = "catalog_app_facet"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["app", "facet", "value"], name="catalog_app_facet_unique"
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["app"], name="catalog_app_facet_app_idx"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.app_id}: {self.facet}={self.value}"
 
 
 class AppMedia(models.Model):

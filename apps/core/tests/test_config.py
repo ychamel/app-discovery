@@ -204,6 +204,55 @@ class WidgetAttributionWindowTests(SimpleTestCase):
             config.widget_attribution_window_days()
 
 
+class AppPageTunableTests(SimpleTestCase):
+    def test_defaults(self):
+        for name in (
+            "APP_PAGE_DEEP_DIVE_MAX_LENGTH",
+            "CATALOG_CLIP_MAX_BYTES",
+            "APP_PAGE_DEVLOG_LIMIT",
+        ):
+            os.environ.pop(name, None)
+        self.assertEqual(config.app_page_deep_dive_max_length(), 8000)
+        self.assertEqual(config.catalog_clip_max_bytes(), 10 * 1024 * 1024)
+        self.assertEqual(config.app_page_devlog_limit(), 5)
+
+    @override_settings(APP_PAGE_DEEP_DIVE_MAX_LENGTH=2000, APP_PAGE_DEVLOG_LIMIT=3)
+    def test_setting_overrides(self):
+        self.assertEqual(config.app_page_deep_dive_max_length(), 2000)
+        self.assertEqual(config.app_page_devlog_limit(), 3)
+
+    @override_settings(CATALOG_CLIP_MAX_BYTES=0)
+    def test_non_positive_clip_cap_fails_loudly(self):
+        with self.assertRaises(ImproperlyConfigured):
+            config.catalog_clip_max_bytes()
+
+
+class AppPageGatedFieldsTests(SimpleTestCase):
+    _CANDIDATES = frozenset({"tagline", "deep_dive", "facets", "demo_clip"})
+
+    def test_default_is_all_candidates(self):
+        os.environ.pop("APP_PAGE_GATED_FIELDS", None)
+        self.assertEqual(config.app_page_gated_fields(), self._CANDIDATES)
+
+    @override_settings(APP_PAGE_GATED_FIELDS=["tagline", "facets"])
+    def test_setting_relaxes_to_subset(self):
+        self.assertEqual(config.app_page_gated_fields(), frozenset({"tagline", "facets"}))
+
+    @override_settings(APP_PAGE_GATED_FIELDS=[])
+    def test_empty_setting_gates_no_new_field(self):
+        self.assertEqual(config.app_page_gated_fields(), frozenset())
+
+    @override_settings(APP_PAGE_GATED_FIELDS=["tagline", "unknown_field"])
+    def test_unknown_name_is_intersected_out(self):
+        self.assertEqual(config.app_page_gated_fields(), frozenset({"tagline"}))
+
+    def test_env_comma_string_override(self):
+        with mock.patch.dict(os.environ, {"APP_PAGE_GATED_FIELDS": "deep_dive, demo_clip"}):
+            self.assertEqual(
+                config.app_page_gated_fields(), frozenset({"deep_dive", "demo_clip"})
+            )
+
+
 class ValidateAllTests(SimpleTestCase):
     def test_passes_with_defaults(self):
         config.validate_all()  # should not raise

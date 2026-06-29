@@ -82,7 +82,7 @@ class NotAvailableTests(TestCase):
     def test_catalog_read_failure_is_a_loud_500(self):
         """A genuine catalog failure is the page's core dependency → loud 500, not hidden."""
         with mock.patch(
-            "apps.pages.views.catalog.get_catalogued_app",
+            "apps.pages.views.catalog.get_app_page_content",
             side_effect=RuntimeError("DB down"),
         ):
             with self.assertRaises(RuntimeError):

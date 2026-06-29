@@ -50,3 +50,21 @@ def make_non_image_upload(
 ) -> SimpleUploadedFile:
     """An uploaded file whose bytes are not a decodable image."""
     return SimpleUploadedFile(name, b"this is not an image", content_type=content_type)
+
+
+# Minimal magic-byte headers the clip sniffer recognises (DESIGN.md §5.1/§9.4): an MP4 carries
+# an ``ftyp`` box at offset 4; WebM/Matroska opens with the EBML magic ``1A 45 DF A3``.
+_MP4_HEADER = b"\x00\x00\x00\x18ftypmp42\x00\x00\x00\x00mp42isom"
+_WEBM_HEADER = b"\x1a\x45\xdf\xa3" + b"\x00" * 12
+
+
+def make_clip_upload(
+    name: str = "demo.mp4",
+    *,
+    container: str = "mp4",
+    extra_bytes: int = 0,
+    content_type: str = "video/mp4",
+) -> SimpleUploadedFile:
+    """A demo-clip upload whose magic bytes sniff as the given container (mp4/webm)."""
+    header = _WEBM_HEADER if container == "webm" else _MP4_HEADER
+    return SimpleUploadedFile(name, header + b"\x00" * extra_bytes, content_type=content_type)

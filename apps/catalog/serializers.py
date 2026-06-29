@@ -84,6 +84,13 @@ class AppSerializer(serializers.Serializer):
     tags = serializers.SerializerMethodField()
     media = MediaSerializer(many=True, read_only=True)
     latest_decision = serializers.SerializerMethodField()
+    # Marketing fields round-trip back for editing (app-page-redesign DESIGN.md §8). Facets
+    # are returned as plain ``(facet, value)`` pairs (the registry resolves labels at display).
+    tagline = serializers.CharField(read_only=True)
+    deep_dive = serializers.CharField(read_only=True)
+    demo_clip_url = serializers.SerializerMethodField()
+    demo_clip_alt = serializers.CharField(read_only=True)
+    facets = serializers.SerializerMethodField()
 
     def get_tags(self, app) -> list[dict]:
         resolved = []
@@ -92,6 +99,15 @@ class AppSerializer(serializers.Serializer):
             if tag is not None:
                 resolved.append({"id": tag.id, "label": tag.label})
         return TagRefSerializer(resolved, many=True).data
+
+    def get_demo_clip_url(self, app) -> str | None:
+        return app.demo_clip.url if app.demo_clip else None
+
+    def get_facets(self, app) -> list[dict]:
+        return [
+            {"facet": facet.facet, "value": facet.value}
+            for facet in app.app_facets.all()
+        ]
 
     def get_latest_decision(self, app) -> dict | None:
         decision = app.decisions.order_by("-created_at").first()

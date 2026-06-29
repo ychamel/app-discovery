@@ -57,7 +57,7 @@
           </div>
         {% endif %}
 
-        <form method="post" action="{% url 'catalog:app-detail' app_id=app.id %}" class="stack" style="--gap: var(--space-4);">
+        <form method="post" action="{% url 'catalog:app-detail' app_id=app.id %}" enctype="multipart/form-data" class="stack" style="--gap: var(--space-4);">
           {% csrf_token %}
           <input type="hidden" name="action" value="edit">
 
@@ -97,6 +97,58 @@
               {% endfor %}
             </div>
             {% for error in form.tags.errors %}
+              <span role="alert" style="color: var(--color-error); font-size: var(--font-size-xs); margin-top: var(--space-1);">{{ error }}</span>
+            {% endfor %}
+          </div>
+
+          {# --- Optional marketing/launch-page fields (app-page-redesign §8) ---------- #}
+          <div class="form-field">
+            <label for="id_tagline">Tagline <span style="color: var(--color-muted); font-weight: normal;">(optional)</span></label>
+            <input type="text" name="tagline" id="id_tagline" maxlength="300" value="{{ form.tagline.value|default:'' }}" style="max-width: none;">
+            {% for error in form.tagline.errors %}
+              <span role="alert" style="color: var(--color-error); font-size: var(--font-size-xs); margin-top: var(--space-1);">{{ error }}</span>
+            {% endfor %}
+          </div>
+
+          <div class="form-field">
+            <label for="id_deep_dive">Deep dive <span style="color: var(--color-muted); font-weight: normal;">(optional)</span></label>
+            <textarea name="deep_dive" id="id_deep_dive" style="max-width: none; min-height: 100px; resize: vertical;">{{ form.deep_dive.value|default:'' }}</textarea>
+            {% for error in form.deep_dive.errors %}
+              <span role="alert" style="color: var(--color-error); font-size: var(--font-size-xs); margin-top: var(--space-1);">{{ error }}</span>
+            {% endfor %}
+          </div>
+
+          <div class="stack" style="--gap: var(--space-3); border: 1px solid var(--color-border); padding: var(--space-4); border-radius: var(--radius);">
+            <span style="font-weight: var(--font-weight-semibold); font-size: var(--font-size-sm); color: var(--color-text);">At-a-glance facets <span style="color: var(--color-muted); font-weight: normal;">(optional)</span></span>
+            {% for group_label, group_choices in form.fields.facets.choices %}
+              <fieldset style="border: none; margin: 0; padding: 0;">
+                <legend style="font-size: var(--font-size-xs); color: var(--color-muted); text-transform: uppercase; letter-spacing: 0.04em; padding: 0;">{{ group_label }}</legend>
+                <div class="grid" style="grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: var(--space-2); margin-top: var(--space-1);">
+                  {% for value, label in group_choices %}
+                    <label style="display: flex; align-items: center; gap: var(--space-2); font-weight: var(--font-weight-medium); cursor: pointer; margin: 0; font-size: var(--font-size-sm);">
+                      <input type="checkbox" name="facets" value="{{ value }}" style="width: auto; margin: 0;"
+                             {% if value in form.facets.value %}checked{% endif %}>
+                      {{ label }}
+                    </label>
+                  {% endfor %}
+                </div>
+              </fieldset>
+            {% endfor %}
+          </div>
+
+          <div class="form-field">
+            <label for="id_demo_clip">Demo clip <span style="color: var(--color-muted); font-weight: normal;">(optional)</span></label>
+            {% if app.demo_clip_url %}
+              <p style="color: var(--color-muted); font-size: var(--font-size-xs); margin: 0 0 var(--space-1) 0;">A clip is set. Upload a new file to replace it.</p>
+            {% endif %}
+            <input type="file" name="demo_clip" id="id_demo_clip" accept="video/mp4,video/webm" style="max-width: none;">
+            <span style="color: var(--color-muted); font-size: var(--font-size-xs); margin-top: var(--space-1);">A short muted loop of your app in action. MP4 or WebM.</span>
+          </div>
+
+          <div class="form-field">
+            <label for="id_demo_clip_alt">Demo clip description</label>
+            <input type="text" name="demo_clip_alt" id="id_demo_clip_alt" maxlength="200" value="{{ form.demo_clip_alt.value|default:'' }}" style="max-width: none;">
+            {% for error in form.demo_clip_alt.errors %}
               <span role="alert" style="color: var(--color-error); font-size: var(--font-size-xs); margin-top: var(--space-1);">{{ error }}</span>
             {% endfor %}
           </div>

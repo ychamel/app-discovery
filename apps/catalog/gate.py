@@ -17,6 +17,8 @@ The write/lifecycle services (T-05/T-06) and the review surfaces (T-10/T-12) con
 
 from django.db import models
 
+from apps.core import config
+
 
 class Criterion(models.TextChoices):
     """The five fixed objective floors an app must clear to be catalogued (AC5).
@@ -60,10 +62,21 @@ CHECKLIST: dict[str, str] = {
 }
 
 
-# The named set of fields whose edit on an *accepted* app forces re-review (AC8): a change
-# to any of these can break a floor (honest-metadata / works), so the app returns to
-# ``pending`` until re-reviewed. Consumed by ``edit_app`` (T-05). This is the extension
-# seam — a future non-gated field added outside this set would skip re-review.
-GATE_RELEVANT_FIELDS: frozenset[str] = frozenset(
+# The core floor inputs whose edit on an *accepted* app **always** forces re-review (AC8): a
+# change to any of these can break a floor (honest-metadata / works), so the app returns to
+# ``pending`` until re-reviewed. These are never relaxable — they are the intake floor itself.
+_CORE_GATE_FIELDS: frozenset[str] = frozenset(
     {"name", "description", "url", "tags", "media"}
 )
+
+
+def gate_relevant_fields() -> frozenset[str]:
+    """The fields whose edit on an ACCEPTED app forces re-review (D-14b / APR-DESIGN-2).
+
+    The core floor inputs (``_CORE_GATE_FIELDS``) are **always** gated; the new public-claim
+    marketing fields (tagline/deep_dive/facets/demo_clip) are gated **by config**
+    (``config.app_page_gated_fields()``, default all on) so the re-review policy for them can
+    be tuned from observed deployment behaviour without a code change. This is the **one**
+    source of truth for the policy — ``edit_app`` calls it, never a hardcoded set.
+    """
+    return _CORE_GATE_FIELDS | config.app_page_gated_fields()

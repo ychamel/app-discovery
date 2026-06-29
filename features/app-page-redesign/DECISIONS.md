@@ -101,3 +101,30 @@ post-acceptance public claims unchecked for honesty.
 **User decision:** AskUserQuestion 2026-06-29 → *"Yes, but design it to be togglable per-field."*
 
 **Status:** **RATIFIED → global [D-14b](../../DECISIONS.md)** on DESIGN approval (DN-APR-DESIGN, 2026-06-29). APR-DESIGN-1 likewise → **[D-14a](../../DECISIONS.md)**.
+
+---
+
+## APR-BUILD-1 — Stage-4 build deviations from DESIGN (Senior Engineer, 2026-06-30)
+
+Four small, design-aligned implementation calls made during the build (T-01…T-09). None change
+scope, schema beyond the one approved additive migration, or any AC; recorded for the reader.
+
+1. **The toggleable-gate-field candidate list lives in `config`, not `gate`.** DESIGN §8.1
+   sketched `_TOGGLEABLE_GATE_FIELDS` in `gate.py`. Because `gate` imports `config` (for the
+   toggle), keeping the candidate list in `gate` too would invite a `config`↔`gate` cycle. The
+   single source is `config.APP_PAGE_TOGGLEABLE_GATE_FIELDS`; `gate.gate_relevant_fields()` =
+   `_CORE_GATE_FIELDS | config.app_page_gated_fields()`. The override is one setting/env
+   `APP_PAGE_GATED_FIELDS` (a subset, **intersected** with the candidates so config can only
+   relax, never widen) — which satisfies DESIGN's "overridable per field" without per-field env
+   vars.
+2. **Added `config.app_page_other_apps_limit()` (default 6).** DESIGN §8 named "other-apps
+   count" as a config limit but T-03 listed only three knobs; added it so the identity-block
+   query is principled-bounded (no magic number), consistent with §5.2.
+3. **The deep-dive `<details>` lives inside the always-present "About" slot landmark.** To
+   reconcile DESIGN §7's "deep-dive slot omitted when empty" with AC-7's "identical slot
+   set/order regardless of content", the 9 slot **landmarks** (`data-slot`) are always present
+   and the deep-dive `<details>` is content-conditional *within* About. The 10 logical slots of
+   §7 are all delivered; the uniformity invariant fingerprints the 9 always-present landmarks.
+4. **Clip-edit semantics on `edit_app`.** `demo_clip=_UNSET` leaves the clip unchanged;
+   `demo_clip=None` removes it; a file replaces it (alt required). A metadata-only edit via the
+   server page never wipes a clip (the view passes `demo_clip` only when a file is uploaded).

@@ -26,6 +26,8 @@ from uuid import UUID
 from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.db.models import Count, Subquery
 
+from apps.catalog import facets
+from apps.catalog.facets import FacetValue
 from apps.catalog.models import App, AppTag, ReviewDecision
 from apps.core import config
 from apps.taxonomy import selectors as taxonomy
@@ -52,7 +54,12 @@ class CatalogMedia:
 
 @dataclass(frozen=True)
 class CatalogApp:
-    """The downstream view of one accepted app — the D-6 cross-feature shape (§11)."""
+    """The downstream view of one accepted app — the D-6 cross-feature shape (§11).
+
+    **Byte-stable cross-feature contract** (AC-9): discovery/dashboard/widget/subscriptions
+    read this shape. The app-page redesign adds page-only content to ``AppPageContent`` (below)
+    instead of fattening this — so this contract never changes for the benefit of one consumer.
+    """
 
     id: UUID
     name: str
@@ -60,6 +67,50 @@ class CatalogApp:
     url: str
     tags: list[CatalogTag]
     media: list[CatalogMedia]
+
+
+# --- Page-scoped read DTOs (app-page-redesign DESIGN.md §6; NOT the shared CatalogApp) ---
+@dataclass(frozen=True)
+class CatalogDeveloper:
+    """The app page's identity block — the developer's public display name only (no new PII)."""
+
+    id: UUID
+    display_name: str
+
+
+@dataclass(frozen=True)
+class CatalogFacet:
+    """One typed facet resolved for display: its label + its set values, in registry order."""
+
+    facet: str  # the registry key, e.g. "pricing"
+    label: str  # the resolved display label, e.g. "Pricing"
+    values: list[FacetValue]  # resolved values in registry order; only facets with ≥1 value
+
+
+@dataclass(frozen=True)
+class AppPageContent:
+    """The full content of one accepted app's launch page (the page-scoped read, §6).
+
+    The flat ``CatalogApp`` base fields (so the template keeps using ``app.name/.tags/.media``)
+    **plus** the new page-only content. Every new part degrades to empty/None for a legacy or
+    sparsely-filled app (graceful-empty, M2) — the page renders the same slot set regardless.
+    """
+
+    # --- the existing CatalogApp shape, flat ---
+    id: UUID
+    name: str
+    description: str
+    url: str
+    tags: list[CatalogTag]
+    media: list[CatalogMedia]
+    # --- new page-only content (each degrades gracefully, M2) ---
+    tagline: str  # "" when unset
+    deep_dive: str  # "" when unset
+    demo_clip_url: str | None  # None when no clip
+    demo_clip_alt: str  # "" when no clip
+    facets: list[CatalogFacet]  # registry order; only facets with ≥1 value, [] when none
+    developer: CatalogDeveloper
+    other_apps: list[CatalogApp]  # ACCEPTED-only, excludes this app, bounded; [] when solo
 
 
 @dataclass(frozen=True)
@@ -298,6 +349,73 @@ def get_catalogued_apps(app_ids: list[UUID]) -> list[CatalogApp]:
     apps = list(
         App.objects.filter(pk__in=app_ids, status=App.Status.ACCEPTED)
         .prefetch_related("media", "app_tags")
+    )
+    resolved = _resolve_tag_labels(apps)
+    return [_to_catalog_app(app, resolved) for app in apps]
+
+
+# --- Page-scoped read (app-page-redesign DESIGN.md §3/§6) --------------------
+def get_app_page_content(app_id) -> AppPageContent | None:
+    """The single launch-page read: an accepted app's full page content, or None (D-6).
+
+    Accepted-only (a non-accepted/unknown id → None → the view 404s, unchanged). Builds the
+    flat base fields via the existing ``_to_catalog_app`` so the shared ``CatalogApp`` contract
+    stays byte-stable (AC-9), then adds the page-only content. Bounded query count
+    (``select_related("owner")`` + prefetch of media/app_tags/app_facets + tag resolution + one
+    bounded ``accepted_apps_by_owner``) — no N+1. Raises only on a genuine DB failure (never a
+    fake-empty page that would hide an outage, DESIGN §7/§9.2)."""
+    app = (
+        App.objects.filter(pk=app_id, status=App.Status.ACCEPTED)
+        .select_related("owner")
+        .prefetch_related("media", "app_tags", "app_facets")
+        .first()
+    )
+    if app is None:
+        return None
+
+    base = _to_catalog_app(app, _resolve_tag_labels([app]))
+    return AppPageContent(
+        id=base.id,
+        name=base.name,
+        description=base.description,
+        url=base.url,
+        tags=base.tags,
+        media=base.media,
+        tagline=app.tagline,
+        deep_dive=app.deep_dive,
+        demo_clip_url=app.demo_clip.url if app.demo_clip else None,
+        demo_clip_alt=app.demo_clip_alt,
+        facets=_resolve_facets_for_display(app),
+        developer=CatalogDeveloper(
+            id=app.owner_id, display_name=app.owner.display_name
+        ),
+        other_apps=accepted_apps_by_owner(
+            app.owner_id,
+            exclude=app.id,
+            limit=config.app_page_other_apps_limit(),
+        ),
+    )
+
+
+def _resolve_facets_for_display(app: App) -> list[CatalogFacet]:
+    """Map the app's stored facet rows to display DTOs, in registry order (drops stale values)."""
+    return [
+        CatalogFacet(facet=resolved.facet, label=resolved.label, values=resolved.values)
+        for resolved in facets.resolve_facets(app.app_facets.all())
+    ]
+
+
+def accepted_apps_by_owner(owner_id, *, exclude, limit) -> list[CatalogApp]:
+    """Up to ``limit`` OTHER accepted apps by this owner, newest-accepted-first (DESIGN §6).
+
+    The identity block's "other apps" grid. **Accepted-only** (never leaks a pending/rejected/
+    withdrawn app, AC-5) and excludes the app being viewed; reuses ``_to_catalog_app`` so the
+    grid items are the same D-6 shape. One bounded query + deduped tag resolution (no N+1)."""
+    apps = list(
+        App.objects.filter(owner_id=owner_id, status=App.Status.ACCEPTED)
+        .exclude(pk=exclude)
+        .order_by("-accepted_at", "id")
+        .prefetch_related("media", "app_tags")[:limit]
     )
     resolved = _resolve_tag_labels(apps)
     return [_to_catalog_app(app, resolved) for app in apps]

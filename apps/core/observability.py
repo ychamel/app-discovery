@@ -66,6 +66,9 @@ APP_PAGE_NOT_AVAILABLE = "app_page_not_available"  # a non-accepted/unknown id w
 # a page emit was caught + dropped (tags: action) — informational, not a hard alert
 APP_PAGE_CAPTURE_DEGRADED = "app_page_capture_degraded"
 LANDING_RENDERED = "landing_rendered"
+# app-page-redesign (DESIGN.md §9.5): the on-page devlog slot fell back to nothing (fail-soft
+# — a devlog read error never 500s the page). Informational health, not a hard alert.
+APP_PAGE_DEVLOG_DEGRADED = "app_page_devlog_degraded"
 
 
 # ratings-reviews metrics (DESIGN.md §8.4). The gate-split (RATING_SUBMITTED/_UPDATED tagged

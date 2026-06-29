@@ -552,6 +552,54 @@ tr:hover td {
   object-fit: cover;
 }
 
+/* App-page redesign components (app-page-redesign DESIGN.md §7) — added to the one no-build
+   design system, no per-type templates. Each is presentation only; the slot structure and
+   uniformity live in the template, never here. */
+
+/* The at-a-glance fact strip in the hero: category tags + typed facets as small badges. */
+.fact-strip {
+  flex-wrap: wrap;
+}
+.fact-strip .facet {
+  background: var(--color-surface-2);
+}
+
+/* The demo clip is the first, full-width media peer in the (flex) gallery. */
+.screenshots-gallery .media--clip {
+  flex: 0 0 100%;
+  margin: 0;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+}
+.screenshots-gallery .media--clip video {
+  width: 100%;
+  aspect-ratio: 16/10;
+  object-fit: cover;
+  display: block;
+}
+
+/* The developer-hub identity block + its grid of the developer's other apps. */
+.other-apps-grid .other-app a {
+  transition: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .other-apps-grid .other-app a {
+    transition: box-shadow var(--transition), transform var(--transition);
+  }
+  .other-apps-grid .other-app a:hover {
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-2px);
+  }
+}
+
+/* The on-page devlog list (the fail-soft {% app_devlog %} slot). */
+.devlog__entry {
+  border-left: 3px solid var(--color-border);
+  padding-left: var(--space-3);
+}
+
 /* Discover Page Layout & Components */
 .discovery-layout {
   display: grid;

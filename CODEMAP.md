@@ -57,6 +57,7 @@ _Built by `identity-accounts` Stage 4. Entries are added as each shared item shi
 - `taxonomy_resolve_max_steps() -> int` — max replaced_by hops `resolve_tag` follows before bailing on a cycle (default 16) — `apps/core/config.py`
 - `catalog_media_max_count() -> int` — max screenshots per submitted app (default 8; submission-intake DESIGN §9) — `apps/core/config.py`
 - `catalog_media_max_bytes() -> int` — max bytes per uploaded app image (default 5 MB; DESIGN §9) — `apps/core/config.py`
+- app-page-redesign tunables (DESIGN §8): `app_page_deep_dive_max_length()` (8000) / `catalog_clip_max_bytes()` (10 MB) / `app_page_devlog_limit()` (5) / `app_page_other_apps_limit()` (6) / `app_page_gated_fields() -> frozenset[str]` (the re-review-gated marketing fields; default all of `APP_PAGE_TOGGLEABLE_GATE_FIELDS`, relaxable per field via `APP_PAGE_GATED_FIELDS`, intersected so config can only relax never widen — D-14b) — `apps/core/config.py`
 - `validate_all()` — evaluate all tunables at startup (fail loud) — `apps/core/config.py`
 
 ### Email (`apps/core/email.py`)
@@ -120,17 +121,20 @@ _Built by `identity-accounts` Stage 4. Entries are added as each shared item shi
 - `tag_ids_resolving_to(active_id) -> frozenset[UUID]` — **reverse of `resolve_tag`**: an active tag + its transitive merge predecessors (the ids that *mean* it now), for a merge-correct tag filter (open-search-browse AC3); tolerant of a bad id (→ `frozenset()`), bounded by vocabulary size not catalogue — `apps/taxonomy/selectors.py`
 
 ### App catalog — model & gate (`apps/catalog/`)
-- `App` — one submitted web app; UUID `id` is the stable cross-feature reference (D-6); `owner`/`status`/`normalized_url`/`last_submitted_at` — `apps/catalog/models.py`
+- `App` — one submitted web app; UUID `id` is the stable cross-feature reference (D-6); `owner`/`status`/`normalized_url`/`last_submitted_at`; + additive marketing columns `tagline`/`deep_dive`/`demo_clip`/`demo_clip_alt` (app-page-redesign §5.1; all optional → graceful-empty, no tier/payment field) — `apps/catalog/models.py`
 - `AppTag` — app↔tag link as a soft `tag_id` UUID (D-5; no DB FK) — `apps/catalog/models.py`
+- `AppFacet` — one typed facet value on an app as **soft** code-validated `facet`/`value` strings (the `AppTag` pattern; **firewalled from ranking/discovery**, D-14a); CASCADE, unique `(app, facet, value)` — `apps/catalog/models.py`
 - `AppMedia` — one ordered screenshot (validated image) — `apps/catalog/models.py`
 - `ReviewDecision` — append-only gate-decision audit row (outcome + failed_criteria) — `apps/catalog/models.py`
-- `Criterion` / `CHECKLIST` / `GATE_RELEVANT_FIELDS` — the fixed five objective floors, no "other" value (AC6) — `apps/catalog/gate.py`
+- `Criterion` / `CHECKLIST` — the fixed five objective floors, no "other" value (AC6) — `apps/catalog/gate.py`
+- `gate.gate_relevant_fields() -> frozenset[str]` — the fields whose edit re-reviews an accepted app: the always-gated core floor (name/description/url/tags/media) ∪ the config-toggled marketing fields (`config.app_page_gated_fields()`, default all on — D-14b/APR-DESIGN-2). The **one** source of the re-review policy; replaces the former `GATE_RELEVANT_FIELDS` constant — `apps/catalog/gate.py`
+- `facets.FACETS` / `FacetDef`/`FacetValue`/`FacetCardinality`/`ResolvedFacet`; `is_valid_facet_value()`/`facet_keys()`/`cardinality_of()`/`resolve_facets(rows)` — the **code-fixed** typed-facet vocabulary (pricing/maturity/modality/platform), pure declaration (the `gate.py` precedent, no DB); resolve drops a registry-absent value silently (D-5) — `apps/catalog/facets.py`
 - `normalize_url(raw) -> str` — single rule for "same app" duplicate signal — `apps/catalog/urlnorm.py`
 
 ### App catalog — write surface (`apps/catalog/services.py`, the single mutate path)
-- `submit_app` / `edit_app` / `add_media` / `remove_media` — content writes with the AC1/AC4/§9 boundary invariants — `apps/catalog/services.py`
+- `submit_app` / `edit_app` / `add_media` / `remove_media` — content writes with the AC1/AC4/§9 boundary invariants; `submit_app`/`edit_app` also take **optional** marketing params `tagline`/`deep_dive`/`facet_values`/`demo_clip`(+`demo_clip_alt`) (app-page-redesign §8): facets validated + cardinality-enforced via `facets`, clip sniffed (MP4/WebM magic bytes) + size-capped + alt-required, replace-set semantics, gate wired via `gate.gate_relevant_fields()`. The required submission floor is unchanged — `apps/catalog/services.py`
 - `accept_app` / `reject_app` / `withdraw_app` / `resubmit_app` — lifecycle/decision writes (atomic, row-locked, §7 state machine) — `apps/catalog/services.py`
-- `InvalidTagError` / `MediaLimitError` / `InvalidTransitionError` / `NotOwnerError` — loud write-service failures — `apps/catalog/errors.py`
+- `InvalidTagError` / `InvalidFacetError` / `MediaLimitError` / `InvalidTransitionError` / `NotOwnerError` — loud write-service failures (`InvalidFacetError` = off-vocabulary or cardinality-breaking facet) — `apps/catalog/errors.py`
 
 ### App catalog — read surface (`apps/catalog/selectors.py`, the cross-feature substrate — D-6)
 - `get_owned_app(owner, id)` / `list_owned_apps(owner)` — owner-scoped "my apps", any status (no leak, AC8) — `apps/catalog/selectors.py`
@@ -143,6 +147,9 @@ _Built by `identity-accounts` Stage 4. Entries are added as each shared item shi
 - `services._search_vector_expr() -> SearchVector` — the **single definition** of the catalogue FTS formula (name weight A + description weight B); reused by `submit_app`/`edit_app` maintenance and the backfill migration so the field list lives in one place (open-search-browse §5b/§8) — `apps/catalog/services.py`
 - `App.accepted_at` (nullable; newest-first browse-order key, stamped only in `accept_app`) + `App.search_vector` (nullable `SearchVectorField`, maintained only in `submit_app`/`edit_app`); composite index `(status, -accepted_at)` + `search_vector` GIN — additive open-search-browse columns, written only via the catalog write path (no drift) — `apps/catalog/models.py`
 - `time_to_decision(app)` / `decision_latencies()` — time-to-decision reporting from stored timestamps (observable, not an SLA) — `apps/catalog/selectors.py`
+- `get_app_page_content(id) -> AppPageContent | None` — the **page-scoped launch-page read** (app-page-redesign §6): accepted-only (→ None → 404), builds the flat base via `_to_catalog_app` so the shared `CatalogApp` stays **byte-stable** (AC-9), then adds `tagline`/`deep_dive`/`demo_clip_url`/`demo_clip_alt`/`facets`/`developer`/`other_apps`; bounded queries, no N+1; raises only on a real DB failure — `apps/catalog/selectors.py`
+- `AppPageContent` / `CatalogFacet` / `CatalogDeveloper` — the page-only read DTOs (NOT the shared `CatalogApp`): full page content / a resolved facet (label + registry-ordered `FacetValue`s) / the identity block (`display_name` only, no PII) — `apps/catalog/selectors.py`
+- `accepted_apps_by_owner(owner_id, *, exclude, limit) -> list[CatalogApp]` — up to `limit` OTHER accepted apps by this owner, newest-accepted-first (the identity block's "other apps"); accepted-only (no pending/rejected/withdrawn leak), reuses `_to_catalog_app`, no N+1 — `apps/catalog/selectors.py`
 
 ### Behavioral signals — model & vocabulary (`apps/signals/`, the D-7 event schema)
 - `Impression` — one shown instance; UUID `id` is the anchor every conversion attributes to; soft `app_id`, `surface`, `occurred_at` — `apps/signals/models.py`
@@ -180,7 +187,7 @@ _Built by `identity-accounts` Stage 4. Entries are added as each shared item shi
 ### Public app pages (`apps/pages/`, a pure D-6/D-7 consumer — owns no model)
 - `emission.record_page_view(request, app_id) -> UUID | None` / `record_try_click(request, app_id, imp)` / `record_share(request, app_id, imp)` — the **surface-side non-blocking** capture wrapper: authenticated-only (AP-4), fail-soft-but-counted (AC7), never raises into the request — `apps/pages/emission.py`
 - route names `pages:app-page` / `pages:try` / `pages:share` — the public page, try-it redirect, and share endpoint, keyed on `App.id` (AP-5) — `apps/pages/urls.py`
-- app-pages metric constants (`APP_PAGE_RENDERED`, `APP_PAGE_NOT_AVAILABLE`, `APP_PAGE_CAPTURE_DEGRADED`) — `apps/core/observability.py`
+- app-pages metric constants (`APP_PAGE_RENDERED`, `APP_PAGE_NOT_AVAILABLE`, `APP_PAGE_CAPTURE_DEGRADED`, `APP_PAGE_DEVLOG_DEGRADED` = the app-page devlog-slot fail-soft signal, app-page-redesign §9.5) — `apps/core/observability.py`
 
 ### Ratings & reviews (`apps/ratings/`, owns one mutable table `ratings_rating`)
 - `Rating` / `EligibilityBasis` — one editable rating per user×app + the recorded curated-gate determination; **no score/weight/rank/average column** (AC6) — `apps/ratings/models.py`
@@ -234,6 +241,7 @@ _Built by `identity-accounts` Stage 4. Entries are added as each shared item shi
 - route names `updates:my-channels` (`/updates/`) + `updates:channel` (`/updates/apps/<uuid>/`) + `updates:post` (POST) + `updates:withdraw` (POST `…/notices/<uuid>/withdraw`) — all `login_required` + `require_role(developer)` (D-3); mutations POST+CSRF, addressed by `request.user`+`app_id`(+scoped `notice_id`) ⇒ no IDOR; non-owner id ⇒ 404 indistinguishable (D-6); **imports nothing from `signals`** (AC6 structural — posting is inert to the corpus, AST-enforced in `tests/test_imports.py`) — `apps/updates/urls.py`, `apps/updates/views.py`, `apps/updates/tests/test_imports.py`
 - `updates.selectors.published_notices_for_apps(app_ids, *, limit) -> list[PublishedNotice]` (the AS-3 producer feed read — 1 query, `limit`-bounded, follower-count-independent, R3) + `notices_for_channel(owner, app_id) -> list[PublishedNotice]` (the AC7 owner manage list); returns the frozen `PublishedNotice` DTO (`PublishedNotice.from_model` is the single model→DTO map), never ORM rows — `apps/updates/selectors.py`
 - `updates.services.post_notice(author, app_id, *, kind, title, summary) -> PublishedNotice` / `withdraw_notice(author, app_id, notice_id) -> bool` — the **only** writer of `updates_notice`: owner-gate (`AppNotOwnedError`→404), boundary validation (`InvalidNoticeError`), durable table-derived rate limit (`RateLimitedError`, AC8); withdraw = scoped idempotent hard delete — `apps/updates/services.py`, `apps/updates/errors.py`
+- `{% app_devlog app %}` (`updates_tags`) — the app-page **devlog-slot** inclusion tag (app-page-redesign §6): reads `published_notices_for_apps([app.id], limit=app_page_devlog_limit())`, newest-first; **fail-soft** (renders nothing + `APP_PAGE_DEVLOG_DEGRADED`, never 500s); imports nothing from `signals` (M5=0 structural, AST-enforced by `apps/updates/tests/test_imports.py`) — `apps/updates/templatetags/updates_tags.py`
 - `updates.models.Notice` / table `updates_notice` (soft D-6 `app_id` ref, `author` FK CASCADE, `kind`∈{update,early_access}, `title`/`summary`/`published_at`; **no** score/`updated_at`/`withdrawn_at`; index `updates_app_published_idx` on `(app_id, published_at)`) — `apps/updates/models.py`
 - **AS-3 seam repoint (the single adapter, DU-DESIGN-2):** `subscriptions.notices.notices_for_apps(app_ids)` now delegates to `updates.selectors` and maps `PublishedNotice → Notice` (drops `id`); the render `Notice` DTO + its one call site (`subscriptions.views._notices_fail_soft`) are unchanged; feed health reuses `SUBSCRIPTION_NOTICE_DEGRADED`. The two-package dependency stays a DAG with no import cycle (proven in `apps/updates/tests/test_seam.py`) — `apps/subscriptions/notices.py`
 - **additive reverse-audience read on the closed `apps/subscriptions/`:** `subscriptions.selectors.subscriber_count(app_id) -> int` (1 indexed COUNT — backs the post-form audience hint + M2) + the additive `subscriptions_app_idx` index on `subscriptions_subscription(app_id)` (`0002`; no new column, no behaviour change) — `apps/subscriptions/selectors.py`, `apps/subscriptions/models.py`

@@ -18,7 +18,11 @@ class InvalidTagError(CatalogError):
 
 
 class MediaLimitError(CatalogError):
-    """An upload is not a valid image, is over size, or would breach the per-app count cap (§9)."""
+    """An upload is not a valid image/clip, is over size, or breaches a per-app cap (§9)."""
+
+
+class InvalidFacetError(CatalogError):
+    """A submitted ``(facet, value)`` is off-vocabulary, or breaks a facet's cardinality (D-14a)."""
 
 
 class InvalidTransitionError(CatalogError):

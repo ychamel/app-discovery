@@ -13,7 +13,7 @@ from django.test import TestCase
 from django.utils import timezone
 
 from apps.catalog.gate import Criterion
-from apps.catalog.models import App, AppMedia, AppTag, ReviewDecision
+from apps.catalog.models import App, AppFacet, AppMedia, AppTag, ReviewDecision
 from apps.catalog.tests.helpers import make_account
 
 
@@ -80,6 +80,66 @@ class AppModelTests(TestCase):
         # The pre-existing indexes are untouched (additive change).
         self.assertIn("catalog_app_status_idx", index_names)
         self.assertIn("catalog_app_normurl_idx", index_names)
+
+    def test_marketing_columns_default_to_empty_never_null(self):
+        # app-page-redesign §5.1: a legacy/sparse app stores one empty representation (M2) —
+        # the three text columns are "" (not NULL), the optional clip is None.
+        app = self._make_app()
+        app.refresh_from_db()
+        self.assertEqual(app.tagline, "")
+        self.assertEqual(app.deep_dive, "")
+        self.assertEqual(app.demo_clip_alt, "")
+        self.assertFalse(app.demo_clip)  # an unset FileField is falsy
+
+    def test_only_demo_clip_is_nullable_among_new_columns(self):
+        # null=True only on the FileField (it stores "" poorly); text columns never NULL.
+        self.assertFalse(App._meta.get_field("tagline").null)
+        self.assertFalse(App._meta.get_field("deep_dive").null)
+        self.assertFalse(App._meta.get_field("demo_clip_alt").null)
+        self.assertTrue(App._meta.get_field("demo_clip").null)
+
+    def test_new_columns_add_no_tier_payment_or_identity_field(self):
+        # G5/R2: the redesign must not introduce a richness-by-identity field — assert the
+        # added columns are exactly the four marketing fields and nothing fairness-relevant.
+        field_names = {f.name for f in App._meta.get_fields()}
+        forbidden = {"price", "payment", "tier", "budget", "brand", "priority", "fast_lane"}
+        self.assertEqual(field_names & forbidden, set())
+        for added in ("tagline", "deep_dive", "demo_clip", "demo_clip_alt"):
+            self.assertIn(added, field_names)
+
+
+class AppFacetModelTests(TestCase):
+    def setUp(self):
+        self.owner = make_account("owner@example.com")
+        self.app = App.objects.create(
+            owner=self.owner,
+            name="Demo",
+            description="d",
+            url="https://demo.example.com",
+            normalized_url="https://demo.example.com",
+            last_submitted_at=timezone.now(),
+        )
+
+    def test_facet_value_stored_as_soft_strings(self):
+        facet = AppFacet.objects.create(app=self.app, facet="pricing", value="free")
+        self.assertEqual((facet.facet, facet.value), ("pricing", "free"))
+
+    def test_unique_app_facet_value(self):
+        AppFacet.objects.create(app=self.app, facet="platform", value="web")
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                AppFacet.objects.create(app=self.app, facet="platform", value="web")
+
+    def test_same_facet_different_value_allowed(self):
+        # A MULTI facet (platform) may carry several distinct values on one app.
+        AppFacet.objects.create(app=self.app, facet="platform", value="web")
+        AppFacet.objects.create(app=self.app, facet="platform", value="mobile")
+        self.assertEqual(self.app.app_facets.count(), 2)
+
+    def test_facets_cascade_delete_with_app(self):
+        AppFacet.objects.create(app=self.app, facet="pricing", value="free")
+        self.app.delete()
+        self.assertFalse(AppFacet.objects.exists())
 
 
 class AppTagModelTests(TestCase):

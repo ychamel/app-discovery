@@ -84,24 +84,23 @@ class FollowSlotRenderTests(TestCase):
         self.assertNotIn(follow_url, html)
 
     # --- structural: slot edit is content-only ----------------------------
-    def test_app_page_renders_follow_after_header_with_all_slots_intact(self):
+    def test_app_page_renders_follow_with_all_slots_intact(self):
+        # The Follow-slot edit is content-only: every uniform app-page slot is intact
+        # (landmarks per app-page-redesign §7) and the Follow + Reviews sections render.
         html = self.client.get(self.page_url).content.decode()
         for aria in (
-            'aria-label="Categories"',
+            'aria-label="App summary"',
             'aria-label="Follow"',
-            'aria-label="Screenshots"',
+            'aria-label="Media"',
             'aria-label="About"',
             'aria-label="Try it"',
             'aria-label="Share"',
             'aria-label="Reviews"',
         ):
             self.assertIn(aria, html)
-        # The Follow section sits after the header (before Screenshots), and the Reviews
-        # heading is untouched (the ratings slot fill is independent).
-        self.assertLess(
-            html.index('aria-label="Follow"'), html.index('aria-label="Screenshots"')
-        )
+        # The Follow section (sidebar) comes after the hero, and the Reviews heading is
+        # untouched (the ratings slot fill is independent).
         self.assertGreater(
-            html.index('aria-label="Follow"'), html.index('aria-label="Categories"')
+            html.index('aria-label="Follow"'), html.index('aria-label="App summary"')
         )
         self.assertIn("<h2>Reviews</h2>", html)
