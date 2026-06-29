@@ -13,7 +13,7 @@ A debugger and systems analyzer. You receive bug reports, technical chores, or r
 - The existing codebase, `CODEMAP.md`, and any related feature folders.
 
 ## Your job
-Produce `features/patch-<slug>/PATCH.md` containing:
+Produce `patches/patch-<slug>/PATCH.md` containing:
 
 - **1. Problem Statement**
   - **Reproduction Steps:** Step-by-step description of how to trigger the defect.

@@ -83,9 +83,9 @@ curated-app-platform-design.md← product vision / north star
 process/
   personas/                   ← self-contained briefs per stage + the off-pipeline Strategist
 
-features/
-  README.md                   ← folder conventions and creation steps
-  INDEX.md                    ← registry of every feature/patch + its outcome
+features/                     ← Feature Track only (patches live in patches/, below)
+  README.md                   ← feature folder conventions and creation steps
+  INDEX.md                    ← registry of every feature + its outcome
   <feature-slug>/             ← all artifacts for one feature live together (Feature Track)
     FEATURE_BRIEF.md
     DESIGN.md
@@ -94,6 +94,10 @@ features/
     RELEASE_NOTES.md
     OPEN_QUESTIONS.md
     DECISIONS.md
+
+patches/                      ← Patch Track only, kept separate so feature tracking stays uncongested
+  README.md                   ← patch folder conventions and creation steps
+  INDEX.md                    ← registry of every patch + its outcome
   patch-<patch-slug>/         ← all artifacts for one patch live together (Patch Track)
     PATCH.md                  ← brief, root-cause design, and task list consolidated
     TEST_PLAN.md              ← regression test mapping
@@ -102,10 +106,12 @@ features/
     DECISIONS.md
 ```
 
-Why per-feature folders: artifacts that belong together stay together, multiple
+Why per-feature/patch folders: artifacts that belong together stay together, multiple
 features can run without colliding, and a finished feature is a self-documenting unit.
-This is the scalable choice over dumping everything at the root — and "scalable over
-quick" is the standard here (see §5).
+Features and patches live in **separate top-level directories** so browsing or tracking
+features is not congested by the higher-volume stream of maintenance patches. This is the
+scalable choice over dumping everything at the root — and "scalable over quick" is the
+standard here (see §5).
 
 ---
 
@@ -253,5 +259,7 @@ bottom without reverse-engineering it, it is wrong, no matter how clever or shor
 - [curated-app-platform-design.md](curated-app-platform-design.md) — product vision
 - [STRATEGY.md](STRATEGY.md) — living strategic picture (Strategist, §4.1; created on first use)
 - [process/personas/](process/personas/) — the six stage personas + the off-pipeline [Strategist](process/personas/strategist.md) (§4.1)
-- [features/README.md](features/README.md) — per-feature folder convention
+- [features/README.md](features/README.md) — per-feature folder convention (Feature Track)
 - [features/INDEX.md](features/INDEX.md) — registry of every feature + its outcome
+- [patches/README.md](patches/README.md) — per-patch folder convention (Patch Track)
+- [patches/INDEX.md](patches/INDEX.md) — registry of every patch + its outcome
