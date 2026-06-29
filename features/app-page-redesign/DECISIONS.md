@@ -52,5 +52,52 @@ closes out — exactly as it stayed parked behind `premium-frontend`.
 face first; real-feedback iteration remains available post-deploy regardless.
 
 **User decision:** AskUserQuestion 2026-06-29 → *"Redesign first, then deploy."*
+
+---
+
+## APR-DESIGN-1 — Typed facets are code-fixed structured fields, firewalled from ranking (Architect, 2026-06-29)
+
+**Decision.** The new typed facets (**pricing · maturity · modality · platform/access**) are modeled
+as **code-fixed structured fields**: a pure declaration in a new `apps/catalog/facets.py` (the
+`gate.py` precedent — vocabulary + cardinality in code, no DB, no editorial mutation path) plus a new
+`AppFacet` table storing per-app `(facet, value)` rows as **soft, write-validated, read-resolved**
+references (the D-5 pattern). Facets are kept **entirely separate from the D-5 taxonomy tag pool** and
+never enter `search_catalogue`, the interest matcher, or any score — they are **informational only**
+(AC-3). The existing **category/"genre" tags stay as the D-5 taxonomy** already shown in the header
+(resolves [OPEN_QUESTIONS.md](OPEN_QUESTIONS.md) Q1).
+
+**Why.** A flat tag pool can't enforce typed cardinality ("one pricing value per app") → illegal
+states become representable; and reusing `AppTag` would pull facets into the discovery/ranking/match
+paths that the tag pool already feeds — breaking AC-3's firewall. Code-fixed structured fields make
+illegal states unrepresentable and keep facets ranking-neutral by construction. **Global-relevant** →
+promoted to **D-14a** on DESIGN approval (a later feature would be wrong to rank by a facet).
+
+**Rejected.** (a) Extend the D-5 taxonomy (facets as clusters/tags) — couples facets to
+ranking/discovery, no cardinality guarantee. (b) A JSON blob column on `App` — not integrity-checkable,
+illegal states representable.
+
+**User decision:** AskUserQuestion 2026-06-29 → *"Code-fixed structured fields."*
+
+---
+
+## APR-DESIGN-2 — Re-review policy for public-claim fields is config-togglable (Architect, 2026-06-29)
+
+**Decision.** The new developer-authored public-claim fields (**tagline · deep_dive · facets ·
+demo_clip**) **are gate-relevant** — editing them on an *accepted* app returns it to `pending`
+re-review, upholding the honest-metadata floor consistently with `description` today. **But** which of
+them force re-review is **config-togglable** (default: all on): `gate.GATE_RELEVANT_FIELDS` (the
+constant) becomes `gate.gate_relevant_fields()` = an always-gated core (name/description/url/tags/media)
+**∪** a config-driven set `config.app_page_gated_fields()` (defaults to all four new fields). Policy is
+tunable from observed deployment behaviour **without a code change or migration**.
+
+**Why.** Honesty-first is the right default (vision §4), but re-review churn on marketing iteration may
+prove to fight the "make it their hub" goal — and the policy is unvalidated until real usage. A config
+toggle is the §5.2 "design for change" answer: keep the integrity guarantee, make the knob cheap to
+turn. The user explicitly asked for this togglability. **Global-relevant** → **D-14b** on approval.
+
+**Rejected.** A hardcoded gated set — too rigid for an unvalidated policy. "No re-review" — leaves
+post-acceptance public claims unchecked for honesty.
+
+**User decision:** AskUserQuestion 2026-06-29 → *"Yes, but design it to be togglable per-field."*
 </content>
 </invoke>
