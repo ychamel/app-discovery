@@ -166,3 +166,18 @@ class RemoveRatingTests(TestCase):
         services.remove_rating(self.user, self.app.id)
         self.assertEqual(Rating.objects.count(), 1)
         self.assertTrue(Rating.objects.filter(user=other).exists())
+
+
+class SelfRatingTests(TestCase):
+    """T-01 — owner cannot submit a rating for their own app (patch-block-self-interaction)."""
+
+    def setUp(self):
+        self.owner = make_user("owner@example.com")
+        self.tag = make_tag("notes")
+        self.app = make_accepted_app(self.owner, tag_ids=[self.tag.id])
+
+    def test_submit_rating_raises_self_rating_error_for_owner(self):
+        from apps.ratings.errors import SelfRatingError
+        with self.assertRaises(SelfRatingError):
+            services.submit_rating(self.owner, self.app.id, score=4)
+        self.assertEqual(Rating.objects.count(), 0)

@@ -19,7 +19,7 @@ from django.shortcuts import redirect
 from django.views.decorators.http import require_http_methods
 
 from apps.ratings import services
-from apps.ratings.errors import RatingValidationError, UnknownAppError
+from apps.ratings.errors import RatingValidationError, SelfRatingError, UnknownAppError
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +41,8 @@ def submit(request, app_id: UUID):
         )
     except UnknownAppError as exc:
         raise Http404("No such app to rate.") from exc
+    except SelfRatingError as exc:
+        messages.error(request, str(exc))
     except RatingValidationError as exc:
         messages.error(request, str(exc))
     return redirect("pages:app-page", app_id=app_id)

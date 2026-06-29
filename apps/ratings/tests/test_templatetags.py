@@ -117,3 +117,11 @@ class ReviewsSlotRenderTests(TestCase):
         ):
             self.assertIn(aria, html)
         self.assertIn("<h2>Reviews</h2>", html)
+
+    # --- owner notice (patch-block-self-interaction) ----------------------
+    def test_reviews_slot_shows_notice_for_owner(self):
+        self.client.force_login(self.owner)
+        html = self.client.get(self.page_url).content.decode()
+        self.assertIn("can't review your own app", html)
+        submit_url = reverse("ratings:submit", args=[self.app.id])
+        self.assertNotIn(f'action="{submit_url}"', html)

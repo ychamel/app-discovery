@@ -13,6 +13,7 @@ import logging
 
 from django import template
 
+from apps.catalog import selectors as catalog
 from apps.core import config, observability
 from apps.ratings import selectors
 
@@ -24,12 +25,14 @@ register = template.Library()
 def app_reviews(context, app):
     """Build the reviews-slot context for ``app`` — fail-soft (DESIGN §5f)."""
     request = context.get("request")
+    user = getattr(request, "user", None)
     scale_max = config.rating_scale_max()
     try:
         reviews = selectors.reviews_for_app(
             app.id, limit=config.reviews_display_limit()
         )
-        own_rating = selectors.user_rating(getattr(request, "user", None), app.id)
+        own_rating = selectors.user_rating(user, app.id)
+        is_owner = catalog.is_app_owner(user, app.id)
     except Exception:
         observability.increment(
             observability.RATING_DISPLAY_DEGRADED, app_id=str(app.id)
@@ -40,6 +43,7 @@ def app_reviews(context, app):
             "app": app,
             "reviews": None,
             "own_rating": None,
+            "is_owner": False,
             "scale_max": scale_max,
             "score_choices": range(1, scale_max + 1),
             "degraded": True,
@@ -56,6 +60,7 @@ def app_reviews(context, app):
             for score in range(scale_max, 0, -1)
         ],
         "own_rating": own_rating,
+        "is_owner": is_owner,
         "scale_max": scale_max,
         "score_choices": range(1, scale_max + 1),
         "degraded": False,

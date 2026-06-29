@@ -89,6 +89,17 @@ def list_owned_apps(owner) -> list[App]:
     )
 
 
+def is_app_owner(user, app_id: UUID) -> bool:
+    """Return True iff ``user`` is the owner of the app identified by ``app_id``.
+
+    Anonymous / unauthenticated users always return False. One EXISTS query, O(1).
+    This is the single source of truth for the owner-cannot-self-interact guard.
+    """
+    if not getattr(user, "is_authenticated", False):
+        return False
+    return App.objects.filter(owner=user, pk=app_id).exists()
+
+
 # --- Review queue (FIFO; AC3 — no priority) ----------------------------------
 def list_review_queue() -> list[ReviewRow]:
     """Pending apps in strict FIFO order by ``last_submitted_at``, each with a dup hint (§6c).

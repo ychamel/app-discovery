@@ -25,7 +25,7 @@ from django.views.decorators.http import require_http_methods
 
 from apps.core import config, observability
 from apps.subscriptions import notices, selectors, services
-from apps.subscriptions.errors import UnknownAppError
+from apps.subscriptions.errors import SelfFollowError, UnknownAppError
 from apps.widget import source as widget_source
 
 logger = logging.getLogger(__name__)
@@ -50,6 +50,8 @@ def follow(request, app_id: UUID):
         created = services.follow_app(request.user, app_id)
     except UnknownAppError as exc:
         raise Http404("No such app to follow.") from exc
+    except SelfFollowError as exc:
+        messages.error(request, str(exc))
     except Exception:
         # The write fails loud inside services (CAPTURE_ERROR counted there); to the user it
         # is a try-again — never a 500, and honestly not-followed (AC7).

@@ -229,3 +229,20 @@ class TimeToDecisionTests(SelectorTestBase):
         app = self._submit()
         self._accept(app)
         self.assertEqual(len(selectors.decision_latencies()), 1)
+
+
+class IsAppOwnerTests(SelectorTestBase):
+    """T-01 — is_app_owner returns correct ownership truth (patch-block-self-interaction)."""
+
+    def test_is_app_owner_returns_true_for_owner(self):
+        app = self._submit()
+        self.assertTrue(selectors.is_app_owner(self.owner, app.id))
+
+    def test_is_app_owner_returns_false_for_non_owner(self):
+        app = self._submit()
+        self.assertFalse(selectors.is_app_owner(self.other, app.id))
+
+    def test_is_app_owner_returns_false_for_anonymous(self):
+        from django.contrib.auth.models import AnonymousUser
+        app = self._submit()
+        self.assertFalse(selectors.is_app_owner(AnonymousUser(), app.id))

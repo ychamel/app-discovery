@@ -12,3 +12,7 @@ class UnknownAppError(Exception):
 
 class RatingValidationError(Exception):
     """The submitted score or review text violates a boundary rule (range / length)."""
+
+
+class SelfRatingError(Exception):
+    """The submitting user is the app's owner; self-rating is not permitted."""

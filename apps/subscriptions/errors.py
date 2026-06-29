@@ -7,3 +7,7 @@ app never leaves a row. The view maps it to HTTP 404 (AC1).
 
 class UnknownAppError(Exception):
     """The target app is not an accepted catalog app (unknown/pending/rejected/withdrawn)."""
+
+
+class SelfFollowError(Exception):
+    """The following user is the app's owner; self-follow is not permitted."""

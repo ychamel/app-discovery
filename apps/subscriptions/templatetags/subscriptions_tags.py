@@ -14,6 +14,7 @@ import logging
 
 from django import template
 
+from apps.catalog import selectors as catalog
 from apps.core import observability
 from apps.subscriptions import selectors
 
@@ -28,16 +29,21 @@ def app_follow(context, app):
     user = getattr(request, "user", None)
     try:
         following = selectors.is_following(user, app.id)
+        is_owner = catalog.is_app_owner(user, app.id)
     except Exception:
         observability.increment(
             observability.SUBSCRIPTION_CONTROL_DEGRADED, app_id=str(app.id)
         )
         logger.warning("follow slot degraded app_id=%s", app.id, exc_info=True)
-        return {"request": request, "app": app, "is_following": False, "degraded": True}
+        return {
+            "request": request, "app": app,
+            "is_following": False, "is_owner": False, "degraded": True,
+        }
 
     return {
         "request": request,
         "app": app,
         "is_following": following,
+        "is_owner": is_owner,
         "degraded": False,
     }

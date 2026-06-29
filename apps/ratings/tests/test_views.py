@@ -125,6 +125,28 @@ class RemoveViewTests(TestCase):
         self.assertIn("/auth/signin", response["Location"])
 
 
+class OwnerSubmitBlockTests(TestCase):
+    """T-01 — submit view rejects owner's rating with a message (patch-block-self-interaction)."""
+
+    def setUp(self):
+        self.owner = make_user("owner@example.com")
+        self.app = make_accepted_app(self.owner, tag_ids=[make_tag("notes").id])
+        self.url = reverse("ratings:submit", args=[self.app.id])
+        self.page_url = reverse("pages:app-page", args=[self.app.id])
+
+    def test_submit_view_blocks_owner_with_message(self):
+        self.client.force_login(self.owner)
+        response = self.client.post(self.url, {"score": "5"}, follow=True)
+        self.assertRedirects(
+            self.client.post(self.url, {"score": "5"}),
+            self.page_url,
+            fetch_redirect_response=False,
+        )
+        self.assertEqual(Rating.objects.count(), 0)
+        msgs = [m.message for m in response.context["messages"]]
+        self.assertTrue(any("own app" in m for m in msgs))
+
+
 def _png():
     import io
 

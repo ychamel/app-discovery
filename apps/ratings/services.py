@@ -24,7 +24,7 @@ from django.utils import timezone
 from apps.catalog import selectors as catalog
 from apps.core import config, observability
 from apps.ratings import gate
-from apps.ratings.errors import RatingValidationError, UnknownAppError
+from apps.ratings.errors import RatingValidationError, SelfRatingError, UnknownAppError
 from apps.ratings.models import Rating
 
 logger = logging.getLogger(__name__)
@@ -39,6 +39,7 @@ def submit_rating(user, app_id: UUID, *, score: int, review_text: str = "") -> R
     rather than duplicating it (AC8).
     """
     _require_catalogued_app(app_id)
+    _require_non_owner(user, app_id)
     _validate(score, review_text)
 
     determined_at = timezone.now()
@@ -92,6 +93,12 @@ def _require_catalogued_app(app_id: UUID) -> None:
     """Raise ``UnknownAppError`` unless ``app_id`` is an accepted catalog app (D-6, AC9)."""
     if catalog.get_catalogued_app(app_id) is None:
         raise UnknownAppError(f"No accepted catalog app for id {app_id!r}.")
+
+
+def _require_non_owner(user, app_id: UUID) -> None:
+    """Raise ``SelfRatingError`` if ``user`` owns ``app_id`` — self-rating is not permitted."""
+    if catalog.is_app_owner(user, app_id):
+        raise SelfRatingError("You can't review your own app.")
 
 
 def _validate(score: int, review_text: str) -> None:

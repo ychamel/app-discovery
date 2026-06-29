@@ -183,6 +183,21 @@ class AccountDeletionCorpusTests(TestCase):
         self.assertIsNone(event.user_id)
 
 
+class SelfFollowTests(TestCase):
+    """T-01 — owner cannot follow their own app (patch-block-self-interaction)."""
+
+    def setUp(self):
+        self.owner = make_user("owner@example.com")
+        self.tag = make_tag("notes")
+        self.app = make_accepted_app(self.owner, tag_ids=[self.tag.id])
+
+    def test_follow_app_raises_self_follow_error_for_owner(self):
+        from apps.subscriptions.errors import SelfFollowError
+        with self.assertRaises(SelfFollowError):
+            services.follow_app(self.owner, self.app.id)
+        self.assertEqual(Subscription.objects.count(), 0)
+
+
 def _png():
     import io
 

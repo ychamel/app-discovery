@@ -21,7 +21,7 @@ from django.db import transaction
 from apps.catalog import selectors as catalog
 from apps.core import observability
 from apps.signals import capture as signals_capture
-from apps.subscriptions.errors import UnknownAppError
+from apps.subscriptions.errors import SelfFollowError, UnknownAppError
 from apps.subscriptions.models import Subscription
 
 logger = logging.getLogger(__name__)
@@ -36,6 +36,7 @@ def follow_app(user, app_id: UUID) -> bool:
     (append-only D-7).
     """
     _require_catalogued_app(app_id)
+    _require_non_owner(user, app_id)
     with transaction.atomic():
         # The follow row + its corpus event are ONE unit. record_subscribe opens its own
         # atomic block; nested here it becomes a savepoint, so if capture raises BOTH the
@@ -76,3 +77,9 @@ def _require_catalogued_app(app_id: UUID) -> None:
     """Raise ``UnknownAppError`` unless ``app_id`` is an accepted catalog app (D-6, AC1)."""
     if catalog.get_catalogued_app(app_id) is None:
         raise UnknownAppError(f"No accepted catalog app for id {app_id!r}.")
+
+
+def _require_non_owner(user, app_id: UUID) -> None:
+    """Raise ``SelfFollowError`` if ``user`` owns ``app_id`` — self-follow is not permitted."""
+    if catalog.is_app_owner(user, app_id):
+        raise SelfFollowError("You can't follow your own app.")

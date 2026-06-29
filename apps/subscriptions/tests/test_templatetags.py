@@ -76,6 +76,13 @@ class FollowSlotRenderTests(TestCase):
         self.assertIn('aria-label="Reviews"', html)
         self.assertIn("No reviews yet", html)  # ratings slot rendered normally
 
+    # --- owner (patch-block-self-interaction) ----------------------------
+    def test_follow_slot_hides_button_for_owner(self):
+        self.client.force_login(self.owner)
+        html = self.client.get(self.page_url).content.decode()
+        follow_url = reverse("subscriptions:follow", args=[self.app.id])
+        self.assertNotIn(follow_url, html)
+
     # --- structural: slot edit is content-only ----------------------------
     def test_app_page_renders_follow_after_header_with_all_slots_intact(self):
         html = self.client.get(self.page_url).content.decode()
