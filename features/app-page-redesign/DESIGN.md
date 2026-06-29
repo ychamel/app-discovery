@@ -1,6 +1,6 @@
 # DESIGN.md — app-page-redesign
 
-*Stage 2 (Software Architect) — **awaiting user approval***
+*Stage 2 (Software Architect) — **APPROVED 2026-06-29** (DN-APR-DESIGN; APR-DESIGN-1/2 → global [D-14](../../DECISIONS.md)). Handed to the Planner (Stage 3).*
 
 > Inputs read: the approved [FEATURE_BRIEF.md](FEATURE_BRIEF.md); [OPEN_QUESTIONS.md](OPEN_QUESTIONS.md)
 > (Q1–Q4 + the uniformity guardrail); the live page

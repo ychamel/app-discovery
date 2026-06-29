@@ -1,6 +1,6 @@
 # FEATURE_BRIEF.md — app-page-redesign
 
-*Stage 1 (Product Analyst) — **awaiting user approval***
+*Stage 1 (Product Analyst) — **APPROVED 2026-06-29** (DN-APR-BRIEF).*
 
 > Upstream inputs read: the user's request + Coordinator brainstorm in
 > [OPEN_QUESTIONS.md](OPEN_QUESTIONS.md); the scope decisions [APR-D-1 / APR-D-2](DECISIONS.md);

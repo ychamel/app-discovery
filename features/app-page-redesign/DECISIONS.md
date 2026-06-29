@@ -99,5 +99,5 @@ turn. The user explicitly asked for this togglability. **Global-relevant** → *
 post-acceptance public claims unchecked for honesty.
 
 **User decision:** AskUserQuestion 2026-06-29 → *"Yes, but design it to be togglable per-field."*
-</content>
-</invoke>
+
+**Status:** **RATIFIED → global [D-14b](../../DECISIONS.md)** on DESIGN approval (DN-APR-DESIGN, 2026-06-29). APR-DESIGN-1 likewise → **[D-14a](../../DECISIONS.md)**.
