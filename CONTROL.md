@@ -42,12 +42,12 @@ Rules:
 ### Latest session status (CLAUDE.md §6.7 — overwritten each session)
 
 ```
-Stage: P-plan | Feature: patch-block-self-interaction | Persona: Coordinator → Maintenance Planner
-Done: Coordinator routed the answered Q-002 (block self-review) + Q-003 (block self-follow) into ONE Patch Track patch (user picked this bundle from the queue). Triaged both against live code: the public app page's `app` is a CatalogApp read-model that ALREADY carries `owner` (selectors.py:70/108 from App.owner FK) → ownership determinable, no schema. Self-review path = ratings.services.submit_rating + _reviews_slot.html form; self-follow path = subscriptions.services.follow_app + _follow_slot.html button. Scope gate → Patch Track (guard = added behaviour on existing endpoints + template hide; no migration/new route/ADR). Scaffolded patches/patch-block-self-interaction/ (5 artifacts; PATCH.md carries the triage + Planner framing), added the INDEX.md Patch Track row, set Q-002/Q-003 IN-PROGRESS in issues/ + registry. No code touched.
-Verified by: n/a (no code; planning/scaffolding only).
-Blocked/Deferred: Queue behind this patch — UX-005 (patch-developer-app-preview), BUG-005 (patch-share-button-fallback), UX-002 (minimal tag-picker), UX-001. Q-004 (answered C, two distinct scores) still needs routing — likely Feature Track. DN-PS-DEPLOY (live staging deploy) still open.
-Decisions needed: DN-Q004 routing (Feature Track?). DN-PS-DEPLOY (live staging deploy).
-Next: Maintenance Planner investigates Q-002+Q-003 against the code and writes patches/patch-block-self-interaction/PATCH.md (Problem Statement / root-cause design / task list, T-01 red-first), then surfaces an approval decision.
+Stage: P-plan | Feature: patch-block-self-interaction | Persona: Maintenance Planner
+Done: Investigated Q-002 + Q-003 against live code. Key correction: CatalogApp (selectors.py:54) has NO `owner` field — the Coordinator triage and both issue files were wrong about this. `owner` at selectors.py:70/108 belongs to ReviewRow/list_review_queue (admin path), not the public page path. _to_catalog_app() does not populate owner. Design: (1) add is_app_owner(user, app_id) EXISTS selector to catalog.selectors as the single ownership source of truth; (2) SelfRatingError in ratings.errors + _require_non_owner guard in submit_rating + view mapping; (3) SelfFollowError in subscriptions.errors + guard in follow_app + view mapping; (4) inclusion tags pass is_owner; slots show notice/conditional UX. Pre-existing owner rows → allow Remove/Unfollow cleanup; no retroactive deletion. 7 tasks, T-01 red-first. Wrote full PATCH.md. Surfaced DN-BSI-PLAN (approval gates P-build). No code touched.
+Verified by: n/a (planning only).
+Blocked/Deferred: Awaiting DN-BSI-PLAN approval. Queue: UX-005, BUG-005, UX-002, UX-001. DN-Q004 routing (Feature Track?). DN-PS-DEPLOY (live staging deploy).
+Decisions needed: DN-BSI-PLAN (approve patch plan → P-build). DN-Q004. DN-PS-DEPLOY.
+Next: User approves DN-BSI-PLAN → Maintenance Engineer executes T-01 through T-07.
 ```
 
 ---
@@ -56,6 +56,14 @@ Next: Maintenance Planner investigates Q-002+Q-003 against the code and writes p
 
 The agent is blocked on these. Answer inline (edit the **Answer** cell), then the agent
 proceeds.
+
+**DN-BSI-PLAN — 2026-06-29 (blocks `P-build`).** Maintenance Planner has completed the investigation and written [patches/patch-block-self-interaction/PATCH.md](patches/patch-block-self-interaction/PATCH.md). Summary:
+- **Correction to triage:** `CatalogApp` does NOT have an `owner` field — the fix uses a new `catalog.is_app_owner(user, app_id)` EXISTS selector as the single ownership source of truth.
+- **Service-layer guard:** `SelfRatingError` / `SelfFollowError` raised in `submit_rating` / `follow_app` before any write; mapped to messages + PRG in the views.
+- **Template hide:** inclusion tags pass `is_owner`; slots show a notice + optional Remove/Unfollow cleanup for pre-existing rows.
+- **7 ordered tasks (T-01 red-first tests → T-07 verify); ~11 files touched; no schema.**
+- **Edge-case decision (pre-existing owner rating/follow):** allow Remove/Unfollow for cleanup; no retroactive deletion.
+Approve to proceed to `P-build`: `[approve / change: <note>]` →
 
 ~~**DN-MAS-PLAN**~~ — **RESOLVED 2026-06-29** (user approved "proceed" → built + closed-out by Maintenance Engineer; **UX-004 + UX-006 RESOLVED**, 1 004 tests).
 
