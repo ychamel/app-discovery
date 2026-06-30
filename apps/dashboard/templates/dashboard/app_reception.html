@@ -1,23 +1,24 @@
 {% extends "dashboard/base.html" %}
+{% load icons %}
 {% block title %}Telemetry: {{ reception.app_name }} · Developer dashboard{% endblock %}
 {% block content %}
 <div class="stack" style="--gap: var(--space-6);">
-  
+
   {# Header section #}
   <header class="stack" style="--gap: var(--space-4);">
-    <div class="cluster" style="justify-content: space-between; align-items: center;">
+    <div class="toolbar">
       <div>
-        <p style="margin: 0;"><a href="{% url 'dashboard:my-apps' %}?window={{ reception.window.key }}" class="btn btn--ghost btn--sm" style="margin-left: calc(var(--space-2) * -1);">← Back to My Apps</a></p>
+        <p class="m-0"><a href="{% url 'dashboard:my-apps' %}?window={{ reception.window.key }}" class="btn btn--ghost btn--sm" style="margin-left: calc(var(--space-2) * -1);">{% icon "arrow-left" %} Back to My Apps</a></p>
         <h1 style="margin: var(--space-2) 0 0 0; font-size: var(--font-size-3xl);">{{ reception.app_name }}</h1>
       </div>
     </div>
-    
+
     <div class="stack" style="--gap: var(--space-2);">
-      <h2 style="font-size: var(--font-size-sm); font-weight: var(--font-weight-bold); text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-muted); margin: 0;">Reporting Period</h2>
+      <h2 class="muted-caption m-0">Reporting Period</h2>
       <nav aria-label="Reporting window" class="cluster" style="--gap: var(--space-1.5); background-color: var(--color-surface); padding: var(--space-1.5); border-radius: var(--radius); border: 1px solid var(--color-border); width: fit-content;">
         {% for w in windows %}
           {% if w.key == reception.window.key %}
-            <span aria-current="true" class="btn btn--primary btn--sm" style="font-weight: var(--font-weight-semibold);">{{ w.label }}</span>
+            <span aria-current="true" class="btn btn--primary btn--sm font-semibold">{{ w.label }}</span>
           {% else %}
             <a href="?window={{ w.key }}" class="btn btn--ghost btn--sm" style="color: var(--color-muted); font-weight: var(--font-weight-medium);">{{ w.label }}</a>
           {% endif %}
@@ -29,21 +30,21 @@
   {# Grid of top-level metrics #}
   <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--space-5);">
     <div class="card stack" style="--gap: var(--space-2); justify-content: center;">
-      <span style="font-size: var(--font-size-sm); color: var(--color-muted); font-weight: var(--font-weight-medium);">Total Reach</span>
-      <div style="font-size: var(--font-size-3xl); font-weight: var(--font-weight-bold); line-height: 1;">{{ reception.reach.total }}</div>
-      <span style="font-size: var(--font-size-xs); color: var(--color-muted);">Impressions shown to users</span>
+      <span class="text-muted metric-label">Total Reach</span>
+      <div class="metric-value">{{ reception.reach.total }}</div>
+      <span class="text-muted text-xs">Impressions shown to users</span>
     </div>
     <div class="card stack" style="--gap: var(--space-2); justify-content: center;">
-      <span style="font-size: var(--font-size-sm); color: var(--color-muted); font-weight: var(--font-weight-medium);">Click-throughs</span>
-      <div style="font-size: var(--font-size-3xl); font-weight: var(--font-weight-bold); line-height: 1; color: var(--color-accent);">{{ reception.funnel.click_throughs }}</div>
-      <span style="font-size: var(--font-size-xs); color: var(--color-muted);">User visits to your app page</span>
+      <span class="text-muted metric-label">Click-throughs</span>
+      <div class="metric-value text-accent">{{ reception.funnel.click_throughs }}</div>
+      <span class="text-muted text-xs">User visits to your app page</span>
     </div>
     <div class="card stack" style="--gap: var(--space-2); justify-content: center;">
-      <span style="font-size: var(--font-size-sm); color: var(--color-muted); font-weight: var(--font-weight-medium);">Widget Impressions</span>
-      <div style="font-size: var(--font-size-3xl); font-weight: var(--font-weight-bold); line-height: 1;">
+      <span class="text-muted metric-label">Widget Impressions</span>
+      <div class="metric-value">
         {% if reception.widget_reach.available %}{{ reception.widget_reach.impressions }}{% else %}—{% endif %}
       </div>
-      <span style="font-size: var(--font-size-xs); color: var(--color-muted);">Off-platform widget embeds</span>
+      <span class="text-muted text-xs">Off-platform widget embeds</span>
     </div>
   </div>
 
@@ -51,10 +52,10 @@
   <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: var(--space-6);">
     {# sparkline #}
     <div class="card stack" style="--gap: var(--space-4);">
-      <h2 style="margin: 0; font-size: var(--font-size-xl);">Reach Trend <span style="font-size: var(--font-size-sm); font-weight: var(--font-weight-normal); color: var(--color-muted);">({{ reception.reach.trend.granularity_label }})</span></h2>
+      <h2 class="m-0 card-heading">Reach Trend <span class="text-muted text-sm font-normal">({{ reception.reach.trend.granularity_label }})</span></h2>
       {% if reception.reach.trend.is_empty %}
         <div class="empty-state" style="padding: var(--space-6) var(--space-4);">
-          <p style="color: var(--color-muted); margin: 0;">No impressions in this window.</p>
+          <p class="text-muted m-0">No impressions in this window.</p>
         </div>
       {% else %}
         {% with svg=reception.reach.trend.sparkline %}
@@ -64,8 +65,8 @@
               <polyline fill="none" stroke="var(--color-success)" stroke-width="2" stroke-dasharray="4 2" points="{{ svg.curated_points }}" />
             </svg>
             <div class="cluster" style="--gap: var(--space-4); justify-content: center; margin-top: var(--space-3); font-size: var(--font-size-xs);">
-              <span class="cluster" style="--gap: var(--space-1.5);"><span style="display:inline-block; width:12px; height:2px; background-color: var(--color-muted);"></span> Total Reach</span>
-              <span class="cluster" style="--gap: var(--space-1.5);"><span style="display:inline-block; width:12px; height:2px; background-dasharray: 4 2; background: repeating-linear-gradient(90deg, var(--color-success), var(--color-success) 4px, transparent 4px, transparent 8px);"></span> Curated Reach</span>
+              <span class="cluster" style="--gap: var(--space-1.5);"><span class="legend-swatch"></span> Total Reach</span>
+              <span class="cluster" style="--gap: var(--space-1.5);"><span class="legend-swatch legend-swatch--dashed"></span> Curated Reach</span>
             </div>
           </div>
         {% endwith %}
@@ -74,10 +75,10 @@
 
     {# reach by surface #}
     <div class="card stack" style="--gap: var(--space-4);">
-      <h2 style="margin: 0; font-size: var(--font-size-xl);">Reach by Surface</h2>
+      <h2 class="m-0 card-heading">Reach by Surface</h2>
       <ul class="stack" style="--gap: var(--space-2); list-style: none; padding: 0; margin: 0;">
         {% for source in reception.reach.surfaces %}
-          <li class="cluster" style="justify-content: space-between; font-size: var(--font-size-sm); border-bottom: 1px solid var(--color-surface-2); padding-bottom: var(--space-1.5);">
+          <li class="data-row">
             <span>
               {% if source.is_curated %}
                 <span class="badge badge--success" style="margin-right: var(--space-1); font-size: var(--font-size-xs); padding: var(--space-0.5) var(--space-1.5);">Curated</span><strong>{{ source.label }}</strong>
@@ -85,12 +86,12 @@
                 {{ source.label }}
               {% endif %}
             </span>
-            <span style="font-weight: var(--font-weight-semibold);">
+            <strong>
               {{ source.count }} shown
               {% if source.is_curated and source.count == 0 %}
-                <span style="color: var(--color-muted); font-weight: var(--font-weight-normal); font-size: var(--font-size-xs); display: block; text-align: right;">no curated shows yet</span>
+                <span class="text-muted" style="font-weight: var(--font-weight-normal); font-size: var(--font-size-xs); display: block; text-align: right;">no curated shows yet</span>
               {% endif %}
-            </span>
+            </strong>
           </li>
         {% endfor %}
       </ul>
@@ -98,23 +99,23 @@
 
     {# table #}
     <div class="card stack" style="--gap: var(--space-4);">
-      <h2 style="margin: 0; font-size: var(--font-size-xl);">Impressions Breakdown</h2>
+      <h2 class="m-0 card-heading">Impressions Breakdown</h2>
       {% if reception.reach.trend.is_empty %}
         <div class="empty-state" style="padding: var(--space-6) var(--space-4);">
-          <p style="color: var(--color-muted); margin: 0;">No trend data available.</p>
+          <p class="text-muted m-0">No trend data available.</p>
         </div>
       {% else %}
-        <div class="table-wrap" style="margin: 0; max-height: 200px; overflow-y: auto;">
-          <table style="width: 100%;">
+        <div class="table-wrap m-0" style="max-height: 200px; overflow-y: auto;">
+          <table class="full-width">
             <thead>
               <tr><th scope="col">Timeline</th><th scope="col">Total</th><th scope="col">Curated</th></tr>
             </thead>
             <tbody>
               {% for bucket in reception.reach.trend.buckets %}
                 <tr>
-                  <td>{{ bucket.label }}</td>
-                  <td>{{ bucket.total }}</td>
-                  <td>{{ bucket.curated }}</td>
+                   <td>{{ bucket.label }}</td>
+                   <td>{{ bucket.total }}</td>
+                   <td>{{ bucket.curated }}</td>
                 </tr>
               {% endfor %}
             </tbody>
@@ -128,40 +129,40 @@
   <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: var(--space-6);">
     {# On-Platform Funnel #}
     <div class="card stack" style="--gap: var(--space-4);">
-      <h2 style="margin: 0; font-size: var(--font-size-xl); border-bottom: 1px solid var(--color-border); padding-bottom: var(--space-2);">Engagement Funnel</h2>
+      <h2 class="m-0 card-heading card-heading--divided">Engagement Funnel</h2>
       {% with funnel=reception.funnel %}
         <dl style="margin: 0; display: grid; grid-template-columns: 1fr; gap: var(--space-2.5); font-size: var(--font-size-sm);">
-          <div class="cluster" style="justify-content: space-between; border-bottom: 1px solid var(--color-surface-2); padding-bottom: var(--space-1.5);">
-            <dt style="color: var(--color-muted);">Impressions</dt>
-            <dd style="margin: 0; font-weight: var(--font-weight-semibold);">{{ funnel.impressions }}</dd>
+          <div class="data-row">
+            <dt class="text-muted">Impressions</dt>
+            <dd>{{ funnel.impressions }}</dd>
           </div>
-          <div class="cluster" style="justify-content: space-between; border-bottom: 1px solid var(--color-surface-2); padding-bottom: var(--space-1.5);">
-            <dt style="color: var(--color-muted);">Click-throughs</dt>
-            <dd style="margin: 0; font-weight: var(--font-weight-semibold);">{{ funnel.click_throughs }}</dd>
+          <div class="data-row">
+            <dt class="text-muted">Click-throughs</dt>
+            <dd>{{ funnel.click_throughs }}</dd>
           </div>
-          <div class="cluster" style="justify-content: space-between; border-bottom: 1px solid var(--color-surface-2); padding-bottom: var(--space-1.5);">
-            <dt style="color: var(--color-muted);">Returns (within {{ funnel.short_days }} days)</dt>
-            <dd style="margin: 0; font-weight: var(--font-weight-semibold);">{{ funnel.returns_short }}</dd>
+          <div class="data-row">
+            <dt class="text-muted">Returns (within {{ funnel.short_days }} days)</dt>
+            <dd>{{ funnel.returns_short }}</dd>
           </div>
-          <div class="cluster" style="justify-content: space-between; border-bottom: 1px solid var(--color-surface-2); padding-bottom: var(--space-1.5);">
-            <dt style="color: var(--color-muted);">Returns (within {{ funnel.long_days }} days)</dt>
-            <dd style="margin: 0; font-weight: var(--font-weight-semibold);">{{ funnel.returns_long }}</dd>
+          <div class="data-row">
+            <dt class="text-muted">Returns (within {{ funnel.long_days }} days)</dt>
+            <dd>{{ funnel.returns_long }}</dd>
           </div>
-          <div class="cluster" style="justify-content: space-between; border-bottom: 1px solid var(--color-surface-2); padding-bottom: var(--space-1.5);">
-            <dt style="color: var(--color-muted);">Subscribes</dt>
-            <dd style="margin: 0; font-weight: var(--font-weight-semibold);">{{ funnel.subscribes }}</dd>
+          <div class="data-row">
+            <dt class="text-muted">Subscribes</dt>
+            <dd>{{ funnel.subscribes }}</dd>
           </div>
-          <div class="cluster" style="justify-content: space-between; border-bottom: 1px solid var(--color-surface-2); padding-bottom: var(--space-1.5);">
-            <dt style="color: var(--color-muted);">On-page Re-engagements</dt>
-            <dd style="margin: 0; font-weight: var(--font-weight-semibold);">{{ funnel.page_reengagements }}</dd>
+          <div class="data-row">
+            <dt class="text-muted">On-page Re-engagements</dt>
+            <dd>{{ funnel.page_reengagements }}</dd>
           </div>
-          <div class="cluster" style="justify-content: space-between; border-bottom: 1px solid var(--color-surface-2); padding-bottom: var(--space-1.5);">
-            <dt style="color: var(--color-muted);">Shares</dt>
-            <dd style="margin: 0; font-weight: var(--font-weight-semibold);">{{ funnel.shares }}</dd>
+          <div class="data-row">
+            <dt class="text-muted">Shares</dt>
+            <dd>{{ funnel.shares }}</dd>
           </div>
           <div class="cluster" style="justify-content: space-between;">
-            <dt style="color: var(--color-muted); font-weight: var(--font-weight-semibold);">Off-platform proxy</dt>
-            <dd style="margin: 0; font-weight: var(--font-weight-bold); color: var(--color-accent);">{{ funnel.off_platform_proxy }}</dd>
+            <dt class="text-muted font-semibold">Off-platform proxy</dt>
+            <dd class="m-0 font-bold text-accent">{{ funnel.off_platform_proxy }}</dd>
           </div>
         </dl>
       {% endwith %}
@@ -169,10 +170,10 @@
 
     {# Widget Performance (Off-Platform) #}
     <div class="card stack" style="--gap: var(--space-4);">
-      <h2 style="margin: 0; font-size: var(--font-size-xl); border-bottom: 1px solid var(--color-border); padding-bottom: var(--space-2);">Widget Performance (Off-Platform)</h2>
+      <h2 class="m-0 card-heading card-heading--divided">Widget Performance (Off-Platform)</h2>
       {% if not reception.widget_reach.available %}
         <div class="empty-state" style="padding: var(--space-8) var(--space-4);">
-          <div class="empty-state__icon">⚙️</div>
+          <div class="empty-state__icon">{% icon "gear" %}</div>
           <h3 class="empty-state__title">Telemetry Unavailable</h3>
           <p class="empty-state__description">Widget reach data is temporarily unavailable right now.</p>
         </div>
@@ -180,32 +181,32 @@
         {% with wr=reception.widget_reach %}
           <div class="stack" style="--gap: var(--space-4);">
             <dl style="margin: 0; display: grid; grid-template-columns: 1fr; gap: var(--space-2.5); font-size: var(--font-size-sm);">
-              <div class="cluster" style="justify-content: space-between; border-bottom: 1px solid var(--color-surface-2); padding-bottom: var(--space-1.5);">
-                <dt style="color: var(--color-muted);">Widget Impressions</dt>
-                <dd style="margin: 0; font-weight: var(--font-weight-semibold);">{{ wr.impressions }}</dd>
+              <div class="data-row">
+                <dt class="text-muted">Widget Impressions</dt>
+                <dd>{{ wr.impressions }}</dd>
               </div>
-              <div class="cluster" style="justify-content: space-between; border-bottom: 1px solid var(--color-surface-2); padding-bottom: var(--space-1.5);">
-                <dt style="color: var(--color-muted);">Click-throughs to Platform</dt>
-                <dd style="margin: 0; font-weight: var(--font-weight-semibold);">{{ wr.click_throughs }}</dd>
+              <div class="data-row">
+                <dt class="text-muted">Click-throughs to Platform</dt>
+                <dd>{{ wr.click_throughs }}</dd>
               </div>
               {% if wr.impressions %}
-                <div class="cluster" style="justify-content: space-between; border-bottom: 1px solid var(--color-surface-2); padding-bottom: var(--space-1.5);">
-                  <dt style="color: var(--color-muted);">Click-through Rate (CTR)</dt>
-                  <dd style="margin: 0; font-weight: var(--font-weight-bold); color: var(--color-accent);">{% widthratio wr.click_throughs wr.impressions 100 %}%</dd>
+                <div class="data-row">
+                  <dt class="text-muted">Click-through Rate (CTR)</dt>
+                  <dd class="m-0 font-bold text-accent">{% widthratio wr.click_throughs wr.impressions 100 %}%</dd>
                 </div>
               {% endif %}
-              <div class="cluster" style="justify-content: space-between; border-bottom: 1px solid var(--color-surface-2); padding-bottom: var(--space-1.5);">
-                <dt style="color: var(--color-muted);">Follows from Widget</dt>
-                <dd style="margin: 0; font-weight: var(--font-weight-semibold);">{{ wr.follows }}</dd>
+              <div class="data-row">
+                <dt class="text-muted">Follows from Widget</dt>
+                <dd>{{ wr.follows }}</dd>
               </div>
-              <div class="cluster" style="justify-content: space-between; border-bottom: 1px solid var(--color-surface-2); padding-bottom: var(--space-1.5);">
-                <dt style="color: var(--color-muted);">New Accounts from Widget</dt>
-                <dd style="margin: 0; font-weight: var(--font-weight-semibold);">{{ wr.accounts }}</dd>
+              <div class="data-row">
+                <dt class="text-muted">New Accounts from Widget</dt>
+                <dd>{{ wr.accounts }}</dd>
               </div>
               {% if wr.click_throughs %}
                 <div class="cluster" style="justify-content: space-between;">
-                  <dt style="color: var(--color-muted); font-weight: var(--font-weight-semibold);">Conversion Rate</dt>
-                  <dd style="margin: 0; font-weight: var(--font-weight-bold); color: var(--color-success);">{% widthratio wr.conversions_total wr.click_throughs 100 %}%</dd>
+                  <dt class="text-muted font-semibold">Conversion Rate</dt>
+                  <dd class="m-0 font-bold text-success">{% widthratio wr.conversions_total wr.click_throughs 100 %}%</dd>
                 </div>
               {% endif %}
             </dl>
@@ -217,24 +218,24 @@
 
   {# Reviews Section #}
   <section class="card stack" style="--gap: var(--space-5);" aria-labelledby="reviews-heading">
-    <h2 id="reviews-heading" style="margin: 0; font-size: var(--font-size-xl); border-bottom: 1px solid var(--color-border); padding-bottom: var(--space-2);">Reviews & Ratings</h2>
-    
+    <h2 id="reviews-heading" class="m-0 card-heading card-heading--divided">Reviews & Ratings</h2>
+
     {% if not reception.reviews.available %}
       <div class="empty-state" style="padding: var(--space-8) var(--space-4);">
-        <p style="color: var(--color-muted); margin: 0;">Reviews unavailable</p>
+        <p class="text-muted m-0">Reviews unavailable</p>
       </div>
     {% else %}
       <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--space-6); align-items: start;">
         {# rating distribution #}
         <div class="stack" style="--gap: var(--space-3);">
-          <h3 style="font-size: var(--font-size-md); font-weight: var(--font-weight-bold); text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-muted); margin: 0;">Rating Breakdown</h3>
+          <h3 class="muted-caption m-0">Rating Breakdown</h3>
           <div style="font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold);">{{ reception.reviews.total_count }} total review{{ reception.reviews.total_count|pluralize }}</div>
-          
+
           <div class="stack" style="--gap: var(--space-2); margin-top: var(--space-2);">
             {% for score, count in reception.reviews.distribution.items %}
-              <div class="cluster" style="justify-content: space-between; font-size: var(--font-size-sm);">
-                <span style="font-weight: var(--font-weight-semibold);">{{ score }} Star{{ score|pluralize }}</span>
-                <span class="badge" style="font-weight: var(--font-weight-bold);">{{ count }}</span>
+              <div class="cluster" style="justify-content: space-between;">
+                <span class="font-semibold">{{ score }} Star{{ score|pluralize }}</span>
+                <span class="badge font-bold">{{ count }}</span>
               </div>
             {% endfor %}
           </div>
@@ -242,21 +243,21 @@
 
         {# list of reviews #}
         <div class="stack" style="--gap: var(--space-4);">
-          <h3 style="font-size: var(--font-size-md); font-weight: var(--font-weight-bold); text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-muted); margin: 0;">Recent Reviews</h3>
+          <h3 class="muted-caption m-0">Recent Reviews</h3>
           {% if reception.reviews.reviews %}
             <div class="stack" style="--gap: var(--space-3); max-height: 300px; overflow-y: auto; padding-right: var(--space-2);">
               {% for review in reception.reviews.reviews %}
                 <div class="card" style="padding: var(--space-4); background-color: var(--color-surface);">
-                  <div class="cluster" style="justify-content: space-between; margin-bottom: var(--space-2);">
-                    <span class="badge badge--accent">{{ review.score }} ★</span>
-                    <span style="font-size: var(--font-size-xs); color: var(--color-muted);">{{ review.author_display }} ({{ review.created_at }})</span>
+                  <div class="toolbar" style="margin-bottom: var(--space-2);">
+                    <span class="badge badge--accent">{{ review.score }} {% icon "star" %}</span>
+                    <span class="text-muted text-xs">{{ review.author_display }} ({{ review.created_at }})</span>
                   </div>
-                  <p style="margin: 0; font-size: var(--font-size-sm); color: var(--color-text); line-height: var(--line-base);">{{ review.review_text }}</p>
+                  <p class="m-0" style="font-size: var(--font-size-sm); color: var(--color-text); line-height: var(--line-base);">{{ review.review_text }}</p>
                 </div>
               {% endfor %}
             </div>
           {% else %}
-            <p style="color: var(--color-muted); font-size: var(--font-size-sm); margin: 0;">No reviews written yet.</p>
+            <p class="text-muted m-0 text-sm">No reviews written yet.</p>
           {% endif %}
         </div>
       </div>

@@ -1,18 +1,19 @@
 {% extends "pages/base.html" %}
+{% load icons %}
 {% block title %}Apps you follow · App Discovery{% endblock %}
 
 {% block content %}
 <div class="stack" style="--gap: var(--space-6);">
   <div>
-    <h1 style="margin: 0;">Apps you follow</h1>
+    <h1 class="m-0">Apps you follow</h1>
     <p style="color: var(--color-muted); margin: 0; font-size: var(--font-size-lg);">Stay updated with the latest releases, announcements, and news from your followed projects.</p>
   </div>
 
   <div class="app-page">
     {# Notices region (News Feed) #}
     <section class="app-page-main stack" style="--gap: var(--space-5);" aria-label="Notices">
-      <h2 style="font-size: var(--font-size-xl); margin: 0;">Latest News</h2>
-      
+      <h2 class="card-heading">Latest News</h2>
+
       {% if notices %}
         <div class="stack" style="--gap: var(--space-4);">
           {% for notice in notices %}
@@ -24,7 +25,7 @@
         </div>
       {% else %}
         <div class="empty-state" style="padding: var(--space-8) var(--space-4);">
-          <div class="empty-state__icon">📰</div>
+          <div class="empty-state__icon">{% icon "newspaper" %}</div>
           <h3 class="empty-state__title">No news yet</h3>
           <p class="empty-state__description">Developers of your followed apps haven't posted any updates or announcements yet.</p>
         </div>
@@ -33,8 +34,8 @@
 
     {# Followed-apps region (Sidebar list) #}
     <section class="app-page-sidebar stack" style="--gap: var(--space-5);" aria-label="Followed apps">
-      <h2 style="font-size: var(--font-size-xl); margin: 0;">Your Followed Apps</h2>
-      
+      <h2 class="card-heading">Your Followed Apps</h2>
+
       {% if apps %}
         <div class="card" style="padding: var(--space-4);">
           <ul class="stack" style="--gap: var(--space-2); list-style: none; padding: 0; margin: 0;">

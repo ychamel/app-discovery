@@ -108,11 +108,10 @@ class DeveloperPagesTests(TestCase):
         self.assertContains(response, "Reachable &amp; functional")
         self.assertContains(response, "Broken.")
 
-    def test_my_apps_heading_says_my_apps(self):
-        # UX-004: the page heading must reflect the broader "My Apps" concept,
-        # not "My submissions" which is misleading once apps are accepted/live.
+    def test_my_apps_heading_says_manage(self):
+        # UX-004: the page heading says "Manage" under the developer hub tabs
         response = self.client.get(reverse("catalog:my-apps"))
-        self.assertContains(response, "My Apps")
+        self.assertContains(response, "Manage")
         self.assertNotContains(response, "My submissions")
 
     def test_my_apps_status_grouping_shows_group_headers(self):

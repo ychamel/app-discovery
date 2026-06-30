@@ -2,24 +2,24 @@
   The Follow slot's content (app-subscriptions DESIGN.md §5f).
 {% endcomment %}
 {% if degraded %}
-  <p style="color: var(--color-error); font-size: var(--font-size-sm); margin: 0;">Follow is temporarily unavailable.</p>
+  <p class="text-error text-sm m-0">Follow is temporarily unavailable.</p>
 {% elif request.user.is_authenticated %}
   {% if is_owner %}
     {% if is_following %}
-      <form method="post" action="{% url 'subscriptions:unfollow' app_id=app.id %}" style="margin: 0; width: 100%;">
+      <form method="post" action="{% url 'subscriptions:unfollow' app_id=app.id %}" class="m-0">
         {% csrf_token %}
-        <button type="submit" class="btn btn--secondary" style="width: 100%;">Unfollow</button>
+        <button type="submit" class="btn btn--secondary">Unfollow</button>
       </form>
     {% endif %}
   {% elif is_following %}
-    <form method="post" action="{% url 'subscriptions:unfollow' app_id=app.id %}" style="margin: 0; width: 100%;">
+    <form method="post" action="{% url 'subscriptions:unfollow' app_id=app.id %}" class="m-0">
       {% csrf_token %}
-      <button type="submit" class="btn btn--secondary" style="width: 100%;">Unfollow</button>
+      <button type="submit" class="btn btn--secondary">Unfollow</button>
     </form>
   {% else %}
-    <form method="post" action="{% url 'subscriptions:follow' app_id=app.id %}" style="margin: 0; width: 100%;">
+    <form method="post" action="{% url 'subscriptions:follow' app_id=app.id %}" class="m-0">
       {% csrf_token %}
-      <button type="submit" class="btn btn--primary" style="width: 100%;">Follow</button>
+      <button type="submit" class="btn btn--primary">Follow</button>
     </form>
   {% endif %}
 {% else %}

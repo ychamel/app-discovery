@@ -1,9 +1,10 @@
 {% extends "updates/base.html" %}
+{% load icons %}
 {% block title %}My channels · Developer updates{% endblock %}
 {% block content %}
 <div class="stack" style="--gap: var(--space-6);">
   <div>
-    <h1 style="margin: 0;">Update Channels</h1>
+    <h1 class="m-0">Update Channels</h1>
     <p style="color: var(--color-muted); margin: 0; font-size: var(--font-size-lg);">Publish release announcements and early-access updates for your followers.</p>
   </div>
 
@@ -11,7 +12,7 @@
     <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--space-6);">
       {% for app in apps %}
         <div class="card stack" style="--gap: var(--space-4);">
-          <h2 style="margin: 0; font-size: var(--font-size-xl);">{{ app.name }}</h2>
+          <h2 class="card-heading">{{ app.name }}</h2>
           <p style="color: var(--color-muted); font-size: var(--font-size-sm); margin: 0;">Active updates channel for followers of {{ app.name }}.</p>
           <a href="{% url 'updates:channel' app_id=app.id %}" class="btn btn--primary" style="text-decoration: none; text-align: center; margin-top: auto;">
             Manage Channel
@@ -21,7 +22,7 @@
     </div>
   {% else %}
     <div class="empty-state">
-      <div class="empty-state__icon">📢</div>
+      <div class="empty-state__icon">{% icon "megaphone" %}</div>
       <h2 class="empty-state__title">No channels available</h2>
       <p class="empty-state__description">no accepted apps yet — once your application is accepted, a channel will automatically be created here.</p>
       <a href="{% url 'dashboard:my-apps' %}" class="btn btn--secondary">Go to Dashboard</a>

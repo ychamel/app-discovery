@@ -5,7 +5,7 @@
 {% block content %}
 <div class="stack" style="--gap: var(--space-6);">
   <div>
-    <h1 style="margin: 0;">Your profile</h1>
+    <h1 class="m-0">Your profile</h1>
     <p style="color: var(--color-muted); margin: 0; font-size: var(--font-size-lg);">Manage your account details, developer role, and settings.</p>
   </div>
 
@@ -15,17 +15,17 @@
   <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: var(--space-6); align-items: start;">
     <!-- Profile Info and Edit Name -->
     <div class="card stack" style="--gap: var(--space-5);">
-      <h2 style="margin: 0; font-size: var(--font-size-xl); border-bottom: 1px solid var(--color-border); padding-bottom: var(--space-3);">Account Information</h2>
-      
-      <dl style="margin: 0; display: grid; grid-template-columns: 120px 1fr; gap: var(--space-3) 0;">
-        <dt style="font-weight: var(--font-weight-semibold); color: var(--color-muted);">Email</dt>
-        <dd style="margin: 0; color: var(--color-text);">{{ account.email }}{% if not account.is_email_confirmed %} <span class="badge badge--warning">unconfirmed</span>{% endif %}</dd>
-        
-        <dt style="font-weight: var(--font-weight-semibold); color: var(--color-muted);">Display name</dt>
-        <dd style="margin: 0; color: var(--color-text);">{{ account.display_name|default:"—" }}</dd>
-        
-        <dt style="font-weight: var(--font-weight-semibold); color: var(--color-muted);">Roles</dt>
-        <dd style="margin: 0; color: var(--color-text);">
+      <h2 class="card-heading card-heading--divided">Account Information</h2>
+
+      <dl class="profile-details">
+        <dt>Email</dt>
+        <dd>{{ account.email }}{% if not account.is_email_confirmed %} <span class="badge badge--warning">unconfirmed</span>{% endif %}</dd>
+
+        <dt>Display name</dt>
+        <dd>{{ account.display_name|default:"—" }}</dd>
+
+        <dt>Roles</dt>
+        <dd>
           {% for role in roles %}
             <span class="badge badge--accent">{{ role }}</span>
           {% empty %}
@@ -39,7 +39,7 @@
         <div class="form-field" style="margin-bottom: 0;">
           <label for="id_display_name">Edit display name</label>
           <div class="cluster" style="--gap: var(--space-2); align-items: stretch; width: 100%;">
-            <input type="text" name="display_name" id="id_display_name" value="{{ account.display_name }}" maxlength="80" required style="flex: 1; max-width: none;">
+            <input type="text" name="display_name" id="id_display_name" value="{{ account.display_name }}" maxlength="80" required class="full-width" style="flex: 1;">
             <button type="submit" class="btn btn--primary">Save</button>
           </div>
         </div>
@@ -50,29 +50,29 @@
     <div class="grid" style="grid-template-columns: 1fr; gap: var(--space-6);">
       {% if "developer" not in roles %}
         <div class="card stack" style="--gap: var(--space-4);">
-          <h2 style="margin: 0; font-size: var(--font-size-xl);">Become a developer</h2>
+          <h2 class="card-heading">Become a developer</h2>
           <p style="color: var(--color-muted); font-size: var(--font-size-sm); margin: 0;">Submit and manage your own applications, view telemetry dashboards, and publish release channels.</p>
           <form method="post" action="{% url 'accounts:developer-role' %}">
             {% csrf_token %}
-            <button type="submit" class="btn btn--primary" style="width: 100%;">Become a developer</button>
+            <button type="submit" class="btn btn--primary full-width">Become a developer</button>
           </form>
         </div>
       {% else %}
         <div class="card stack" style="--gap: var(--space-4);">
-          <h2 style="margin: 0; font-size: var(--font-size-xl);">Developer Dashboard</h2>
+          <h2 class="card-heading">Developer Dashboard</h2>
           <p style="color: var(--color-muted); font-size: var(--font-size-sm); margin: 0;">You have the developer role enabled. Access your apps and analytics.</p>
-          <a href="{% url 'dashboard:my-apps' %}" class="btn btn--primary" style="text-decoration: none; text-align: center;">Go to Dashboard</a>
+          <a href="{% url 'dashboard:my-apps' %}" class="btn btn--primary full-width" style="text-decoration: none; text-align: center;">Go to Dashboard</a>
         </div>
       {% endif %}
 
       <div class="card stack" style="--gap: var(--space-4);">
-        <h2 style="margin: 0; font-size: var(--font-size-xl);">Account Actions</h2>
-        
+        <h2 class="card-heading">Account Actions</h2>
+
         <div class="stack" style="--gap: var(--space-3); border-bottom: 1px solid var(--color-border); padding-bottom: var(--space-4);">
           <p style="color: var(--color-muted); font-size: var(--font-size-sm); margin: 0;">Sign out from your active session.</p>
           <form method="post" action="{% url 'accounts:logout' %}">
             {% csrf_token %}
-            <button type="submit" class="btn btn--secondary" style="width: 100%;">Sign out</button>
+            <button type="submit" class="btn btn--secondary full-width">Sign out</button>
           </form>
         </div>
 
@@ -81,7 +81,7 @@
           <form method="post" action="{% url 'accounts:profile-delete' %}" onsubmit="return confirm('Permanently delete your account?');">
             {% csrf_token %}
             <input type="hidden" name="confirm" value="true">
-            <button type="submit" class="btn btn--secondary" style="width: 100%; border-color: var(--color-error); color: var(--color-error);">Delete my account</button>
+            <button type="submit" class="btn btn--danger full-width">Delete my account</button>
           </form>
         </div>
       </div>

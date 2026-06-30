@@ -1,4 +1,5 @@
 {% extends "discovery/base.html" %}
+{% load icons %}
 {% comment %}
   The open discovery surface (DESIGN.md §6.4). Five states, all rendered here:
   results · zero-results · empty-catalogue · facet-degraded · (error = a loud 500, never here).
@@ -12,7 +13,7 @@
 {% block content %}
 <div class="stack" style="--gap: var(--space-6);">
   <div class="stack" style="--gap: var(--space-2);">
-    <h1 style="margin: 0;">Discover apps</h1>
+    <h1 class="m-0">Discover apps</h1>
     <p style="color: var(--color-muted); margin: 0; font-size: var(--font-size-lg);">Explore and find verified vibe-coded web applications.</p>
   </div>
 
@@ -36,7 +37,7 @@
     {# --- Facet sidebar (active tags grouped by cluster) — fails soft (DESIGN §9). --- #}
     <aside class="discovery-sidebar card stack" style="--gap: var(--space-5);" aria-label="Filters">
       {% if facets_degraded %}
-        <p style="color: var(--color-error); margin: 0;">Filters are unavailable right now.</p>
+        <p class="text-error m-0">Filters are unavailable right now.</p>
       {% else %}
         {% if selected_tag or selected_cluster or query %}
           <p style="margin: 0;"><a href="{% url 'discovery:browse' %}" class="btn btn--secondary btn--sm" style="width: 100%; text-align: center; display: block;">Clear filters</a></p>
@@ -44,7 +45,7 @@
         {% for cluster in clusters %}
           {% if cluster.tags.all %}
             <section aria-label="{{ cluster.name }}" class="stack" style="--gap: var(--space-2);">
-              <h2 class="sidebar-title" style="margin: 0;"><a href="{% url 'discovery:browse' %}?cluster={{ cluster.id }}">{{ cluster.name }}</a></h2>
+              <h2 class="sidebar-title m-0"><a href="{% url 'discovery:browse' %}?cluster={{ cluster.id }}">{{ cluster.name }}</a></h2>
               <ul class="stack" style="--gap: 0; list-style: none; padding: 0; margin: 0;">
                 {% for tag in cluster.tags.all %}
                   <li>
@@ -67,6 +68,13 @@
       {% if page.apps %}
         <div class="cluster" style="justify-content: space-between; align-items: center;">
           <p style="color: var(--color-muted); margin: 0; font-size: var(--font-size-sm);">{{ page.total }} result{{ page.total|pluralize }}</p>
+          <caption class="ranking-caption" style="display: block; font-size: var(--font-size-sm); color: var(--color-muted);">
+            {% if query %}
+              Sorted by relevance to search query
+            {% else %}
+              Sorted by newest accepted
+            {% endif %}
+          </caption>
         </div>
 
         <ul class="app-grid" style="list-style: none; padding: 0; margin: 0;">
@@ -106,7 +114,7 @@
       {% elif query or selected_tag or selected_cluster %}
         {# Zero-results: a well-formed query/filter matched nothing; the catalogue is non-empty. #}
         <div class="empty-state">
-          <div class="empty-state__icon">🔍</div>
+          <div class="empty-state__icon">{% icon "search" %}</div>
           <h2 class="empty-state__title" style="margin: 0 0 var(--space-2) 0;">No apps match your search</h2>
           <p class="empty-state__description">Try adjusting your filters or search query to find what you're looking for.</p>
           <a href="{% url 'discovery:browse' %}" class="btn btn--secondary">Clear filters</a>
@@ -114,7 +122,7 @@
       {% else %}
         {# Empty catalogue: no accepted apps at all yet. #}
         <div class="empty-state">
-          <div class="empty-state__icon">📦</div>
+          <div class="empty-state__icon">{% icon "package" %}</div>
           <h2 class="empty-state__title" style="margin: 0 0 var(--space-2) 0;">No apps in the catalogue yet</h2>
           <p class="empty-state__description">We're just getting started. Check back later or list your own app if you're a developer.</p>
         </div>

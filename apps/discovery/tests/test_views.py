@@ -73,6 +73,12 @@ class BrowseTests(TestCase):
         response = Client().get(_BROWSE)
         self.assertContains(response, reverse("pages:app-page", args=[app.id]))
 
+    def test_ranking_caption_browse(self):
+        # T-09: check browse mode ranking caption is present
+        make_accepted_app(self.owner, tag_ids=[self.tag.id], name="BrowseApp")
+        response = Client().get(_BROWSE)
+        self.assertContains(response, "Sorted by newest accepted")
+
 
 @override_settings(MEDIA_ROOT=_MEDIA_ROOT)
 class KeywordSearchTests(TestCase):
@@ -98,6 +104,12 @@ class KeywordSearchTests(TestCase):
         )
         response = Client().get(f"{_BROWSE}?q=PendingCalendar")
         self.assertContains(response, "No apps match")
+
+    def test_ranking_caption_search(self):
+        # T-09: check search mode ranking caption is present
+        make_accepted_app(self.owner, tag_ids=[self.tag.id], name="Calendar")
+        response = Client().get(f"{_BROWSE}?q=Calendar")
+        self.assertContains(response, "Sorted by relevance to search query")
 
 
 @override_settings(MEDIA_ROOT=_MEDIA_ROOT)

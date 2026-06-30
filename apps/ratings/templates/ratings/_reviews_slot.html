@@ -1,9 +1,10 @@
+{% load icons %}
 {% comment %}
   The AP-1 reviews slot (ratings-reviews DESIGN.md §5f). Rendered *inside* the app page's
   existing <section aria-label="Reviews"> — this partial owns the slot's content only.
 {% endcomment %}
 {% if degraded %}
-  <p style="color: var(--color-error); font-size: var(--font-size-sm); margin: 0;">Reviews are temporarily unavailable.</p>
+  <p class="text-error text-sm m-0">Reviews are temporarily unavailable.</p>
 {% else %}
 
   {# Summary: total count + raw per-score distribution (descriptive, not a score). #}
@@ -14,8 +15,8 @@
     {% if reviews.total_count %}
       <div class="cluster" style="--gap: var(--space-2); flex-wrap: wrap;">
         {% for score, count in distribution_rows %}
-          <span class="badge" style="font-weight: var(--font-weight-semibold);">
-            {{ score }} ★: {{ count }}
+          <span class="badge font-semibold text-xs">
+            {{ score }} {% icon "star" %}: {{ count }}
           </span>
         {% endfor %}
       </div>
@@ -29,7 +30,7 @@
         {% for review in reviews.reviews %}
           <li style="border-bottom: 1px solid var(--color-surface-2); padding-bottom: var(--space-3);">
             <div class="cluster" style="justify-content: space-between; margin-bottom: var(--space-1.5); align-items: center;">
-              <span class="badge badge--accent" style="font-weight: var(--font-weight-semibold); font-size: var(--font-size-xs);">{{ review.score }} / {{ scale_max }} ★</span>
+              <span class="badge badge--accent" style="font-weight: var(--font-weight-semibold); font-size: var(--font-size-xs);">{{ review.score }} / {{ scale_max }} {% icon "star" %}</span>
               <span style="font-size: var(--font-size-xs); color: var(--color-muted);">By {{ review.author_display }}</span>
             </div>
             {% if review.review_text %}
@@ -53,7 +54,7 @@
         {% if own_rating %}
           <form method="post" action="{% url 'ratings:remove' app_id=app.id %}" style="display: flex; justify-content: flex-end; margin-top: var(--space-3);">
             {% csrf_token %}
-            <button type="submit" class="btn btn--ghost btn--sm" style="color: var(--color-error);">Remove your rating</button>
+            <button type="submit" class="btn btn--ghost btn--sm text-error">Remove your rating</button>
           </form>
         {% endif %}
       {% else %}
@@ -63,7 +64,7 @@
         <div class="grid" style="grid-template-columns: 120px 1fr; gap: var(--space-4); align-items: start;">
           <div class="form-field" style="margin-bottom: 0;">
             <label for="rating-score">Your rating</label>
-            <select id="rating-score" name="score" style="width: 100%;">
+            <select id="rating-score" name="score" class="full-width">
               {% for value in score_choices %}
                 <option value="{{ value }}"
                   {% if own_rating and own_rating.score == value %}selected{% endif %}>
@@ -91,7 +92,7 @@
       {% if own_rating %}
         <form method="post" action="{% url 'ratings:remove' app_id=app.id %}" style="display: flex; justify-content: flex-end; margin-top: calc(var(--space-2) * -1);">
           {% csrf_token %}
-          <button type="submit" class="btn btn--ghost btn--sm" style="color: var(--color-error);">Remove your rating</button>
+          <button type="submit" class="btn btn--ghost btn--sm text-error">Remove your rating</button>
         </form>
       {% endif %}
       {% endif %}

@@ -15,23 +15,18 @@
     <nav class="site-nav" aria-label="Primary">
       <a class="site-brand" href="{% url 'discovery:browse' %}">App Discovery</a>
       <ul class="site-nav-links">
-        <li><a href="{% url 'discovery:browse' %}">Discover</a></li>
+        <li><a href="{% url 'discovery:browse' %}"{% if request.resolver_match.namespace == 'discovery' or request.resolver_match.namespace == 'pages' %} class="active" aria-current="page"{% endif %}>Discover</a></li>
         {% if user.is_authenticated %}
           {% is_developer user as user_is_developer %}
           {% is_admin user as user_is_admin %}
           {% if user_is_developer %}
-            {% comment %}
-              Developer-only entry point to the submissions list (UX-003): mirrors the
-              view's own @require_role(developer) gate, so it is never shown to an
-              account that would receive a 403 on click.
-            {% endcomment %}
-            <li><a href="{% url 'catalog:my-apps' %}">My Apps</a></li>
+            <li><a href="{% url 'catalog:my-apps' %}"{% if request.resolver_match.namespace == 'dashboard' or request.resolver_match.namespace == 'catalog' and 'review' not in request.resolver_match.url_name %} class="active" aria-current="page"{% endif %}>Developer</a></li>
           {% endif %}
           {% if user_is_admin %}
-            <li><a href="{% url 'catalog:review' %}">Review queue</a></li>
+            <li><a href="{% url 'catalog:review' %}"{% if request.resolver_match.namespace == 'catalog' and 'review' in request.resolver_match.url_name %} class="active" aria-current="page"{% endif %}>Review queue</a></li>
           {% endif %}
-          <li><a href="{% url 'subscriptions:feed' %}">Following</a></li>
-          <li><a href="{% url 'accounts:profile' %}">Profile</a></li>
+          <li><a href="{% url 'subscriptions:feed' %}"{% if request.resolver_match.namespace == 'subscriptions' %} class="active" aria-current="page"{% endif %}>Following</a></li>
+          <li><a href="{% url 'accounts:profile' %}"{% if request.resolver_match.namespace == 'accounts' and request.resolver_match.url_name == 'profile' %} class="active" aria-current="page"{% endif %}>Profile</a></li>
           <li>
             {# Mirrors the profile-page sign-out: a CSRF-protected POST (logout flushes the session). #}
             <form class="site-nav-signout" method="post" action="{% url 'accounts:logout' %}">
@@ -40,8 +35,8 @@
             </form>
           </li>
         {% else %}
-          <li><a href="{% url 'accounts:signin' %}">Sign in</a></li>
-          <li><a href="{% url 'accounts:register' %}">Register</a></li>
+          <li><a href="{% url 'accounts:signin' %}"{% if request.resolver_match.namespace == 'accounts' and request.resolver_match.url_name == 'signin' %} class="active" aria-current="page"{% endif %}>Sign in</a></li>
+          <li><a href="{% url 'accounts:register' %}"{% if request.resolver_match.namespace == 'accounts' and request.resolver_match.url_name == 'register' %} class="active" aria-current="page"{% endif %}>Register</a></li>
         {% endif %}
       </ul>
     </nav>

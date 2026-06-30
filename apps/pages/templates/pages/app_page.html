@@ -1,4 +1,5 @@
 {% extends "pages/base.html" %}
+{% load icons %}
 {% load ratings_tags %}
 {% load subscriptions_tags %}
 {% load updates_tags %}
@@ -27,7 +28,7 @@
 
     <!-- 1. Hero — name (always) + pitch line + at-a-glance fact strip (categories + facets). -->
     <header class="card stack" data-slot="hero" aria-label="App summary" style="--gap: var(--space-3);">
-      <h1 style="margin: 0;">{{ app.name }}</h1>
+      <h1 class="m-0">{{ app.name }}</h1>
       {% if app.tagline %}
         <p class="hero__tagline" style="margin: 0; font-size: var(--font-size-lg); color: var(--color-muted);">{{ app.tagline }}</p>
       {% endif %}
@@ -39,7 +40,7 @@
         {% endfor %}
         {% for facet in app.facets %}
           {% for value in facet.values %}
-            <li class="badge facet" title="{{ facet.label }}">{{ value.label }}</li>
+            <li class="badge facet"><span class="facet__cat">{{ facet.label }}</span> {{ value.label }}</li>
           {% endfor %}
         {% endfor %}
       </ul>
@@ -58,13 +59,13 @@
           </figure>
         {% endif %}
         {% for media in app.media %}
-          <figure style="margin: 0;">
+          <figure class="m-0">
             <img src="{{ media.url }}" alt="{{ media.alt_text }}">
           </figure>
         {% empty %}
           {% if not app.demo_clip_url %}
             <div class="empty-state" style="width: 100%;">
-              <div class="empty-state__icon">📸</div>
+              <div class="empty-state__icon">{% icon "photo" %}</div>
               <h3 class="empty-state__title">No screenshots yet</h3>
               <p class="empty-state__description">The developer hasn't uploaded any media for this application.</p>
             </div>
@@ -130,24 +131,50 @@
     </section>
 
     <!-- 8. Share — POST to pages:share (progressive enhancement). -->
-    <section class="card stack" data-slot="share" aria-label="Share" style="--gap: var(--space-4);">
+    <section class="card stack" data-slot="share" aria-label="Share" style="--gap: var(--space-3);">
       <h2>Share this app</h2>
-      <form method="post" action="{% url 'pages:share' app_id=app.id %}" class="stack" style="--gap: var(--space-2);">
+      <div class="cluster" style="--gap: var(--space-2); align-items: flex-end;">
+        <div class="form-field" style="margin: 0; flex: 1;">
+          <label for="share-url">Page link</label>
+          <input id="share-url" type="text" readonly class="full-width"
+                 value="{{ request.scheme }}://{{ request.get_host }}{% url 'pages:app-page' app_id=app.id %}">
+        </div>
+        <button id="copy-button" class="btn btn--secondary" type="button" style="display: none; height: var(--form-control-height, 2.5rem);">Copy link</button>
+      </div>
+      <div id="copy-feedback" aria-live="polite" class="text-success" style="font-size: var(--font-size-sm); min-height: 1.25rem;"></div>
+
+      <form method="post" action="{% url 'pages:share' app_id=app.id %}" class="m-0">
         {% csrf_token %}
         {% if imp %}<input type="hidden" name="imp" value="{{ imp }}">{% endif %}
-        <button type="submit">Share</button>
+        <button type="submit" class="btn btn--ghost btn--sm text-muted">Register share</button>
       </form>
-      <div class="form-field" style="margin: 0;">
-        <label for="share-url">Page link</label>
-        <input id="share-url" type="text" readonly
-               value="{{ request.scheme }}://{{ request.get_host }}{% url 'pages:app-page' app_id=app.id %}">
-      </div>
+
+      <script>
+        (function() {
+          if (navigator.clipboard) {
+            var btn = document.getElementById('copy-button');
+            var input = document.getElementById('share-url');
+            var feedback = document.getElementById('copy-feedback');
+            if (btn && input && feedback) {
+              btn.style.display = 'inline-block';
+              btn.addEventListener('click', function() {
+                navigator.clipboard.writeText(input.value).then(function() {
+                  feedback.textContent = 'Copied!';
+                  setTimeout(function() {
+                    feedback.textContent = '';
+                  }, 3000);
+                });
+              });
+            }
+          }
+        })();
+      </script>
     </section>
 
   </div>
 
   <!-- Reviews Section -->
-  <div class="app-page-reviews" style="width: 100%;">
+  <div class="app-page-reviews full-width">
     <!-- 9. Reviews — the AP-1 slot, filled by the ratings-reviews feature via its inclusion tag. -->
     <section class="card stack" data-slot="reviews" aria-label="Reviews" style="--gap: var(--space-4);">
       <h2>Reviews</h2>

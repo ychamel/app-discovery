@@ -151,7 +151,7 @@ class TrendRenderTests(DashboardViewTestCase):
 
         response = self.client.get(self._app_url(app.id, window="1m"))
 
-        self.assertContains(response, "<svg")
+        self.assertContains(response, 'aria-label="Impressions over time: total and curated lines"')
         self.assertContains(response, "<table")
         buckets = response.context["reception"].reach.trend.buckets
         data_bucket = next(b for b in buckets if b.total > 0)
@@ -163,7 +163,7 @@ class TrendRenderTests(DashboardViewTestCase):
         app = make_accepted_app(self.dev, tag_ids=[self.tag.id])
         response = self.client.get(self._app_url(app.id, window="1m"))
         self.assertContains(response, "No impressions in this window")
-        self.assertNotContains(response, "<svg")
+        self.assertNotContains(response, 'aria-label="Impressions over time: total and curated lines"')
 
 
 class FunnelRenderTests(DashboardViewTestCase):

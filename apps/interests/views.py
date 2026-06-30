@@ -105,11 +105,13 @@ def _build_picker_context(user) -> dict:
 
 def _cluster_rows(declared_ids: set) -> list[dict]:
     """Each cluster with its active tags as (tag, checked) pairs — the AC5 render shape."""
+    seen_tags = set()
     rows = []
     for cluster in taxonomy.list_clusters():
-        tags = [
-            {"tag": tag, "checked": tag.id in declared_ids}
-            for tag in cluster.tags.all()
-        ]
+        tags = []
+        for tag in cluster.tags.all():
+            if tag.id not in seen_tags:
+                seen_tags.add(tag.id)
+                tags.append({"tag": tag, "checked": tag.id in declared_ids})
         rows.append({"cluster": cluster, "tags": tags})
     return rows

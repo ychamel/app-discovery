@@ -145,9 +145,11 @@ class FacetTests(SimpleTestCase):
         ]
         html = _render(_content(facets=facets))
         self.assertIn("fact-strip", html)
-        self.assertIn(">Free<", html)
-        self.assertIn(">Web<", html)
-        self.assertIn(">Mobile<", html)
+        self.assertIn("Free", html)
+        self.assertIn("Web", html)
+        self.assertIn("Mobile", html)
+        self.assertIn("Pricing", html)
+        self.assertIn("Platform", html)
 
 
 class DeepDiveTests(SimpleTestCase):
@@ -231,4 +233,4 @@ class PressKitAndAccessibilityTests(SimpleTestCase):
     def test_try_and_share_are_focusable_controls(self):
         html = _render(_content())
         self.assertRegex(html, r"<a\s[^>]*href=")
-        self.assertIn('<button type="submit">Share</button>', html)
+        self.assertIn('<button type="submit" class="btn btn--ghost btn--sm text-muted">Register share</button>', html)

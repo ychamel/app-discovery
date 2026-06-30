@@ -1,26 +1,25 @@
 {% extends "catalog/base.html" %}
+{% load icons %}
 {% block title %}My apps · App Discovery{% endblock %}
 
 {% block content %}
 <div class="stack" style="--gap: var(--space-6);">
-  <div class="cluster" style="justify-content: space-between; align-items: flex-start;">
-    <div>
-      <h1 style="margin: 0;">My Apps</h1>
-      <p style="color: var(--color-muted); margin: 0; font-size: var(--font-size-lg);">Submit and manage your apps and track their review status.</p>
+  <div class="toolbar">
+    <div class="page-header">
+      <h1>Manage</h1>
+      <p>Submit and manage your apps and track their review status.</p>
     </div>
-    <div class="cluster" style="--gap: var(--space-2);">
-      {% comment %}
-        Reciprocal link to the analytics dashboard (UX-003): makes both developer
-        surfaces mutually reachable from the single header entry point.
-      {% endcomment %}
-      <a href="{% url 'dashboard:my-apps' %}" class="btn btn--secondary">View analytics</a>
+    <div>
       <a href="{% url 'catalog:submit' %}" class="btn btn--primary">Submit an App</a>
     </div>
   </div>
 
+  {% include "core/_dev_tabs.html" with active_tab="manage" %}
+
+
   {% if not apps %}
     <div class="empty-state">
-      <div class="empty-state__icon">📤</div>
+      <div class="empty-state__icon">{% icon "upload" %}</div>
       <h2 class="empty-state__title">No applications submitted yet</h2>
       <p class="empty-state__description">You haven't submitted an app yet. Submit your web app to have it reviewed and curated in the public directory.</p>
       <a href="{% url 'catalog:submit' %}" class="btn btn--primary">Submit your first app</a>
@@ -40,7 +39,7 @@
             {% for app in group.list %}
               <div class="card stack" style="--gap: var(--space-3);">
                 <div class="cluster" style="justify-content: space-between; align-items: center;">
-                  <h3 style="margin: 0; font-size: var(--font-size-xl);">
+                  <h3 class="card-heading">
                     <a href="{% url 'catalog:app-detail' app_id=app.id %}" style="color: var(--color-text); text-decoration: none;">
                       {{ app.name }}
                     </a>

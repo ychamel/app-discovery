@@ -1,16 +1,17 @@
 {% extends "catalog/base.html" %}
+{% load icons %}
 {% block title %}Review queue · App Discovery{% endblock %}
 
 {% block content %}
 <div class="stack" style="--gap: var(--space-6);">
   <div>
-    <h1 style="margin: 0;">Review Queue</h1>
+    <h1 class="m-0">Review Queue</h1>
     <p style="color: var(--color-muted); margin: 0; font-size: var(--font-size-lg);">Evaluate pending applications against objective floor guidelines.</p>
   </div>
 
   {% if not rows %}
     <div class="empty-state">
-      <div class="empty-state__icon">✅</div>
+      <div class="empty-state__icon">{% icon "check" %}</div>
       <h2 class="empty-state__title">No apps awaiting review</h2>
       <p class="empty-state__description">All submitted applications have been reviewed. There is nothing pending right now.</p>
     </div>
@@ -19,7 +20,7 @@
       {% for row in rows %}
         <div class="card stack" style="--gap: var(--space-3);">
           <div class="cluster" style="justify-content: space-between; align-items: center;">
-            <h2 style="margin: 0; font-size: var(--font-size-xl);">
+            <h2 class="card-heading">
               <a href="{% url 'catalog:review-detail' app_id=row.app.id %}" style="color: var(--color-text); text-decoration: none;">
                 {{ row.app.name }}
               </a>
@@ -33,13 +34,13 @@
 
           {% if row.duplicate_hint %}
             <div class="message error" role="alert" style="margin: var(--space-2) 0 0 0; padding: var(--space-2.5) var(--space-3); font-size: var(--font-size-sm); font-weight: var(--font-weight-medium);">
-              ⚠️ Duplicate Signal: {{ row.duplicate_hint }} other app(s) share this URL.
+              {% icon "warning" %} Duplicate Signal: {{ row.duplicate_hint }} other app(s) share this URL.
             </div>
           {% endif %}
 
-          <div style="margin-top: var(--space-2);">
+          <div class="mt-2">
             <a href="{% url 'catalog:review-detail' app_id=row.app.id %}" class="btn btn--primary btn--sm" style="text-decoration: none;">
-              Begin Review →
+              Begin Review {% icon "arrow-right" %}
             </a>
           </div>
         </div>

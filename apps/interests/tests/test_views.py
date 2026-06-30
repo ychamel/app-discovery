@@ -31,7 +31,7 @@ class PickerRenderTests(TestCase):
         self.assertContains(response, "Calm")
         self.assertContains(response, str(tag.id))
 
-    def test_duplicate_tags_have_unique_html_ids_and_matching_labels(self):
+    def test_duplicate_tags_are_deduplicated_in_render(self):
         from apps.interests.tests.helpers import make_cluster
         from apps.taxonomy import services as taxonomy_services
 
@@ -42,17 +42,15 @@ class PickerRenderTests(TestCase):
         response = self.client.get(reverse("interests:picker"))
         self.assertEqual(response.status_code, 200)
 
-        # Check that unique IDs are present for each cluster-tag combination
+        # Check that the tag is rendered in the first cluster
         id1 = f"tag_{cluster1.id}_{tag.id}"
-        id2 = f"tag_{cluster2.id}_{tag.id}"
-
-        # Assert that the input checkboxes have these unique ids
         self.assertContains(response, f'id="{id1}"')
-        self.assertContains(response, f'id="{id2}"')
-
-        # Assert that the labels point to these unique ids via 'for' attribute
         self.assertContains(response, f'for="{id1}"')
-        self.assertContains(response, f'for="{id2}"')
+
+        # Check that the tag is NOT rendered in the second cluster
+        id2 = f"tag_{cluster2.id}_{tag.id}"
+        self.assertNotContains(response, f'id="{id2}"')
+        self.assertNotContains(response, f'for="{id2}"')
 
     def test_saved_tags_are_pre_checked_on_the_next_get(self):
         # AC1: declared tags show as selected on return.

@@ -1,13 +1,14 @@
 {% extends "updates/base.html" %}
+{% load icons %}
 {% block title %}{{ app.name }} · Developer updates{% endblock %}
 {% block content %}
 <div class="stack" style="--gap: var(--space-6);">
   <header class="stack" style="--gap: var(--space-2);">
-    <p style="margin: 0;"><a href="{% url 'updates:my-channels' %}" class="btn btn--ghost btn--sm" style="margin-left: calc(var(--space-2) * -1);">← Back to Update Channels</a></p>
-    <div class="cluster" style="justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-4);">
-      <h1 style="margin: 0;">{{ app.name }}</h1>
+    <p class="m-0"><a href="{% url 'updates:my-channels' %}" class="btn btn--ghost btn--sm" style="margin-left: calc(var(--space-2) * -1);">{% icon "arrow-left" %} Back to Update Channels</a></p>
+    <div class="toolbar">
+      <h1 class="m-0">{{ app.name }}</h1>
       {% if subscriber_count is not None %}
-        <span class="badge badge--success" style="font-size: var(--font-size-sm); padding: var(--space-1.5) var(--space-3);">
+        <span class="badge badge--success badge--lg">
           Reaches {{ subscriber_count }} current follower{{ subscriber_count|pluralize }}
         </span>
       {% endif %}
@@ -17,14 +18,14 @@
   <div class="app-page">
     <!-- Main Column: Post Form and Notices -->
     <div class="app-page-main stack" style="--gap: var(--space-6);">
-      
+
       <!-- Post Form Card -->
       <div class="card stack" style="--gap: var(--space-4);">
-        <h2 style="margin: 0; font-size: var(--font-size-xl); border-bottom: 1px solid var(--color-border); padding-bottom: var(--space-2);">Post an update</h2>
-        
+        <h2 class="card-heading card-heading--divided">Post an update</h2>
+
         <form method="post" action="{% url 'updates:post' app_id=app.id %}" class="stack" style="--gap: var(--space-4);">
           {% csrf_token %}
-          
+
           <div class="form-field">
             <label for="kind">Update Type</label>
             <select name="kind" id="kind" style="max-width: 280px;">
@@ -35,12 +36,12 @@
 
           <div class="form-field">
             <label for="title">Title</label>
-            <input type="text" name="title" id="title" required placeholder="e.g. Version 2.0 Released!" style="max-width: none;">
+            <input type="text" name="title" id="title" required placeholder="e.g. Version 2.0 Released!" class="full-width">
           </div>
 
           <div class="form-field">
             <label for="summary">Summary / Body</label>
-            <textarea name="summary" id="summary" required placeholder="Describe what is new in this update..." style="max-width: none; min-height: 100px; resize: vertical;"></textarea>
+            <textarea name="summary" id="summary" required placeholder="Describe what is new in this update..." class="full-width" style="min-height: 100px; resize: vertical;"></textarea>
           </div>
 
           <button type="submit" class="btn btn--primary" style="width: fit-content; min-width: 140px;">Publish Update</button>
@@ -49,8 +50,8 @@
 
       <!-- Published Notices List -->
       <div class="card stack" style="--gap: var(--space-4);">
-        <h2 style="margin: 0; font-size: var(--font-size-xl); border-bottom: 1px solid var(--color-border); padding-bottom: var(--space-2);">Published notices</h2>
-        
+        <h2 class="card-heading card-heading--divided">Published notices</h2>
+
         {% if notices is None %}
           <div class="message error" role="alert">
             Couldn't load your notices right now — please try again. You can still publish new updates using the form above.
@@ -66,9 +67,9 @@
                       {{ notice.get_kind_display|default:notice.kind|title }}
                     </span>
                   </div>
-                  <form method="post" action="{% url 'updates:withdraw' app_id=app.id notice_id=notice.id %}" style="margin: 0;">
+                  <form method="post" action="{% url 'updates:withdraw' app_id=app.id notice_id=notice.id %}" class="m-0">
                     {% csrf_token %}
-                    <button type="submit" class="btn btn--ghost btn--sm" style="color: var(--color-error); padding: var(--space-1) var(--space-2);">Withdraw</button>
+                    <button type="submit" class="btn btn--ghost btn--sm text-error">Withdraw</button>
                   </form>
                 </div>
                 <p style="margin: 0; color: var(--color-text); font-size: var(--font-size-sm); line-height: var(--line-base);">{{ notice.summary }}</p>
@@ -87,17 +88,17 @@
     <!-- Sidebar Column: Audience / Info -->
     <div class="app-page-sidebar stack" style="--gap: var(--space-6);">
       <div class="card stack" style="--gap: var(--space-3.5);">
-        <h2 style="margin: 0; font-size: var(--font-size-xl);">Channel Audience</h2>
+        <h2 class="card-heading">Channel Audience</h2>
         {% if subscriber_count is not None %}
           <div class="stack" style="--gap: var(--space-1);">
             <span style="font-size: var(--font-size-sm); color: var(--color-muted);">Active Followers</span>
-            <div style="font-size: var(--font-size-4xl); font-weight: var(--font-weight-bold); line-height: 1; color: var(--color-success);">{{ subscriber_count }}</div>
+            <div class="stat-value text-success">{{ subscriber_count }}</div>
           </div>
           <p style="color: var(--color-muted); font-size: var(--font-size-xs); margin: 0; line-height: var(--line-base);">
             Every time you publish an update, it is instantly delivered to these followers' subscription feeds.
           </p>
         {% else %}
-          <div class="message warning" style="font-size: var(--font-size-sm); margin: 0;">
+          <div class="message warning text-sm m-0">
             Follower counts are temporarily unavailable.
           </div>
         {% endif %}

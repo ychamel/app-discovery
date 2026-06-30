@@ -1,17 +1,18 @@
 {% extends "accounts/base.html" %}
+{% load icons %}
 {% block title %}Your interests · App Discovery{% endblock %}
 
 {% block content %}
 <div class="stack" style="--gap: var(--space-6);">
   <div class="cluster" style="justify-content: space-between; align-items: flex-start;">
     <div>
-      <h1 style="margin: 0;">Your interests</h1>
+      <h1 class="m-0">Your interests</h1>
       <p style="color: var(--color-muted); margin: 0; font-size: var(--font-size-lg);">Select topics you care about to personalize your experience.</p>
     </div>
     {% if has_any_tag %}
-      <form method="post" action="{% url 'interests:clear' %}" style="margin: 0;">
+      <form method="post" action="{% url 'interests:clear' %}" class="m-0">
         {% csrf_token %}
-        <button type="submit" class="btn btn--ghost" style="color: var(--color-error);">Clear all interests</button>
+        <button type="submit" class="btn btn--ghost text-error">Clear all interests</button>
       </form>
     {% endif %}
   </div>
@@ -27,7 +28,7 @@
 
     {% if not has_any_tag %}
       <div class="empty-state">
-        <div class="empty-state__icon">🏷️</div>
+        <div class="empty-state__icon">{% icon "tag" %}</div>
         <h2 class="empty-state__title">No interests are available yet</h2>
         <p class="empty-state__description">There are no interest tags configured in the system yet.</p>
       </div>
@@ -44,18 +45,18 @@
 
       <form method="post" action="{% url 'interests:save' %}" class="stack" style="--gap: var(--space-6);">
         {% csrf_token %}
-        
+
         <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: var(--space-6);">
           {% for row in clusters %}
             {% if row.tags %}
               <div class="card stack" style="--gap: var(--space-4);">
                 <div>
-                  <h2 style="margin: 0; font-size: var(--font-size-xl);">{{ row.cluster.name }}</h2>
+                  <h2 class="card-heading">{{ row.cluster.name }}</h2>
                   {% if row.cluster.description %}
                     <p style="color: var(--color-muted); font-size: var(--font-size-sm); margin: var(--space-1) 0 0 0;">{{ row.cluster.description }}</p>
                   {% endif %}
                 </div>
-                
+
                 <ul class="stack" style="--gap: var(--space-2); list-style: none; padding: 0; margin: 0; border-top: 1px solid var(--color-border); padding-top: var(--space-3);">
                   {% for item in row.tags %}
                     <li style="display: flex; align-items: flex-start; gap: var(--space-2.5); padding: var(--space-1.5) 0;">
@@ -82,19 +83,4 @@
     {% endif %}
   {% endif %}
 </div>
-
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const checkboxes = document.querySelectorAll('input[name="tag_id"]');
-    checkboxes.forEach(function(cb) {
-      cb.addEventListener('change', function() {
-        const val = this.value;
-        const isChecked = this.checked;
-        document.querySelectorAll('input[name="tag_id"][value="' + val + '"]').forEach(function(other) {
-          other.checked = isChecked;
-        });
-      });
-    });
-  });
-</script>
 {% endblock %}

@@ -1,13 +1,14 @@
 {% extends "catalog/base.html" %}
+{% load icons %}
 {% block title %}Review {{ app.name }} · App Discovery{% endblock %}
 
 {% block content %}
 <div class="stack" style="--gap: var(--space-6);">
   <header class="stack" style="--gap: var(--space-2);">
-    <p style="margin: 0;"><a href="{% url 'catalog:review' %}" class="btn btn--ghost btn--sm" style="margin-left: calc(var(--space-2) * -1);">← Back to Review Queue</a></p>
-    <div class="cluster" style="justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-4);">
-      <h1 style="margin: 0;">Review: {{ app.name }}</h1>
-      <span class="badge badge--accent" style="font-size: var(--font-size-sm); padding: var(--space-1.5) var(--space-3);">Pending Evaluation</span>
+    <p class="m-0"><a href="{% url 'catalog:review' %}" class="btn btn--ghost btn--sm" style="margin-left: calc(var(--space-2) * -1);">{% icon "arrow-left" %} Back to Review Queue</a></p>
+    <div class="toolbar">
+      <h1 class="m-0">Review: {{ app.name }}</h1>
+      <span class="badge badge--accent badge--lg">Pending Evaluation</span>
     </div>
   </header>
 
@@ -16,8 +17,8 @@
   {% endif %}
 
   {% if duplicate_hint %}
-    <div class="message error" role="alert" style="margin-bottom: 0;">
-      <strong>⚠️ Potential Duplicate URL Detected:</strong> {{ duplicate_hint }} other app(s) in the database share the same domain or path. Please verify that this is a unique application.
+    <div class="message error m-0" role="alert">
+      <strong>{% icon "warning" %} Potential Duplicate URL Detected:</strong> {{ duplicate_hint }} other app(s) in the database share the same domain or path. Please verify that this is a unique application.
     </div>
   {% endif %}
 
@@ -26,20 +27,20 @@
     <div class="app-page-main stack" style="--gap: var(--space-6);">
       <!-- App Information Card -->
       <div class="card stack" style="--gap: var(--space-4);">
-        <h2 style="margin: 0; font-size: var(--font-size-xl); border-bottom: 1px solid var(--color-border); padding-bottom: var(--space-2);">Application Information</h2>
-        
+        <h2 class="m-0 card-heading card-heading--divided">Application Information</h2>
+
         <dl style="margin: 0; display: grid; grid-template-columns: 120px 1fr; gap: var(--space-3.5) 0;">
-          <dt style="font-weight: var(--font-weight-semibold); color: var(--color-muted);">Owner</dt>
-          <dd style="margin: 0; color: var(--color-text);">{{ owner_email }}</dd>
-          
-          <dt style="font-weight: var(--font-weight-semibold); color: var(--color-muted);">URL</dt>
-          <dd style="margin: 0;"><a href="{{ app.url }}" rel="noopener noreferrer" target="_blank" style="font-weight: var(--font-weight-semibold);">{{ app.url }} ↗</a></dd>
-          
-          <dt style="font-weight: var(--font-weight-semibold); color: var(--color-muted);">Description</dt>
-          <dd style="margin: 0; color: var(--color-text); line-height: var(--line-base);">{{ app.description }}</dd>
-          
-          <dt style="font-weight: var(--font-weight-semibold); color: var(--color-muted);">Tags</dt>
-          <dd style="margin: 0; display: flex; flex-wrap: wrap; gap: var(--space-1.5);">
+          <dt class="text-muted font-semibold">Owner</dt>
+          <dd class="m-0" style="color: var(--color-text);">{{ owner_email }}</dd>
+
+          <dt class="text-muted font-semibold">URL</dt>
+          <dd class="m-0"><a href="{{ app.url }}" rel="noopener noreferrer" target="_blank" class="font-semibold">{{ app.url }} {% icon "arrow-up-right" %}</a></dd>
+
+          <dt class="text-muted font-semibold">Description</dt>
+          <dd class="m-0" style="color: var(--color-text); line-height: var(--line-base);">{{ app.description }}</dd>
+
+          <dt class="text-muted font-semibold">Tags</dt>
+          <dd class="m-0" style="display: flex; flex-wrap: wrap; gap: var(--space-1.5);">
             {% for tag in app.tags %}
               <span class="badge badge--accent">{{ tag.label }}</span>
             {% empty %}
@@ -51,7 +52,7 @@
 
       <!-- Screenshots Card -->
       <div class="card stack" style="--gap: var(--space-4);">
-        <h2 style="margin: 0; font-size: var(--font-size-xl);">Screenshots Gallery</h2>
+        <h2 class="m-0 card-heading">Screenshots Gallery</h2>
         {% if app.media %}
           <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-4);">
             {% for media in app.media %}
@@ -63,28 +64,28 @@
             {% endfor %}
           </div>
         {% else %}
-          <p style="color: var(--color-muted); font-size: var(--font-size-sm); margin: 0;">No screenshots uploaded for this application.</p>
+          <p class="text-muted m-0 text-sm">No screenshots uploaded for this application.</p>
         {% endif %}
       </div>
 
       <!-- Evaluation / Checklist form -->
       <div class="card stack" style="--gap: var(--space-5);">
-        <h2 style="margin: 0; font-size: var(--font-size-xl); border-bottom: 1px solid var(--color-border); padding-bottom: var(--space-3);">Floor Curation Evaluation</h2>
-        
-        <div class="message warning" style="font-size: var(--font-size-sm); margin-bottom: 0;">
+        <h2 class="m-0 card-heading card-heading--divided">Floor Curation Evaluation</h2>
+
+        <div class="message warning m-0 text-sm">
           <strong>Guideline Checklist:</strong> Accept ONLY if every floor criterion below is satisfied. To reject, select the specific criteria that failed. Rejection must be based strictly on these floors, never subjective taste.
         </div>
 
         <form method="post" action="{% url 'catalog:review-detail' app_id=app.id %}" class="stack" style="--gap: var(--space-4);">
           {% csrf_token %}
-          
+
           <ul class="stack" style="--gap: var(--space-3); list-style: none; padding: 0; margin: 0;">
             {% for item in checklist %}
               <li style="display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius); background-color: var(--color-surface);">
                 <input type="checkbox" name="failed_criteria" id="fail_{{ item.value }}" value="{{ item.value }}" style="width: auto; margin-top: 0.25rem;">
-                <label for="fail_{{ item.value }}" style="cursor: pointer; margin: 0; font-size: var(--font-size-sm); line-height: var(--line-base);">
-                  <span style="color: var(--color-error); display: block; font-size: var(--font-size-base); margin-bottom: var(--space-0.5); font-weight: var(--font-weight-bold);"><strong>{{ item.label }}</strong></span>
-                  <span style="color: var(--color-muted);">{{ item.hint }}</span>
+                <label for="fail_{{ item.value }}" class="m-0" style="cursor: pointer; font-size: var(--font-size-sm); line-height: var(--line-base);">
+                  <span class="text-error" style="display: block; font-size: var(--font-size-base); margin-bottom: var(--space-0.5); font-weight: var(--font-weight-bold);"><strong>{{ item.label }}</strong></span>
+                  <span class="text-muted">{{ item.hint }}</span>
                 </label>
               </li>
             {% endfor %}

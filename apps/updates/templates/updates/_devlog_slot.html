@@ -10,10 +10,10 @@
     {% for notice in notices %}
       <li class="devlog__entry stack" style="--gap: var(--space-1); border-left: 3px solid var(--color-border); padding-left: var(--space-3);">
         <div class="cluster" style="--gap: var(--space-2); align-items: baseline; flex-wrap: wrap;">
-          <span class="badge {% if notice.kind == 'early_access' %}badge--accent{% endif %}" style="font-size: var(--font-size-xs);">
+          <span class="badge {% if notice.kind == 'early_access' %}badge--accent{% endif %} text-xs">
             {% if notice.kind == 'early_access' %}Early access{% else %}Update{% endif %}
           </span>
-          <strong style="font-size: var(--font-size-sm);">{{ notice.title }}</strong>
+          <strong class="text-sm">{{ notice.title }}</strong>
           <span style="font-size: var(--font-size-xs); color: var(--color-muted);">{{ notice.published_at|date:"M j, Y" }}</span>
         </div>
         {% if notice.summary %}

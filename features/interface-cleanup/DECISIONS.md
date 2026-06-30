@@ -100,11 +100,10 @@ identically to every app) as long as the structural slot order is untouched.
 - **IC-DESIGN-8 — Discover ordering = a presentational label only (resolves OQ-IC-6).** "Ranked by
   merit, never by spend" caption; **no sort control/param**, `search_catalogue` untouched (C4).
 - **IC-DESIGN-9 — Picker no-JS = de-duplicate the rendered tags (resolves OQ-IC-2/AC-6c).** Render
-  each tag once → delete the JS sync `<script>` → no-JS path inherently consistent. **C4 nuance:**
-  if the dedupe needs reshaping the view's `clusters` context (vs. regrouping data already in the
-  template), it is the single, endpoint/schema-neutral view-layer touch — **surfaced for Planner/
-  build confirmation under the C2 gate ([OPEN_QUESTIONS.md](OPEN_QUESTIONS.md) OQ-IC-8)**, with a
-  no-regression fallback (keep the JS sync; the *saved* state is already no-JS-correct).
+  each tag once → delete the JS sync `<script>` → no-JS path inherently consistent.
+  **OQ-IC-8 Resolution:** Resolved by modifying the view's `_cluster_rows` function to filter out duplicate tags
+  (keeping only the first occurrence of each tag). This is confirmed as the single view-context change
+  in this feature since it does not touch URLs, schemas, or saved-state contracts.
 
 **No global ADR.** All choices are presentation-only within D-4/D-13 (DESIGN §14); nothing is
 promoted to the global [DECISIONS.md](../../DECISIONS.md) (confirms IC-D-2).
