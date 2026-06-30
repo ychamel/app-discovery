@@ -68,13 +68,7 @@
       {% if page.apps %}
         <div class="cluster" style="justify-content: space-between; align-items: center;">
           <p style="color: var(--color-muted); margin: 0; font-size: var(--font-size-sm);">{{ page.total }} result{{ page.total|pluralize }}</p>
-          <caption class="ranking-caption" style="display: block; font-size: var(--font-size-sm); color: var(--color-muted);">
-            {% if query %}
-              Sorted by relevance to search query
-            {% else %}
-              Sorted by newest accepted
-            {% endif %}
-          </caption>
+          <p class="text-muted text-sm" style="margin: 0;">Ranked by merit, never by spend</p>
         </div>
 
         <ul class="app-grid" style="list-style: none; padding: 0; margin: 0;">

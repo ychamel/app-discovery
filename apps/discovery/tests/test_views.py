@@ -74,10 +74,11 @@ class BrowseTests(TestCase):
         self.assertContains(response, reverse("pages:app-page", args=[app.id]))
 
     def test_ranking_caption_browse(self):
-        # T-09: check browse mode ranking caption is present
+        # T-09: static ordering caption present in results state; no sort control added
         make_accepted_app(self.owner, tag_ids=[self.tag.id], name="BrowseApp")
         response = Client().get(_BROWSE)
-        self.assertContains(response, "Sorted by newest accepted")
+        self.assertContains(response, "Ranked by merit, never by spend")
+        self.assertNotContains(response, "<select")
 
 
 @override_settings(MEDIA_ROOT=_MEDIA_ROOT)
@@ -106,10 +107,10 @@ class KeywordSearchTests(TestCase):
         self.assertContains(response, "No apps match")
 
     def test_ranking_caption_search(self):
-        # T-09: check search mode ranking caption is present
+        # T-09: static ordering caption still present in search-results state
         make_accepted_app(self.owner, tag_ids=[self.tag.id], name="Calendar")
         response = Client().get(f"{_BROWSE}?q=Calendar")
-        self.assertContains(response, "Sorted by relevance to search query")
+        self.assertContains(response, "Ranked by merit, never by spend")
 
 
 @override_settings(MEDIA_ROOT=_MEDIA_ROOT)
@@ -174,6 +175,12 @@ class EmptyStateTests(TestCase):
         response = Client().get(f"{_BROWSE}?q=nonexistentterm")
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "No apps match")
+
+    def test_ordering_caption_absent_on_zero_results(self):
+        # T-09: caption must be suppressed when the results list is empty
+        make_accepted_app(self.owner, tag_ids=[self.tag.id], name="Calendar")
+        response = Client().get(f"{_BROWSE}?q=nonexistentterm")
+        self.assertNotContains(response, "Ranked by merit, never by spend")
 
 
 @override_settings(MEDIA_ROOT=_MEDIA_ROOT)

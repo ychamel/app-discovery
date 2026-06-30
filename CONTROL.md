@@ -17,8 +17,8 @@ Rules:
 | Field              | Value                                                            |
 |--------------------|------------------------------------------------------------------|
 | **Active feature** | **interface-cleanup** |
-| **Stage**          | **`4-build`** |
-| **Persona**        | **Senior Engineer** (TASKS.md approved → builds T-01…T-12 in order; T-01 prerequisite, T-02 guard with it, T-12 the gate; produces code + TEST_PLAN.md) |
+| **Stage**          | **`4b-verify`** |
+| **Persona**        | **Independent Tester** (reads FEATURE_BRIEF.md + DESIGN.md contracts only — not the code; authors blind acceptance suite ACCEPTANCE_TESTS.md; AC-8 checklist already staged in RELEASE_NOTES.md for the user's web+mobile sign-off) |
 | **Folder**         | [features/interface-cleanup/](features/interface-cleanup/) |
 | **Last updated**   | 2026-06-30 (**Planner / Tech Lead wrote [TASKS.md](features/interface-cleanup/TASKS.md)**: the 8 DESIGN workstreams + the S1–S5/X1–X4 EXPERIENCE feel spec → **12 ordered S/M tasks T-01…T-12** (no `L`); W1 tokens first, the W8 enumeration guard lands with it (T-02), shared artifacts precede consumers, every UI task carries the feel into its DoD, T-12 the final gate carries the AC-8 sign-off checklist. OQ-IC-8 gated at T-10 under C2. Full coverage map. **Advanced to `4-build`** (Senior Engineer)). |
 
@@ -43,34 +43,34 @@ Rules:
 ### Latest session status (CLAUDE.md §6.7 — overwritten each session)
 
 ```
-Stage: 4-build | Feature: interface-cleanup | Persona: Senior Engineer
-Done: T-03 (CSS utility/component layer) + T-04 (template inline-style migration) — COMPLETE.
-  - T-03: Extended app.css with .card-heading, .card-heading--divided, .metric-value,
-    .metric-label, .text-accent, .text-sm, .text-xs, .font-semibold, .font-bold, .font-normal
-    (on top of prior-session additions: .checkbox-label, .badge--lg, .profile-details, .stat-value,
-    .text-success, .btn--danger, .full-width extended). Updated test_design_system.py
-    component_exact set to register all new classes (enumeration guard stays green).
-  - T-04: Migrated 22 templates (125 total inline style removals):
-      dashboard/app_reception.html (26), catalog/app_detail.html (19),
-      catalog/review_detail.html (11), dashboard/my_apps.html (9), updates/channel.html (7),
-      subscriptions/_follow_slot.html (7), accounts/check_email.html (5),
-      ratings/_reviews_slot.html (5), accounts/profile.html (5), interests/picker.html (4),
-      pages/app_page.html (4), subscriptions/feed.html (3), discovery/catalogue.html (3),
-      catalog/review_queue.html (3), core/landing.html (2), accounts/register.html (2),
-      accounts/signin.html (2), updates/my_channels.html (2), updates/_devlog_slot.html (2),
-      pages/not_available.html (2), accounts/verify.html (1), catalog/my_apps.html (1).
-  - Inline style count: 621 (baseline) → 513 (mid-session) → 388 (final). M2 gate ≤ 400 PASSES.
+Stage: 4b-verify | Feature: interface-cleanup | Persona: Independent Tester
+Done: T-05…T-12 COMPLETE (T-01…T-04 were done in the prior session; the build commit
+  included T-05–T-11 but CONTROL.md had not been updated). Audited each task, found and
+  fixed T-09 (Discover caption): wrong text "Sorted by..." → correct static text
+  "Ranked by merit, never by spend"; changed <caption> element to <p class="text-muted
+  text-sm">; updated 2 discovery tests + added zero-results caption-absence test.
+  T-12 gate run and passed:
+    - 1104 tests OK (up from 1103; +1 T-09 test)
+    - makemigrations --check = no drift
+    - inline-style count = 388 (≤ 400 M2 floor)
+    - app-page uniformity + firewall invariants green
+    - design system guard green
+    - AC-9 attestation: only icons.py + interests/views.py (OQ-IC-8) Python files changed
+    - RELEASE_NOTES.md written with AC-8 checklist staged for user
+    - TEST_PLAN.md updated with full T-01…T-12 coverage
 
-Verified by: python manage.py test (1103 tests OK, 0 failures), M2 floor check = 388,
-makemigrations --check = no drift.
+Verified by: python manage.py test (1104 tests OK), makemigrations --check = no drift,
+ruff check clean, M2 floor = 388, all invariants green.
 
 Blocked/Deferred:
   - ui-modernization stays the held future bet (IC-D-1/IC-EXP-5).
   - DN-PS-DEPLOY still parked behind interface-cleanup.
+  - AC-8 sign-off is the user's gate (web + mobile review — RELEASE_NOTES.md §AC-8).
 
-Decisions needed: none.
+Decisions needed: none from the agent. User must complete AC-8 web + mobile sign-off.
 
-Next: T-05 — {% icon %} template tag + SVG icon set.
+Next: Independent Tester authors ACCEPTANCE_TESTS.md blind from FEATURE_BRIEF.md +
+DESIGN.md contracts. After that, user completes AC-8 checklist → Stage 5-release.
 ```
 
 ---
@@ -141,6 +141,7 @@ folders remain the full record either way.
 
 | Date       | Stage           | Summary                                                                 |
 |------------|-----------------|-------------------------------------------------------------------------|
+| 2026-06-30 | `4-build` (T-05…T-12 gate) | **Senior Engineer — T-05…T-12 COMPLETE. T-12 gate passed.** Audited the build commit (T-05–T-11 were all present but CONTROL.md was stale). Fixed T-09: Discover caption changed from wrong "Sorted by…" dynamic text to correct static "Ranked by merit, never by spend" with `.text-muted` class + proper `<p>` element (was `<caption>`); 2 tests updated + zero-results absence test added. T-12 gate: **1104 tests OK**, `makemigrations --check` clean, inline-style=388 (≤400 M2), app-page invariants green, design system guard green, ruff clean. AC-9 attestation written. RELEASE_NOTES.md with AC-8 checklist staged. TEST_PLAN.md updated. Advanced to `4b-verify`. |
 | 2026-06-30 | `4-build` (T-03+T-04 done) | **Senior Engineer — T-03 + T-04 COMPLETE.** Two sessions combined. **T-03 (bounded CSS layer in `app.css`):** added `.checkbox-label`, `.badge--lg`, `.profile-details` (+`dt`/`dd`), `.stat-value`, `.text-success`, `.btn--danger`, `.full-width` extended, plus `.card-heading`, `.card-heading--divided`, `.metric-value`, `.metric-label`, `.text-accent`, `.text-sm`, `.text-xs`, `.font-semibold`, `.font-bold`, `.font-normal`. Updated `test_design_system.py` `component_exact` set to register all new classes (enumeration guard stays green). **T-04 (template migration, 22 files, 125 removals):** `dashboard/app_reception.html` (26), `catalog/app_detail.html` (19), `catalog/review_detail.html` (11), `dashboard/my_apps.html` (9), `updates/channel.html` (7), `subscriptions/_follow_slot.html` (7), `accounts/check_email.html` (5), `ratings/_reviews_slot.html` (5), `accounts/profile.html` (5), `interests/picker.html` (4), `pages/app_page.html` (4), `subscriptions/feed.html` (3), `discovery/catalogue.html` (3), `catalog/review_queue.html` (3), `core/landing.html` (2), `accounts/register.html` (2), `accounts/signin.html` (2), `updates/my_channels.html` (2), `updates/_devlog_slot.html` (2), `pages/not_available.html` (2), `accounts/verify.html` (1), `catalog/my_apps.html` (1). **Inline style count: 621 → 388** (M2 gate ≤ 400 PASSES). **1103 tests green**, no migration drift. Next: T-05 (`{% icon %}` tag + SVG set). |
 | 2026-06-30 | `4-build` (in-progress) | **Senior Engineer — T-03/T-04 partial.** Started the bounded component/utility layer (T-03) and template migration (T-04). **T-03 additions to `app.css`:** `.checkbox-label` (flex inline checkbox+label), `.badge--lg` (larger badge size), `.profile-details` (+`dt`/`dd` rules), `.stat-value` (4xl/bold stat display), `.text-success`, `.btn--danger` (error-coloured secondary), and `.full-width` extended to also clear `max-width: none`. Updated `test_design_system.py` component_exact list to register all new classes (guard stays green). **T-04 migrations:** `catalog/app_detail.html` (badge inline styles → `.badge--lg`, checkbox labels → `.checkbox-label`); `catalog/submit.html` (inputs → `.full-width`, checkbox labels → `.checkbox-label`, submit → `.full-width`); `accounts/profile.html` (dl → `.profile-details`, buttons → `.full-width` / `.btn--danger`); `updates/channel.html` (subscriber stat → `.stat-value .text-success`, withdraw → `.btn--ghost .btn--sm .text-error`, badge → `.badge--lg`, inputs → `.full-width`). **Inline style count: 621 → 513** (goal ≤ 400 — test still failing). 91/92 tests pass; `test_inline_styles_count` FAILS (513 > 400). No migration drift. **Not yet done:** `app_reception.html` (73), residual `app_detail.html` (56), `review_detail.html` (34), `app_page.html` (30), `ratings/_reviews_slot.html` (30), `catalog/my_apps.html` (22) still need migration. |
 | 2026-06-30 | `2b-ux`→`3-plan` | **Experience Designer** — ran the 13-pillar experience protocol against [DESIGN.md](features/interface-cleanup/DESIGN.md)'s canvas + the live design system, and wrote [EXPERIENCE.md](features/interface-cleanup/EXPERIENCE.md) (intent-only, zero implementation). **Per-screen feel blocks:** **S1** app-page mobile action panel — answered DESIGN's open "compact bar?" question → **compact action bar, one dominant focal point = Try** (order **Try›Follow[restored from the AC-2 grey demotion]›Share**, differentiated by prominence not by greying Follow; the app identity surfaces immediately after the bar) + facet category as visible text (AC-6b) + Share copy affordance with a "Copied!" live confirmation (AC-6d); **S2** developer hub — **Manage = the "home" tab** (the header "Developer" entry lands there), the active indicator **reuses the existing Discover `.sidebar-link.active` accent "you are here" pattern** + current-page semantics (active signalled by more than colour); **S3** Discover ordering caption = **informational, never a control** (AC-7), suppressed on zero results; **S4** picker dedupe/no-JS; **S5** submit required/optional grouping. **4 cross-surface system layers** (X1 one quiet brand-neutral icon family, X2 component grammar = same meaning→same treatment, X3 wayfinding/active-state, X4 defect-repair "nothing half-finished"). **5 tone adjectives** (Coherent/Polished/Trustworthy/Legible/Calm) each tied to a verifiable choice; **reduced-motion-first** system motion, **no new decorative motion** (holds IC-D-1/IC-EXP-5). Produced the **AC-8-class yes/no sign-off checklist** (the release gate) + a **full AC→spec traceability map** — no unmappable criterion ⇒ **no design gap, not routed back to the Architect**. Logged **IC-EXP-1…5**; surfaced + **accepted** the `order:` focus-vs-visual-order trade-off (**IC-EXP-2** — DOM order stays logical → no WCAG 1.3.2 failure → a documented sign-off item, not an escalation). Every empty/error/boundary state designed (empty hub tabs, zero-results, no-JS/no-clipboard, validation). **No code touched.** OQ-IC-8 untouched (a Planner mechanism confirmation under C2). Updated [INDEX.md](features/INDEX.md) → `3-plan`. Handed to the **Planner / Tech Lead**. |
