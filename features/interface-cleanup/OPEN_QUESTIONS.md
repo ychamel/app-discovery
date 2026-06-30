@@ -85,3 +85,30 @@ The brief defines the **capability/outcome**; the **mechanism** is the Architect
 
 *(No open questions block Stage 1. The brief is complete and internally consistent; these are
 hand-offs to the Architect.)*
+
+---
+
+## Stage-2 resolution (Software Architect, 2026-06-30)
+
+OQ-IC-1…7 are **resolved in [DESIGN.md](DESIGN.md)** (digested in [DECISIONS.md](DECISIONS.md)
+IC-DESIGN-1…9): OQ-IC-1 → bounded-first (IC-DESIGN-1/2); OQ-IC-2 → `{% icon %}` inline-SVG
+(IC-DESIGN-3) + picker dedupe (IC-DESIGN-9); OQ-IC-3 → CSS `order:` reflow (IC-DESIGN-4); **OQ-IC-4 →
+the user chose a single "Developer" hub with Manage|Analytics tabs** (AskUserQuestion; IC-DESIGN-5);
+OQ-IC-5 → copy-link PE, no server change (IC-DESIGN-7); OQ-IC-6 → label only, no control
+(IC-DESIGN-8); OQ-IC-7 → presentational form-field idiom only (DESIGN §4.8).
+
+### OQ-IC-8 (NEW, Architect → Planner) — does the picker no-JS fix touch the view context?
+
+The AC-6c "consistent without JavaScript" outcome cannot be met by CSS (it can't sync two
+checkboxes), so the clean fix is to **render each interest tag at most once** and delete the JS sync
+`<script>`. Whether that de-duplication can be done by **regrouping data already in the template
+context** (purely presentational, fully in-envelope) or needs a **minimal reshape of the view's
+`clusters` context** (a single endpoint/schema-neutral view-layer touch) is a Stage-3/4 call.
+
+**Resolution path:** the Planner/Engineer confirms at task time. If template-only → in-envelope, do
+it. If it needs the view-context touch → that touch is **acceptable as the single deliberate
+view-layer change** *provided* it changes no URL, no saved-state contract, and no schema (it does
+not); otherwise the **fallback** (keep the JS sync; document that the saved state is already
+no-JS-correct because the server recomputes `item.checked` from declared tags on reload) is taken and
+the picker item is noted as partially-addressed. **Not a user block** — recorded so the C2 envelope
+gate is honoured explicitly, not crossed silently.
