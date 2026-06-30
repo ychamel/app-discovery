@@ -16,11 +16,11 @@ Rules:
 
 | Field              | Value                                                            |
 |--------------------|------------------------------------------------------------------|
-| **Active feature** | **interface-cleanup** |
-| **Stage**          | **`4b-verify`** |
-| **Persona**        | **Independent Tester** (reads FEATURE_BRIEF.md + DESIGN.md contracts only — not the code; authors blind acceptance suite ACCEPTANCE_TESTS.md; AC-8 checklist already staged in RELEASE_NOTES.md for the user's web+mobile sign-off) |
-| **Folder**         | [features/interface-cleanup/](features/interface-cleanup/) |
-| **Last updated**   | 2026-06-30 (**Planner / Tech Lead wrote [TASKS.md](features/interface-cleanup/TASKS.md)**: the 8 DESIGN workstreams + the S1–S5/X1–X4 EXPERIENCE feel spec → **12 ordered S/M tasks T-01…T-12** (no `L`); W1 tokens first, the W8 enumeration guard lands with it (T-02), shared artifacts precede consumers, every UI task carries the feel into its DoD, T-12 the final gate carries the AC-8 sign-off checklist. OQ-IC-8 gated at T-10 under C2. Full coverage map. **Advanced to `4-build`** (Senior Engineer)). |
+| **Active feature** | **ui-modernization** |
+| **Stage**          | **`1-define`** |
+| **Persona**        | **Product Analyst** (reads the activation request + vision doc; writes `FEATURE_BRIEF.md`. The carried-in activation context + the user's non-binding Stage-2 build-posture lean are seeded in the feature's [OPEN_QUESTIONS.md](features/ui-modernization/OPEN_QUESTIONS.md) + [DECISIONS.md](features/ui-modernization/DECISIONS.md)) |
+| **Folder**         | [features/ui-modernization/](features/ui-modernization/) |
+| **Last updated**   | 2026-06-30 (**Coordinator handoff.** The user judged `interface-cleanup`'s result unsatisfactory ("the whole UI might be scrapped") and **activated the held `ui-modernization` future bet** — the D2 call — a deep rebrand: distinctive palette + stylized/animated nav + premium motion, the design ceiling D-13 named. `interface-cleanup` **closed-out** at `4b-verify` (build was code-complete, 1104 tests; the blind verify suite + AC-8 sign-off were not authored). Scaffolded `features/ui-modernization/` + 8 seed files; seeded the carried context (D-13 revisit trigger: `app.css`=1113 lines + still bland) and the user's lean — **Tailwind standalone CLI, stay no-Node** (UM-LEAN-1, non-binding). `DN-PS-DEPLOY` re-parked behind this feature. **Stage `1-define`** → Product Analyst). |
 
 > **Closed-out features** (Stage 6 skipped per the standing pattern — reopenable; all
 > released local/dev, rollback rehearsed; live-metrics/outcome reports deferred until a
@@ -34,7 +34,8 @@ Rules:
 > `widget-conversion-attribution` (962, first-party `widget_src` cookie, M5=0 structural) ·
 > `platform-staging` (975, D-12 serving stack + shared shell; **live deploy deferred** until staging debuts on the premium UI — artifacts ready, DN-PS-DEPLOY reopenable) ·
 > `premium-frontend` (980, D-13 no-build token design system + static `/` landing + vendored HTMX) ·
-> `app-page-redesign` (1095, D-14 typed facets firewalled from ranking + uniform 10-slot launch page; closed-out 2026-06-30 at user direction — RELEASE_NOTES + AC-8 sign-off folded into close-out, reopenable).
+> `app-page-redesign` (1095, D-14 typed facets firewalled from ranking + uniform 10-slot launch page; closed-out 2026-06-30 at user direction — RELEASE_NOTES + AC-8 sign-off folded into close-out, reopenable) ·
+> `interface-cleanup` (1104, closed-out 2026-06-30 at user direction at Stage `4b-verify` — build code-complete but result judged unsatisfactory; **superseded by `ui-modernization`**; blind verify + AC-8 sign-off not authored; reopenable).
 
 > Canonical stage values: `0-coordinator` · `1-define` · `2-design` · `2b-ux` · `3-plan` ·
 > `4-build` · `4b-verify` · `5-release` · `6-post-release` · `done`. (`2b-ux` is conditional
@@ -43,34 +44,34 @@ Rules:
 ### Latest session status (CLAUDE.md §6.7 — overwritten each session)
 
 ```
-Stage: 4b-verify | Feature: interface-cleanup | Persona: Independent Tester
-Done: T-05…T-12 COMPLETE (T-01…T-04 were done in the prior session; the build commit
-  included T-05–T-11 but CONTROL.md had not been updated). Audited each task, found and
-  fixed T-09 (Discover caption): wrong text "Sorted by..." → correct static text
-  "Ranked by merit, never by spend"; changed <caption> element to <p class="text-muted
-  text-sm">; updated 2 discovery tests + added zero-results caption-absence test.
-  T-12 gate run and passed:
-    - 1104 tests OK (up from 1103; +1 T-09 test)
-    - makemigrations --check = no drift
-    - inline-style count = 388 (≤ 400 M2 floor)
-    - app-page uniformity + firewall invariants green
-    - design system guard green
-    - AC-9 attestation: only icons.py + interests/views.py (OQ-IC-8) Python files changed
-    - RELEASE_NOTES.md written with AC-8 checklist staged for user
-    - TEST_PLAN.md updated with full T-01…T-12 coverage
+Stage: 1-define | Feature: ui-modernization | Persona: Coordinator → Product Analyst
+Done: Coordinator handoff. Per the user's two AskUserQuestion answers:
+  (1) close out interface-cleanup ("results aren't satisfactory, the whole UI might be
+      scrapped"); (2) build-posture lean = Tailwind standalone CLI, stay no-Node.
+  - interface-cleanup closed-out in features/INDEX.md (stage 4b-verify → closed-out,
+    superseded-by note) + CONTROL.md closed-features line. Its committed code stays in
+    the tree; how much survives is a ui-modernization Stage-2 call.
+  - Scaffolded features/ui-modernization/ with the 8 non-conditional seed files
+    (EXPERIENCE.md left for the Architect at 2b-ux hand-off, per features/README.md).
+  - Seeded carried context in the feature's OPEN_QUESTIONS.md (activation framing, the
+    D-13 revisit trigger: app.css=1113 lines + still bland; OQ-UM-1 deploy sequencing;
+    OQ-UM-2 fate of the interface-cleanup code) and DECISIONS.md (UM-LEAN-1 = the user's
+    non-binding no-Node Tailwind-CLI lean, with the npm-plugin implication spelled out).
+  - Added the ui-modernization row to features/INDEX.md; set Current State + INDEX.
 
-Verified by: python manage.py test (1104 tests OK), makemigrations --check = no drift,
-ruff check clean, M2 floor = 388, all invariants green.
+Verified by: n/a (coordination only — no code changed, no tests run).
 
 Blocked/Deferred:
-  - ui-modernization stays the held future bet (IC-D-1/IC-EXP-5).
-  - DN-PS-DEPLOY still parked behind interface-cleanup.
-  - AC-8 sign-off is the user's gate (web + mobile review — RELEASE_NOTES.md §AC-8).
+  - DN-PS-DEPLOY re-parked behind ui-modernization (was behind interface-cleanup).
+  - interface-cleanup's blind ACCEPTANCE_TESTS.md + AC-8 sign-off intentionally not
+    authored (feature closed before verify completed; reopenable).
 
-Decisions needed: none from the agent. User must complete AC-8 web + mobile sign-off.
+Decisions needed: none right now. The Product Analyst's FEATURE_BRIEF.md will surface
+  Stage-1 questions for the user; the build-posture ADR is a Stage-2 decision.
 
-Next: Independent Tester authors ACCEPTANCE_TESTS.md blind from FEATURE_BRIEF.md +
-DESIGN.md contracts. After that, user completes AC-8 checklist → Stage 5-release.
+Next: Product Analyst (Stage 1-define) writes features/ui-modernization/FEATURE_BRIEF.md
+  from the activation request + the vision doc, keeping tooling and visual-design as
+  distinct concerns (bland is a design problem Tailwind alone won't fix).
 ```
 
 ---
@@ -81,7 +82,7 @@ The agent is blocked on these. Answer inline after the `→`, then the agent pro
 Resolved items move down to *Decisions Made (recently)*; full rationale lives in
 [DECISIONS.md](DECISIONS.md), [patches/INDEX.md](patches/INDEX.md), or the issue files.
 
-**DN-PS-DEPLOY — REOPENED 2026-06-28 (the active next bet, now parked behind `interface-cleanup`).** With `premium-frontend` signed off +
+**DN-PS-DEPLOY — REOPENED 2026-06-28 (re-parked 2026-06-30 behind `ui-modernization`).** With `premium-frontend` signed off +
 closed out, the sequencing condition is met (staging now debuts on the polished UI), so the live
 Render deploy of the developer wedge can proceed. The build is verified and every deploy artifact
 ([render.yaml](render.yaml), [docs/deploy/](docs/deploy/)) is written + secret-clean + runs
@@ -99,6 +100,7 @@ A short, human-readable digest. Full rationale lives in [DECISIONS.md](DECISIONS
 (global) or `features/<slug>/DECISIONS.md` (local). Only the **active** feature is kept
 in full; closed features collapse to a single pointer line.
 
+- **`ui-modernization` ACTIVATED + `interface-cleanup` CLOSED-OUT (2026-06-30)** — the user reported `app.css` is *"growing too big"* (1113 lines) and the result *"still bland,"* and via **AskUserQuestion** (a) directed closing out `interface-cleanup` ("its results aren't satisfactory, the whole UI might be scrapped") and (b) leaned **Tailwind via the standalone CLI, stay no-Node** for the rebuild. The Coordinator recognised this as the **D2 activation of the held `ui-modernization` future bet** (the design ceiling D-13 named) **and** the firing of D-13's pre-installed **revisit trigger** (so the Stage-2 build-posture choice reverses/extends global **[D-13](DECISIONS.md)** → a new global ADR). Closed `interface-cleanup` at `4b-verify` (build code-complete, 1104 tests; blind verify + AC-8 sign-off **not** authored — reopenable); scaffolded `features/ui-modernization/` with carried context (OQ-UM-1/2) + the user's non-binding lean (**UM-LEAN-1** — note: no-Node rules out npm-only DaisyUI/Flowbite/Preline; Alpine/Swiper/GSAP can be vendored as plain JS). Key framing recorded for the Analyst: **"bland" is a design problem Tailwind alone won't fix** (D-13). `DN-PS-DEPLOY` re-parked behind it. **→ Stage `1-define`** (Product Analyst). Detail: [features/ui-modernization/DECISIONS.md](features/ui-modernization/DECISIONS.md).
 - **`interface-cleanup` TASKS.md written → Stage 4-build (2026-06-30)** — the Planner / Tech Lead decomposed the 8 DESIGN workstreams + the S1–S5/X1–X4 EXPERIENCE feel spec into **12 ordered S/M tasks T-01…T-12** (no `L`) in [TASKS.md](features/interface-cleanup/TASKS.md): W1 tokens/defects first (T-01), the W8 enumeration guard with it (T-02), shared artifacts before consumers, each UI task carrying its feel into its DoD, the final gate (T-12) carrying the AC-8 sign-off checklist to release. OQ-IC-8 (picker view-context) gated at T-10 under C2 — the Engineer's call, recorded in DECISIONS.md. No design gap, no new decision needed → **advanced to `4-build`** (Senior Engineer).
 - **DN-IC-BRIEF → approved (2026-06-30)** — the user approved the `interface-cleanup` [FEATURE_BRIEF.md](features/interface-cleanup/FEATURE_BRIEF.md) → advanced to Stage 2. The Software Architect wrote [DESIGN.md](features/interface-cleanup/DESIGN.md): **8 presentation-only workstreams**, two reusable artifacts (a `{% icon %}` inline-SVG tag + a design-system **enumeration guard** that makes the silent-defect class unrepresentable), **no schema/API/view/URL/ADR change** (IC-DESIGN-1…9). One user call via **AskUserQuestion** → a unified **"Developer" hub** with Manage|Analytics tabs ([IC-DESIGN-5](features/interface-cleanup/DECISIONS.md)). The app-page mobile-Try fix uses CSS `order:` only, preserving the `data-slot` source-order fingerprint + M5=0 firewall invariants ([IC-D-3](features/interface-cleanup/DECISIONS.md)). The one envelope boundary (the W7 picker view-context touch) is surfaced as **OQ-IC-8** for Planner confirmation under the C2 gate — not a user block. **User-facing → advanced to `2b-ux`** (Experience Designer). Detail: [features/interface-cleanup/DECISIONS.md](features/interface-cleanup/DECISIONS.md).
 - **DN-APR-DESIGN → approved (2026-06-29)** — the user approved the `app-page-redesign` [DESIGN.md](features/app-page-redesign/DESIGN.md). **APR-DESIGN-1/2 promoted to global [D-14](DECISIONS.md)** (a: typed facets are code-fixed structured fields firewalled from ranking; b: re-review policy for the new public-claim fields is config-togglable). The Planner wrote [TASKS.md](features/app-page-redesign/TASKS.md) (**9 ordered S/M tasks T-01…T-09**, risk front-loaded, full AC coverage) → advanced to **Stage 4-build** (Senior Engineer). One additive migration (Feature Track, C4). Detail: [features/app-page-redesign/DECISIONS.md](features/app-page-redesign/DECISIONS.md).
