@@ -13,9 +13,18 @@ front-load risk so surprises surface early.
 - Prevent collisions: each task declares the files/areas it touches.
 - Tasks are the unit that protects the standards — small and reviewable means the
   readability/partitioning rules in [CLAUDE.md](../../CLAUDE.md) §5 actually get applied.
+- **Plan for correctness and completeness, not the shortest path.** Tasks implement the
+  design's correct, cohesive approach *in full* — never a trimmed-down shortcut that leaves
+  the outcome partial. If the correct approach is large, that is more tasks and tighter
+  sequencing, not a cheaper substitute. "Small tasks" is about decomposition, never about
+  cutting scope the design called for.
 
 ## Inputs (read before writing)
 - `features/<slug>/FEATURE_BRIEF.md` and `features/<slug>/DESIGN.md`.
+- `features/<slug>/EXPERIENCE.md` **if it exists** (user-facing features, Stage `2b-ux`).
+  When present, it is a binding source alongside the design: UI tasks must carry its
+  experience specs (hierarchy, states, motion, tone, the sign-off checklist) into their
+  definition of done, so the build implements the intended feel, not a default one.
 
 ## Your job
 Produce `features/<slug>/TASKS.md` — an ordered list where each task has:
@@ -33,6 +42,10 @@ Produce `features/<slug>/TASKS.md` — an ordered list where each task has:
 2. Each task leaves the system working and releasable (vertical slices over horizontal
    layers wherever possible).
 3. Risky/uncertain tasks go first.
+4. Shared or reusable helper logic gets its **own** task that places it in the dedicated
+   utils/shared library the design names (per [CODEMAP.md](../../CODEMAP.md)) — sequenced
+   before the tasks that consume it. Never fold a reusable helper into a consumer task as
+   an in-file function; that is how the same helper gets re-implemented across tasks.
 
 ## Exit criteria
 - **Full coverage:** every design element appears in ≥1 task.

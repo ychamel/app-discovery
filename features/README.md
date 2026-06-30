@@ -23,9 +23,11 @@ dashboard in `CONTROL.md` can't give you once there are many folders.
 ```
 features/<feature-slug>/
   FEATURE_BRIEF.md    ← Stage 1: what & why (single source of truth for the feature)
-  DESIGN.md           ← Stage 2: how it works (architecture, data, contracts, UX)
+  DESIGN.md           ← Stage 2: how it works (architecture, data, contracts, functional states)
+  EXPERIENCE.md       ← Stage 2b: UX/UI experience spec (user-facing features only; intent, not implementation)
   TASKS.md            ← Stage 3: ordered, independently verifiable work items
-  TEST_PLAN.md        ← Stage 4: acceptance criteria → tests/checks mapping
+  TEST_PLAN.md        ← Stage 4: engineer's unit/white-box coverage + regression checklist
+  ACCEPTANCE_TESTS.md ← Stage 4b: Independent Tester's blind, contract-derived acceptance suite
   RELEASE_NOTES.md    ← Stage 5: user-facing change summary
   OPEN_QUESTIONS.md   ← all stages: ambiguities, deferrals, escalations
   DECISIONS.md        ← all stages: choice + rationale + rejected alternatives
@@ -36,7 +38,7 @@ features/<feature-slug>/
 ## Creating a new feature (Coordinator step)
 
 1. Pick the slug with the user.
-2. Create `features/<slug>/` and seed the seven files above (each may start as a heading + "_pending_" so the pipeline has somewhere to write).
+2. Create `features/<slug>/` and seed the eight non-conditional files above (each may start as a heading + "_pending_" so the pipeline has somewhere to write). `EXPERIENCE.md` is **not** seeded at creation — the Architect adds it at hand-off only when the feature is user-facing (Stage `2b-ux`); backend-only features never get one.
 3. Add the feature's row to [INDEX.md](INDEX.md) (stage + started date; outcome stays blank until Stage 6).
 4. In [../CONTROL.md](../CONTROL.md): set the active feature, `Stage: 1-define`, and the folder path.
 5. Hand off to the Product Analyst persona ([../process/personas/phase-1-product-analyst.md](../process/personas/phase-1-product-analyst.md)).

@@ -35,9 +35,9 @@ Rules:
 > `platform-staging` (975, D-12 serving stack + shared shell; **live deploy deferred** until staging debuts on the premium UI — artifacts ready, DN-PS-DEPLOY reopenable) ·
 > `premium-frontend` (980, D-13 no-build token design system + static `/` landing + vendored HTMX).
 
-> Canonical stage values: `0-coordinator` · `1-define` · `2-design` · `3-plan` ·
-> `4-build` · `5-release` · `6-post-release` · `done`. See the routing table in
-> [CLAUDE.md](CLAUDE.md) §2.
+> Canonical stage values: `0-coordinator` · `1-define` · `2-design` · `2b-ux` · `3-plan` ·
+> `4-build` · `4b-verify` · `5-release` · `6-post-release` · `done`. (`2b-ux` is conditional
+> — user-facing features only.) See the routing table in [CLAUDE.md](CLAUDE.md) §2.
 
 ### Latest session status (CLAUDE.md §6.7 — overwritten each session)
 

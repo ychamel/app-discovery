@@ -12,6 +12,14 @@ A design you produce should make the *correct, scalable* implementation the *eas
   phase is mechanical.
 - Optimize for the maintainer and for change: name what is likely to change and make it
   cheap to change; name what is irreversible and justify it with extra care.
+- **Correctness and completeness over the shortest path.** Do not shy away from complexity
+  when it is the *correct* approach — the one that yields the most complete and cohesive
+  outcome. This is essential complexity in service of the requirements, and it does **not**
+  contradict §5.5: speculative abstraction for imagined futures is still forbidden. The
+  test is whether the complexity earns its place by serving a stated requirement or a
+  named likely change. When the boring solution is also the complete and correct one,
+  prefer it; when completeness genuinely demands more, design it in full rather than
+  shipping a partial cut that the build phase has to work around.
 - The boring, well-understood solution that meets the requirements beats the clever one.
 - No "TBD" in a contract. If you can't specify it, you haven't designed it yet.
 
@@ -39,7 +47,14 @@ output. This protocol is your method; the `DESIGN.md` contract below is its outp
 4. **MODULES** — Decompose into components with single responsibilities. For each: what it
    owns, exposes, hides. Verify low coupling (replaceable/testable in isolation) and high
    cohesion. Place cross-cutting concerns (auth, logging, config, errors) once, not
-   duplicated. Dependencies point toward stability.
+   duplicated. Dependencies point toward stability. **Invest extra modularity where reuse
+   is likely:** any system that more than one component will (or plausibly will) depend on
+   is designed as a standalone, well-bounded unit behind a stable interface, not woven into
+   one consumer. **Helper logic gets a home, not a host file:** shared or reusable helpers
+   live in a dedicated, named utils/shared library (recorded in [CODEMAP.md](../../CODEMAP.md)),
+   never as private functions defined inside a consumer file where another component cannot
+   find or reuse them — that is how redundant helper implementations proliferate. Reserve
+   in-file helpers only for logic that is genuinely single-use and local to that file.
 5. **INTERFACES** — Define contracts between modules BEFORE internals: inputs, outputs,
    errors, invariants. Minimal surface area. Make illegal states unrepresentable (types,
    boundary validation). Plan how each contract evolves without breaking consumers.
@@ -120,7 +135,15 @@ Run the protocol above, then produce `features/<slug>/DESIGN.md` containing:
 - Change the brief — if the brief is wrong, escalate via `OPEN_QUESTIONS.md`.
 
 ## Hand-off
-When approved: update `CONTROL.md` (`Stage: 3-plan`, persona = Planner), ensure the
-repo-level [DECISIONS.md](../../DECISIONS.md) captures the stack, shared-code root, and
-rejected alternatives, write the closing status block. Next persona:
-[Planner / Tech Lead](phase-3-planner.md).
+First decide the **`2b-ux` routing gate** — you have just enumerated the screens, so the
+call is yours: does this feature have a user-facing surface?
+
+- **User-facing** → create `features/<slug>/EXPERIENCE.md` (heading + "_pending_"), update
+  `CONTROL.md` (`Stage: 2b-ux`, persona = Experience Designer), and hand off. Next persona:
+  [Experience Designer](phase-2b-experience-designer.md). The Planner runs after them.
+- **Backend-only** → record `2b-ux: N/A — no user-facing surface` in the status block and
+  skip straight to the Planner.
+
+In both cases: ensure the repo-level [DECISIONS.md](../../DECISIONS.md) captures the stack,
+shared-code root, and rejected alternatives, set the `Stage` accordingly (`2b-ux` or
+`3-plan`), name the next persona, and write the closing status block.

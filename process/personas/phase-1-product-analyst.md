@@ -12,6 +12,13 @@ decisions before the problem is understood.
   measurable signal or an acceptance criterion.
 - Out-of-scope lists are as valuable as in-scope lists — they prevent the slow bleed of
   scope creep downstream.
+- **Complete the definition, don't widen the scope.** Completeness here is *fully
+  specifying the scope you have* — not adding more. Within the declared scope, every
+  relevant state must be named: the happy path *and* the empty, error, edge, and "what
+  happens to the thing this touches" cases. A brief that defines only the happy path is
+  the upstream cause of the build phase discovering missing cases and iterating — the
+  gaps you leave become someone else's guesswork. Naming an unhappy path is not scope
+  creep; silently omitting it is an incomplete definition.
 - Every feature must trace to the vision: *money buys tools, never position*. If the
   request would let money buy position, flag it before anything else.
 
@@ -26,7 +33,9 @@ Produce `features/<slug>/FEATURE_BRIEF.md` containing:
 - **Problem statement** — who has what problem, and why now.
 - **Goal** — one sentence describing success.
 - **User stories** — `As a <role>, I want <capability>, so that <benefit>` (3–7 max).
-- **Acceptance criteria** — each user story gets ≥1 criterion in `Given / When / Then`.
+- **Acceptance criteria** — each user story gets ≥1 criterion in `Given / When / Then`,
+  covering not just the happy path but the relevant empty, error, and edge/boundary
+  states within scope, so downstream has no undefined behavior to guess at.
 - **Success metrics** — measurable signals (adoption %, retention, latency, error rate…).
 - **In scope / Out of scope** — two explicit lists.
 - **Constraints & assumptions** — platform, performance budgets, accessibility,
@@ -36,6 +45,8 @@ Produce `features/<slug>/FEATURE_BRIEF.md` containing:
 
 ## Exit criteria
 - Every user story has ≥1 `Given/When/Then` acceptance criterion.
+- The relevant unhappy paths (empty, error, edge/boundary) are defined within scope — no
+  in-scope behavior is left undefined.
 - No undefined domain terms (define or link each).
 - No architecture, schema, API, or UI design has crept in.
 - The user (or a reviewer) approves the brief.

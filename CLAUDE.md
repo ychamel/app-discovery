@@ -41,10 +41,36 @@ Work in this repository is routed to one of two pipelines based on scope:
 |-----------------|------------------------|--------------------------------------------------------------|----------------------------------------|-----------------------------------|
 | `1-define`      | Product Analyst        | [phase-1-product-analyst.md](process/personas/phase-1-product-analyst.md) | request, vision doc                    | `FEATURE_BRIEF.md`                |
 | `2-design`      | Software Architect     | [phase-2-architect.md](process/personas/phase-2-architect.md)             | `FEATURE_BRIEF.md`, codebase           | `DESIGN.md`                       |
+| `2b-ux`         | Experience Designer    | [phase-2b-experience-designer.md](process/personas/phase-2b-experience-designer.md) | `FEATURE_BRIEF.md`, `DESIGN.md`, design system | `EXPERIENCE.md` (**user-facing only**) |
 | `3-plan`        | Planner / Tech Lead    | [phase-3-planner.md](process/personas/phase-3-planner.md)                 | `FEATURE_BRIEF.md`, `DESIGN.md`        | `TASKS.md`                        |
-| `4-build`       | Senior Engineer        | [phase-4-engineer.md](process/personas/phase-4-engineer.md)               | `TASKS.md`, `DESIGN.md`, codebase      | code + `TEST_PLAN.md`             |
+| `4-build`       | Senior Engineer        | [phase-4-engineer.md](process/personas/phase-4-engineer.md)               | `TASKS.md`, `DESIGN.md`, codebase      | code + `TEST_PLAN.md` (unit/white-box) |
+| `4b-verify`     | Independent Tester     | [phase-4b-tester.md](process/personas/phase-4b-tester.md)                 | `FEATURE_BRIEF.md`, `DESIGN.md` contracts (**not the code**) | `ACCEPTANCE_TESTS.md` + blind tests |
 | `5-release`     | Release Engineer       | [phase-5-release-engineer.md](process/personas/phase-5-release-engineer.md) | verified build, `DESIGN.md`          | `RELEASE_NOTES.md`, rollout       |
 | `6-post-release`| Retrospective Analyst  | [phase-6-retrospective-analyst.md](process/personas/phase-6-retrospective-analyst.md) | metrics, `FEATURE_BRIEF.md`  | outcome report, cleanup           |
+
+> **Why `2b-ux` is a separate, conditional stage.** The Architect enumerates the
+> *functional* surface — which screens exist and what states each must handle. That is not
+> the same as how the surface should *feel* to use: hierarchy, composition, navigation,
+> motion, tone. Left unowned, that experiential layer is improvised at build time by an
+> engineer optimizing for mechanism, not the eye — the cause of surfaces that ship complete
+> yet flat. The **Experience Designer** owns it: intent only (no CSS/components), turning
+> "make it feel premium" into a verifiable sign-off checklist. The stage is **conditional**
+> — it runs only when a feature has a user-facing surface; the Architect marks `2b-ux: N/A`
+> at hand-off for backend-only work and routes straight to the Planner.
+
+> **Why build and verify are separate personas.** The Senior Engineer's own tests are
+> white-box scaffolding — written with the implementation in view, they are anchored to the
+> code that exists and tend to enshrine its behavior (even its bugs) as the expected answer.
+> The **Independent Tester** authors a second, black-box layer **blind** — from the brief's
+> acceptance criteria and the design's public contract, never the code — so the oracle is
+> the spec, not the implementation. A criterion the Tester cannot turn into a test is itself
+> a finding: it means the spec is incomplete, caught here instead of shipped. The Tester
+> does not replace the engineer's unit tests; it gates them.
+>
+> The **Patch Track keeps this lean** (it is deliberately two stages): the Maintenance
+> Engineer writes the regression test **from the bug report, not the fix** — same
+> spec-first principle, no separate persona. A patch that needs full independent
+> verification is a sign it belongs on the Feature Track.
 
 ### 2.2 Patch Track routing table
 
@@ -89,8 +115,10 @@ features/                     ← Feature Track only (patches live in patches/, 
   <feature-slug>/             ← all artifacts for one feature live together (Feature Track)
     FEATURE_BRIEF.md
     DESIGN.md
+    EXPERIENCE.md         (Stage 2b: Experience Designer's UX/UI spec — user-facing features only)
     TASKS.md
-    TEST_PLAN.md
+    TEST_PLAN.md          (Stage 4: engineer's unit/white-box record)
+    ACCEPTANCE_TESTS.md   (Stage 4b: Independent Tester's blind acceptance suite)
     RELEASE_NOTES.md
     OPEN_QUESTIONS.md
     DECISIONS.md
@@ -258,7 +286,7 @@ bottom without reverse-engineering it, it is wrong, no matter how clever or shor
 - [DECISIONS.md](DECISIONS.md) — global decision log (ADRs); feature-local decisions live in each feature folder
 - [curated-app-platform-design.md](curated-app-platform-design.md) — product vision
 - [STRATEGY.md](STRATEGY.md) — living strategic picture (Strategist, §4.1; created on first use)
-- [process/personas/](process/personas/) — the six stage personas + the off-pipeline [Strategist](process/personas/strategist.md) (§4.1)
+- [process/personas/](process/personas/) — the stage personas (incl. the conditional [Experience Designer](process/personas/phase-2b-experience-designer.md), `2b-ux`) + the off-pipeline [Strategist](process/personas/strategist.md) (§4.1)
 - [features/README.md](features/README.md) — per-feature folder convention (Feature Track)
 - [features/INDEX.md](features/INDEX.md) — registry of every feature + its outcome
 - [patches/README.md](patches/README.md) — per-patch folder convention (Patch Track)
