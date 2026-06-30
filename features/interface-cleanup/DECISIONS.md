@@ -108,3 +108,38 @@ identically to every app) as long as the structural slot order is untouched.
 
 **No global ADR.** All choices are presentation-only within D-4/D-13 (DESIGN §14); nothing is
 promoted to the global [DECISIONS.md](../../DECISIONS.md) (confirms IC-D-2).
+
+---
+
+## IC-EXP-1…5 — Stage-2b experience calls (Experience Designer, 2026-06-30)
+
+**Date:** 2026-06-30 · **Decided by:** Experience Designer (Stage 2b) · **Status:** ratified in
+[EXPERIENCE.md](EXPERIENCE.md) (intent-only; no implementation). These set the *feel* the Architect's
+mechanisms (IC-DESIGN-1…9) deliver, and feed the AC-8 sign-off checklist (EXPERIENCE §4).
+
+- **IC-EXP-1 — App-page mobile action panel = a compact action bar with one dominant focal point.**
+  Try/Follow/Share render as **one bounded, compact action region** (not a tall full-width stack), so
+  the app identity surfaces immediately after it. Focal order **Try (dominant) › Follow (primary,
+  restored from the AC-2 grey demotion) › Share (quiet)**; Try and Follow are differentiated by
+  *prominence* (size/position), never by demoting Follow's colour. Resolves the "two primaries"
+  tension (Try = dominant conversion link; Follow = primary relationship form-button, below Try) and
+  the DESIGN §4.4 "compact bar or not" question → **compact bar**. (EXPERIENCE S1.)
+- **IC-EXP-2 — Mobile reflow focus-order trade-off accepted (not escalated).** CSS `order:` moves
+  *visual* order only; keyboard/screen-reader order stays DOM order (identity → actions → reviews).
+  That sequence is itself logical → no meaning-changing visual/DOM contradiction (no WCAG 1.3.2
+  failure), so this is **documented as an accepted trade-off + a §4 sign-off item** rather than routed
+  back to the Architect. Upholds IC-D-3 (source order is the invariant). (EXPERIENCE S1-10.)
+- **IC-EXP-3 — Developer-hub "home" tab = Manage; active-tab treatment reuses the existing accent
+  "you are here" pattern.** Managing/submitting is the developer's primary job → the header "Developer"
+  entry lands on **Manage**; Analytics is the reflective second. The active indicator reuses the
+  Discover sidebar active-link pattern (no new pattern) + current-page semantics so "active" is
+  signalled by more than colour. The horizontal tab bar is the one new *arrangement*, justified by the
+  new hub IA. (EXPERIENCE S2.)
+- **IC-EXP-4 — Discover ordering caption must read as informational, never as a control, and is
+  suppressed on zero results.** A merit caption styled like a button/dropdown would imply a sort
+  control that AC-7 explicitly excludes; it reads unmistakably as a statement. On the empty state it is
+  hidden (nothing to order). (EXPERIENCE S3.)
+- **IC-EXP-5 — System scope guard: this pass *quiets and aligns*, it does not embellish.** No new
+  palette, stylized/animated nav, or decorative motion (those stay `ui-modernization`, IC-D-1); the
+  only new feedback motion is the reduced-motion-safe Share "Copied!" confirmation. "Calm" is a tone
+  target tied to restrained accent use + reduced-motion-first. (EXPERIENCE §3.)
